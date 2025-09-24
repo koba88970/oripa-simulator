@@ -556,6 +556,15 @@
                     <div class="history-list" id="historyList">
                         <!-- 履歴がここに表示されます -->
                     </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px;">
+                        <button class="btn btn-success" onclick="exportSettings()" style="padding: 8px 12px; font-size: 12px;">
+                            💾 設定をエクスポート
+                        </button>
+                        <button class="btn btn-primary" onclick="importSettings()" style="padding: 8px 12px; font-size: 12px;">
+                            📂 設定をインポート
+                        </button>
+                    </div>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(event)">
                 </div>
             </div>
 
@@ -1308,6 +1317,114 @@
                 closeModal();
                 document.getElementById('modalHistoryName').value = '';
             }
+        }
+
+        // 設定エクスポート
+        function exportSettings() {
+            const exportData = {
+                version: '2.0',
+                exportDate: new Date().toISOString(),
+                currentSettings: {
+                    packPrice: document.getElementById('packPrice').value,
+                    totalPacks: document.getElementById('totalPacks').value,
+                    totalReturnRate: document.getElementById('totalReturnRate').value,
+                    lossTypeCount: document.getElementById('lossTypeCount').value,
+                    minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
+                    prizes: [...prizes]
+                },
+                history: [...history]
+            };
+
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `oripa-settings-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('設定をエクスポートしました！\nダウンロードしたJSONファイルを他のブラウザでインポートできます。');
+        }
+
+        // 設定インポート
+        function importSettings() {
+            document.getElementById('importFile').click();
+        }
+
+        // ファイルインポート処理
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.type !== 'application/json') {
+                alert('JSONファイルを選択してください');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importData = JSON.parse(e.target.result);
+                    
+                    // バージョンチェック
+                    if (!importData.version) {
+                        alert('古いバージョンの設定ファイルです。インポートできません。');
+                        return;
+                    }
+
+                    // 確認ダイアログ
+                    const confirmMessage = `設定をインポートしますか？\n\n` +
+                        `- エクスポート日時: ${new Date(importData.exportDate).toLocaleString('ja-JP')}\n` +
+                        `- 履歴件数: ${importData.history ? importData.history.length : 0}件\n` +
+                        `- 景品数: ${importData.currentSettings.prizes ? importData.currentSettings.prizes.length : 0}個\n\n` +
+                        `※ 現在の設定と履歴は上書きされます`;
+
+                    if (!confirm(confirmMessage)) {
+                        return;
+                    }
+
+                    // 現在の設定を復元
+                    if (importData.currentSettings) {
+                        const settings = importData.currentSettings;
+                        document.getElementById('packPrice').value = settings.packPrice || '40,000';
+                        document.getElementById('totalPacks').value = settings.totalPacks || '100';
+                        document.getElementById('totalReturnRate').value = settings.totalReturnRate || 98;
+                        if (settings.lossTypeCount) document.getElementById('lossTypeCount').value = settings.lossTypeCount;
+                        if (settings.minGuaranteeValue) document.getElementById('minGuaranteeValue').value = settings.minGuaranteeValue;
+                        
+                        // 景品データを復元
+                        if (settings.prizes) {
+                            prizes = [...settings.prizes];
+                            updatePrizeList();
+                        }
+                    }
+
+                    // 履歴を復元
+                    if (importData.history) {
+                        history = [...importData.history];
+                        updateHistoryList();
+                    }
+
+                    // データを保存
+                    saveData();
+                    
+                    // 再計算
+                    calculate();
+
+                    alert('設定を正常にインポートしました！');
+
+                } catch (error) {
+                    console.error('インポートエラー:', error);
+                    alert('設定ファイルの読み込みに失敗しました。\nファイルが破損している可能性があります。');
+                }
+            };
+
+            reader.readAsText(file);
+            
+            // ファイル選択をリセット
+            event.target.value = '';
         }
 
         // キーボードイベント
