@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>オリパ設計シミュレーター v2.0</title>
+    <style>
+        :root {
+            --sf-blue: #007AFF;
+            --sf-orange: #FF9500;
+            --sf-green: #34C759;
+            --sf-red: #FF3B30;
+            --sf-purple: #AF52DE;
+            --sf-gray: #8E8E93;
+            --sf-gray-2: #AEAEB2;
+            --sf-gray-3: #C7C7CC;
+            --sf-gray-4: #D1D1D6;
+            --sf-gray-5: #E5E5EA;
+            --sf-gray-6: #F2F2F7;
+            --sf-white: #FFFFFF;
+            --sf-black: #000000;
+            --shadow-light: 0 2px 20px rgba(0, 0, 0, 0.08);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --shadow-heavy: 0 20px 60px rgba(0, 0, 0, 0.15);
+            --border-radius: 16px;
+            --border-radius-small: 12px;
+            --transition: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #F2F2F7 0%, #FFFFFF 100%);
+            min-height: 100vh;
+            letter-spacing: -0.01em;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 32px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-heavy);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            color: var(--sf-black);
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 2.2em;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .version-badge {
+            background: var(--sf-blue);
+            color: var(--sf-white);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 16px;
+            vertical-align: middle;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 32px;
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--sf-gray-5);
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s var(--transition);
+        }
+
+        .panel:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .panel h2 {
+            margin: 0 0 20px 0;
+            color: var(--sf-black);
+            border-bottom: 2px solid var(--sf-blue);
+            padding-bottom: 12px;
+            font-size: 1.3em;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            color: var(--sf-black);
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--sf-gray-4);
+            border-radius: var(--border-radius-small);
+            font-size: 15px;
+            font-weight: 400;
+            background: var(--sf-white);
+            transition: all 0.3s var(--transition);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--sf-blue);
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .calculated-value {
+            background: rgba(52, 199, 89, 0.1);
+            color: var(--sf-green);
+            padding: 12px 16px;
+            border-radius: var(--border-radius-small);
+            font-weight: 600;
+            text-align: center;
+            border: 1px solid rgba(52, 199, 89, 0.3);
+        }
+
+        .prize-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .prize-item {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid var(--sf-gray-4);
+            border-radius: var(--border-radius-small);
+            padding: 16px;
+            position: relative;
+            transition: all 0.3s var(--transition);
+        }
+
+        .prize-item:hover {
+            border-color: var(--sf-blue);
+            transform: translateY(-1px);
+        }
+
+        .prize-rank {
+            position: absolute;
+            top: -8px;
+            left: 12px;
+            background: var(--sf-blue);
+            color: var(--sf-white);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .prize-rank.rank-1 { background: #FFD700; color: var(--sf-black); }
+        .prize-rank.rank-2 { background: #C0C0C0; color: var(--sf-black); }
+        .prize-rank.rank-3 { background: #CD7F32; color: var(--sf-white); }
+        .prize-rank.rank-4 { background: var(--sf-green); }
+        .prize-rank.rank-5 { background: var(--sf-purple); }
+
+        .prize-content {
+            margin-top: 8px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .prize-name {
+            font-weight: 500;
+            color: var(--sf-black);
+        }
+
+        .prize-value, .prize-count {
+            font-size: 13px;
+            color: var(--sf-gray);
+            text-align: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--border-radius-small);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--sf-blue);
+            color: var(--sf-white);
+        }
+
+        .btn-primary:hover {
+            background: #0051D5;
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background: var(--sf-red);
+            color: var(--sf-white);
+        }
+
+        .btn-danger:hover {
+            background: #E6342A;
+            transform: scale(1.05);
+        }
+
+        .btn-success {
+            background: var(--sf-green);
+            color: var(--sf-white);
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+
+        .btn-success:hover {
+            background: #248A3D;
+        }
+
+        .add-prize-form {
+            background: rgba(0, 122, 255, 0.05);
+            border: 1px dashed var(--sf-blue);
+            border-radius: var(--border-radius-small);
+            padding: 20px;
+            margin-top: 16px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .result-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--sf-gray-5);
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s var(--transition);
+        }
+
+        .result-panel:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .result-panel h3 {
+            margin: 0 0 16px 0;
+            color: var(--sf-black);
+            border-bottom: 2px solid var(--sf-green);
+            padding-bottom: 8px;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--sf-gray-5);
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 500;
+            color: var(--sf-black);
+        }
+
+        .result-value {
+            color: var(--sf-gray);
+            font-weight: 600;
+        }
+
+        .highlight {
+            background: rgba(255, 149, 0, 0.15);
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 149, 0, 0.3);
+            color: var(--sf-orange);
+            font-weight: 600;
+        }
+
+        .loss-panel {
+            background: rgba(255, 149, 0, 0.08);
+            border: 1px solid rgba(255, 149, 0, 0.2);
+        }
+
+        .loss-panel h3 {
+            border-bottom-color: var(--sf-orange);
+        }
+
+        .expected-values {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .ev-item {
+            text-align: center;
+            padding: 8px;
+            background: rgba(0, 122, 255, 0.1);
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .ev-count {
+            font-weight: 600;
+            color: var(--sf-blue);
+        }
+
+        .ev-value {
+            color: var(--sf-gray);
+            font-size: 11px;
+        }
+
+        .history-panel {
+            background: rgba(175, 82, 222, 0.08);
+            border: 1px solid rgba(175, 82, 222, 0.2);
+        }
+
+        .history-panel h2 {
+            border-bottom-color: var(--sf-purple);
+        }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            transition: all 0.3s var(--transition);
+        }
+
+        .history-item:hover {
+            background: rgba(175, 82, 222, 0.1);
+            transform: translateX(4px);
+        }
+
+        .history-name {
+            font-weight: 500;
+            color: var(--sf-black);
+        }
+
+        .history-meta {
+            font-size: 12px;
+            color: var(--sf-gray);
+        }
+
+        .warning {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--sf-red);
+            padding: 16px;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255, 59, 48, 0.2);
+            margin-top: 24px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--sf-white);
+            padding: 32px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-heavy);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal h3 {
+            margin: 0 0 20px 0;
+            color: var(--sf-black);
+        }
+
+        .close-btn {
+            background: var(--sf-gray-4);
+            color: var(--sf-black);
+        }
+
+        .close-btn:hover {
+            background: var(--sf-gray-3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>オリパ設計シミュレーター <span class="version-badge">v2.0</span></h1>
+        
+        <div class="main-grid">
+            <div class="left-panel">
+                <!-- 基本設定 -->
+                <div class="panel">
+                    <h2>基本設定</h2>
+                    <div class="form-group">
+                        <label>パック単価 (円)</label>
+                        <input type="text" id="packPrice" value="40,000" oninput="formatBasicValue(this)">
+                    </div>
+                    <div class="form-group">
+                        <label>総口数</label>
+                        <input type="text" id="totalPacks" value="100" oninput="formatBasicValue(this)">
+                    </div>
+                    <div class="form-group">
+                        <label>総還元率 (%)</label>
+                        <input type="number" id="totalReturnRate" value="98" min="0" max="100" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>オリパ提供価値</label>
+                        <div class="calculated-value" id="totalValue">¥0</div>
+                    </div>
+                </div>
+
+                <!-- ハズレ設計 -->
+                <div class="panel">
+                    <h2>ハズレ設計</h2>
+                    <div class="form-group">
+                        <label>ハズレの種類数</label>
+                        <select id="lossTypeCount" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);" onchange="calculate()">
+                            <option value="2">2種類</option>
+                            <option value="3">3種類</option>
+                            <option value="4">4種類</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>最低保証価値 (円)</label>
+                        <input type="text" id="minGuaranteeValue" value="1,000" oninput="formatBasicValue(this)">
+                    </div>
+                </div>
+
+                <!-- 景品管理 -->
+                <div class="panel">
+                    <h2>景品管理</h2>
+                    <div class="prize-list" id="prizeList">
+                        <!-- 景品リストがここに表示されます -->
+                    </div>
+                    
+                    <div class="add-prize-form">
+                        <div class="form-group">
+                            <label>景品名</label>
+                            <input type="text" id="prizeName" placeholder="例: レアカード">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>等級</label>
+                                <select id="prizeRank" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
+                                    <option value="1">1等</option>
+                                    <option value="2">2等</option>
+                                    <option value="3">3等</option>
+                                    <option value="4">4等</option>
+                                    <option value="5">5等</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>ポイント還元価値</label>
+                                <input type="text" id="prizeValue" placeholder="70,000" oninput="formatPrizeValue(this)">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>在庫数</label>
+                            <input type="number" id="prizeCount" min="1" value="1">
+                        </div>
+                        <button class="btn btn-success" onclick="addPrize()">景品を追加</button>
+                    </div>
+                </div>
+
+                <!-- 履歴管理 -->
+                <div class="panel history-panel">
+                    <h2>シミュレーション履歴</h2>
+                    <div class="form-group">
+                        <input type="text" id="historyName" placeholder="設定名を入力 (例: 新商品A案)">
+                        <button class="btn btn-primary" onclick="saveToHistory()" style="width: 100%; margin-top: 8px;">現在の設定を保存</button>
+                    </div>
+                    <div class="history-list" id="historyList">
+                        <!-- 履歴がここに表示されます -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-grid">
+                <!-- サマリー -->
+                <div class="result-panel">
+                    <h3>サマリー</h3>
+                    <div class="result-row">
+                        <span class="result-label">総還元率</span>
+                        <span class="result-value" id="summaryTotalReturn">98.0%</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">実質還元率</span>
+                        <span class="result-value highlight" id="summaryRealReturn">0.0%</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">理論期待値</span>
+                        <span class="result-value" id="summaryExpectedValue">¥0</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">標準偏差</span>
+                        <span class="result-value" id="summaryStdDev">¥0</span>
+                    </div>
+                </div>
+
+                <!-- 景品詳細 -->
+                <div class="result-panel">
+                    <h3>景品詳細</h3>
+                    <div id="prizeDetails">
+                        <p style="color: var(--sf-gray); text-align: center;">景品を追加してください</p>
+                    </div>
+                </div>
+
+                <!-- ハズレ詳細 -->
+                <div class="result-panel loss-panel">
+                    <h3>ハズレ詳細（自動計算）</h3>
+                    <div id="lossDetailsContainer">
+                        <!-- ハズレ詳細がここに動的に表示されます -->
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">ハズレ総枚数</span>
+                        <span class="result-value" id="totalLossCount">0枚</span>
+                    </div>
+                </div>
+
+                <!-- 理論期待値 -->
+                <div class="result-panel">
+                    <h3>理論期待値（1〜20回）</h3>
+                    <div class="expected-values" id="expectedValues">
+                        <!-- 期待値がここに表示されます -->
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <canvas id="expectedValueChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- 期待値シミュレーション -->
+                <div class="result-panel" style="grid-column: 1 / -1;">
+                    <h3>期待値シミュレーション</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <!-- 収支確率 -->
+                        <div>
+                            <h4 style="margin: 0 0 12px 0; color: var(--sf-black); font-size: 1.1em;">収支確率</h4>
+                            <div id="profitLossTable" style="font-size: 13px;">
+                                <!-- 収支確率テーブルがここに表示されます -->
+                            </div>
+                        </div>
+                        <!-- 倍率確率 -->
+                        <div>
+                            <h4 style="margin: 0 0 12px 0; color: var(--sf-black); font-size: 1.1em;">倍率確率</h4>
+                            <div id="multiplierTable" style="font-size: 13px;">
+                                <!-- 倍率確率テーブルがここに表示されます -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="warnings"></div>
+    </div>
+
+    <!-- モーダル -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <h3>設定名を入力</h3>
+            <div class="form-group">
+                <input type="text" id="modalHistoryName" placeholder="設定名を入力してください">
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="confirmSaveHistory()">保存</button>
+                <button class="btn close-btn" onclick="closeModal()">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数
+        let prizes = [];
+        let history = [];
+
+        // ローカルストレージのキー
+        const STORAGE_KEY = 'oripa_simulator_v2';
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            attachEventListeners();
+            calculate();
+        });
+
+        // イベントリスナー設定
+        function attachEventListeners() {
+            document.getElementById('packPrice').addEventListener('input', calculate);
+            document.getElementById('totalPacks').addEventListener('input', calculate);
+            document.getElementById('totalReturnRate').addEventListener('input', calculate);
+        }
+
+        // ポイント還元価値のフォーマット
+        function formatPrizeValue(input) {
+            let value = input.value.replace(/[^\d]/g, ''); // 数字以外を除去
+            if (value) {
+                value = parseInt(value).toLocaleString(); // カンマ区切りに変換
+            }
+            input.value = value;
+        }
+
+        // 基本設定値のフォーマット
+        function formatBasicValue(input) {
+            let value = input.value.replace(/[^\d]/g, ''); // 数字以外を除去
+            if (value) {
+                value = parseInt(value).toLocaleString(); // カンマ区切りに変換
+            }
+            input.value = value;
+            // 基本設定が変更されたら再計算
+            setTimeout(calculate, 100);
+        }
+
+        // カンマ区切りの数字を数値に変換
+        function parseFormattedNumber(value) {
+            return parseFloat(value.replace(/,/g, '')) || 0;
+        }
+
+        // 景品追加
+        function addPrize() {
+            const name = document.getElementById('prizeName').value.trim();
+            const rank = parseInt(document.getElementById('prizeRank').value);
+            const value = parseFormattedNumber(document.getElementById('prizeValue').value);
+            const count = parseInt(document.getElementById('prizeCount').value) || 0;
+
+            if (!name || value <= 0 || count <= 0) {
+                alert('すべての項目を正しく入力してください');
+                return;
+            }
+
+            const prize = {
+                id: Date.now(),
+                name: name,
+                rank: rank,
+                value: value,
+                count: count
+            };
+
+            prizes.push(prize);
+            
+            // フォームリセット
+            document.getElementById('prizeName').value = '';
+            document.getElementById('prizeValue').value = '';
+            document.getElementById('prizeCount').value = '1';
+
+            updatePrizeList();
+            calculate();
+            saveData();
+        }
+
+        // 景品削除
+        function removePrize(id) {
+            prizes = prizes.filter(p => p.id !== id);
+            updatePrizeList();
+            calculate();
+            saveData();
+        }
+
+        // 景品リスト更新
+        function updatePrizeList() {
+            const container = document.getElementById('prizeList');
+            
+            if (prizes.length === 0) {
+                container.innerHTML = '<p style="color: var(--sf-gray); text-align: center; margin: 20px 0;">景品を追加してください</p>';
+                return;
+            }
+
+            // 等級順にソート
+            prizes.sort((a, b) => a.rank - b.rank);
+
+            container.innerHTML = prizes.map(prize => `
+                <div class="prize-item">
+                    <div class="prize-rank rank-${prize.rank}">${prize.rank}等</div>
+                    <div class="prize-content">
+                        <div class="prize-name">${prize.name}</div>
+                        <div class="prize-value">¥${prize.value.toLocaleString()}</div>
+                        <div class="prize-count">${prize.count}枚</div>
+                        <button class="btn btn-danger" onclick="removePrize(${prize.id})">削除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 値を10の位で丸める（1桁を0にする）
+        function roundToTens(value) {
+            return Math.round(value / 10) * 10;
+        }
+
+        // メイン計算
+        function calculate() {
+            const packPrice = parseFormattedNumber(document.getElementById('packPrice').value);
+            const totalPacks = parseFormattedNumber(document.getElementById('totalPacks').value);
+            const totalReturnRatePercent = parseFloat(document.getElementById('totalReturnRate').value) || 0;
+            const totalReturnRate = totalReturnRatePercent / 100;
+            const lossTypeCount = parseInt(document.getElementById('lossTypeCount').value) || 2;
+            const minGuaranteeValue = parseFormattedNumber(document.getElementById('minGuaranteeValue').value);
+
+            if (packPrice <= 0 || totalPacks <= 0 || totalReturnRate <= 0) {
+                return;
+            }
+
+            // 基本計算
+            const totalValue = packPrice * totalPacks;
+            const targetReturnValue = totalValue * totalReturnRate;
+
+            // オリパ提供価値表示
+            document.getElementById('totalValue').textContent = `¥${totalValue.toLocaleString()}`;
+
+            // 景品総価値計算
+            const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
+            const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
+
+            // 実質還元率計算
+            const realReturnRate = totalValue > 0 ? (prizesTotalValue / totalValue) * 100 : 0;
+
+            // ハズレ計算
+            const lossCount = totalPacks - prizesTotalCount;
+            const lossValue = targetReturnValue - prizesTotalValue;
+
+            const lossTypes = [];
+
+            if (lossCount > 0 && lossValue > 0) {
+                const lossPerType = Math.floor(lossCount / lossTypeCount);
+                const remainder = lossCount % lossTypeCount;
+
+                // 最低保証を最後に配置
+                const minValue = minGuaranteeValue;
+                const minCount = lossPerType + (remainder > 0 ? 1 : 0);
+                const minTotalValue = minValue * minCount;
+
+                // 残りの価値を他のハズレに配分
+                const remainingValue = lossValue - minTotalValue;
+                const remainingTypes = lossTypeCount - 1;
+
+                for (let i = 0; i < remainingTypes; i++) {
+                    const count = lossPerType + (i < remainder - 1 ? 1 : 0);
+                    if (count > 0) {
+                        // 高い等級ほど価値を高く設定
+                        const valueRatio = (remainingTypes - i) / remainingTypes;
+                        let value = remainingValue * valueRatio / count;
+                        
+                        // パック単価を超えないように制限
+                        value = Math.min(value, packPrice);
+                        
+                        // キリの良い数に丸める
+                        value = roundToTens(value);
+                        
+                        lossTypes.push({
+                            name: `ハズレ${String.fromCharCode(65 + i)}`,
+                            value: value,
+                            count: count,
+                            type: 'normal'
+                        });
+                    }
+                }
+
+                // 最低保証を追加
+                lossTypes.push({
+                    name: `ハズレ${String.fromCharCode(65 + remainingTypes)}（最低保証）`,
+                    value: minValue,
+                    count: minCount,
+                    type: 'min'
+                });
+            }
+
+            // 期待値計算
+            let expectedValue = prizes.reduce((sum, prize) => {
+                const probability = prize.count / totalPacks;
+                return sum + (prize.value * probability);
+            }, 0);
+
+            lossTypes.forEach(loss => {
+                const probability = loss.count / totalPacks;
+                expectedValue += loss.value * probability;
+            });
+
+            // 標準偏差計算
+            let variance = prizes.reduce((sum, prize) => {
+                const probability = prize.count / totalPacks;
+                return sum + (Math.pow(prize.value - expectedValue, 2) * probability);
+            }, 0);
+
+            lossTypes.forEach(loss => {
+                const probability = loss.count / totalPacks;
+                variance += Math.pow(loss.value - expectedValue, 2) * probability;
+            });
+            
+            const stdDev = Math.sqrt(variance);
+
+            // 結果表示更新
+            updateResults({
+                totalReturnRatePercent,
+                realReturnRate,
+                expectedValue,
+                stdDev,
+                lossTypes,
+                lossCount,
+                totalPacks,
+                packPrice
+            });
+        }
+
+        // 結果表示更新
+        function updateResults(data) {
+            document.getElementById('summaryTotalReturn').textContent = `${data.totalReturnRatePercent.toFixed(1)}%`;
+            document.getElementById('summaryRealReturn').textContent = `${data.realReturnRate.toFixed(1)}%`;
+            document.getElementById('summaryExpectedValue').textContent = `¥${data.expectedValue.toLocaleString()}`;
+            document.getElementById('summaryStdDev').textContent = `¥${data.stdDev.toLocaleString()}`;
+
+            // 景品詳細更新
+            updatePrizeDetails();
+
+            // ハズレ詳細更新
+            updateLossDetails(data.lossTypes, data.lossCount);
+
+            // 理論期待値（1-20回）更新
+            updateExpectedValues(data.expectedValue, data.stdDev);
+            
+            // 期待値シミュレーション更新
+            updateSimulationTables(data.expectedValue, data.stdDev, data.packPrice);
+        }
+
+        // 景品詳細更新
+        function updatePrizeDetails() {
+            const container = document.getElementById('prizeDetails');
+            
+            if (prizes.length === 0) {
+                container.innerHTML = '<p style="color: var(--sf-gray); text-align: center;">景品を追加してください</p>';
+                return;
+            }
+
+            const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
+            
+            container.innerHTML = prizes.map(prize => {
+                const probability = totalPacks > 0 ? (prize.count / totalPacks * 100).toFixed(2) : '0.00';
+                return `
+                    <div class="result-row">
+                        <span class="result-label">${prize.rank}等 ${prize.name}</span>
+                        <span class="result-value">${probability}% (¥${prize.value.toLocaleString()})</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ハズレ詳細更新
+        function updateLossDetails(lossTypes, lossCount) {
+            const container = document.getElementById('lossDetailsContainer');
+            
+            if (!lossTypes || lossTypes.length === 0) {
+                container.innerHTML = '<div class="result-row"><span class="result-label">ハズレなし</span><span class="result-value">-</span></div>';
+                document.getElementById('totalLossCount').textContent = '0枚';
+                return;
+            }
+
+            container.innerHTML = lossTypes.map(loss => {
+                const probability = lossCount > 0 ? ((loss.count / lossCount) * 100).toFixed(1) : '0.0';
+                return `
+                    <div class="result-row">
+                        <span class="result-label">${loss.name}</span>
+                        <span class="result-value">¥${loss.value.toLocaleString()} × ${loss.count}枚 (${probability}%)</span>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('totalLossCount').textContent = `${lossCount}枚`;
+        }
+
+        // 理論期待値更新
+        function updateExpectedValues(expectedValue, stdDev) {
+            const container = document.getElementById('expectedValues');
+            
+            let html = '';
+            const chartData = [];
+            for (let i = 1; i <= 20; i++) {
+                const ev = expectedValue * i;
+                const risk = stdDev * Math.sqrt(i);
+                chartData.push({ count: i, value: ev, risk: risk });
+                html += `
+                    <div class="ev-item">
+                        <div class="ev-count">${i}回</div>
+                        <div class="ev-value">¥${ev.toLocaleString()}</div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+            
+            // チャートを描画
+            drawExpectedValueChart(chartData);
+        }
+
+        // 理論期待値チャート描画
+        function drawExpectedValueChart(data) {
+            const canvas = document.getElementById('expectedValueChart');
+            const ctx = canvas.getContext('2d');
+            
+            // キャンバスをクリア
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (data.length === 0) return;
+            
+            const padding = 40;
+            const width = canvas.width - padding * 2;
+            const height = canvas.height - padding * 2;
+            
+            // データの最大値を取得
+            const maxValue = Math.max(...data.map(d => d.value));
+            const maxCount = Math.max(...data.map(d => d.count));
+            
+            // スケール計算
+            const xScale = width / (maxCount - 1);
+            const yScale = height / maxValue;
+            
+            // グリッド線を描画
+            ctx.strokeStyle = '#E5E5EA';
+            ctx.lineWidth = 1;
+            
+            // 縦のグリッド線
+            for (let i = 0; i < 21; i += 5) {
+                const x = padding + (i - 1) * xScale;
+                if (x >= padding && x <= canvas.width - padding) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, padding);
+                    ctx.lineTo(x, canvas.height - padding);
+                    ctx.stroke();
+                }
+            }
+            
+            // 横のグリッド線
+            for (let i = 0; i <= 5; i++) {
+                const y = canvas.height - padding - (maxValue / 5 * i) * yScale;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(canvas.width - padding, y);
+                ctx.stroke();
+            }
+            
+            // 期待値ライン（ブルー）
+            ctx.strokeStyle = '#007AFF';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            data.forEach((point, index) => {
+                const x = padding + (point.count - 1) * xScale;
+                const y = canvas.height - padding - point.value * yScale;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+            
+            // データポイントを描画
+            ctx.fillStyle = '#007AFF';
+            data.forEach(point => {
+                const x = padding + (point.count - 1) * xScale;
+                const y = canvas.height - padding - point.value * yScale;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // ラベルを描画
+            ctx.fillStyle = '#8E8E93';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'center';
+            
+            // X軸ラベル（回数）
+            for (let i = 1; i <= 20; i += 5) {
+                const x = padding + (i - 1) * xScale;
+                ctx.fillText(i + '回', x, canvas.height - 5);
+            }
+            
+            // Y軸ラベル（金額）
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+                const value = maxValue / 5 * i;
+                const y = canvas.height - padding - value * yScale;
+                ctx.fillText('¥' + value.toLocaleString(), padding - 10, y + 4);
+            }
+            
+            // チャートタイトル
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('回数別理論期待値', canvas.width / 2, 20);
+        }
+
+        // 正規分布の累積分布関数（近似）
+        function normalCDF(x, mean, stdDev) {
+            const z = (x - mean) / stdDev;
+            const a1 = 0.254829592;
+            const a2 = -0.284496736;
+            const a3 = 1.421413741;
+            const a4 = -1.453152027;
+            const a5 = 1.061405429;
+            const p = 0.3275911;
+            
+            const sign = z < 0 ? -1 : 1;
+            const absZ = Math.abs(z);
+            const t = 1.0 / (1.0 + p * absZ);
+            const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-absZ * absZ);
+            
+            return 0.5 * (1.0 + sign * y);
+        }
+
+        // 期待値シミュレーションテーブル更新
+        function updateSimulationTables(expectedValue, stdDev, packPrice) {
+            updateProfitLossTable(expectedValue, stdDev, packPrice);
+            updateMultiplierTable(expectedValue, stdDev, packPrice);
+        }
+
+        // 収支確率テーブル更新
+        function updateProfitLossTable(expectedValue, stdDev, packPrice) {
+            const container = document.getElementById('profitLossTable');
+            
+            let html = `
+                <div style="display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; align-items: center; font-weight: 500; border-bottom: 2px solid var(--sf-gray-5); padding-bottom: 8px; margin-bottom: 12px;">
+                    <span>回数</span>
+                    <span style="color: var(--sf-green);">プラス確率</span>
+                    <span style="color: var(--sf-red);">マイナス確率</span>
+                </div>
+            `;
+
+            for (let n = 1; n <= 20; n++) {
+                const investment = packPrice * n;
+                const expectedReturn = expectedValue * n;
+                const stdDevN = stdDev * Math.sqrt(n);
+                
+                // プラス確率（回収額 > 投入額）
+                const profitProb = 1 - normalCDF(investment, expectedReturn, stdDevN);
+                // マイナス確率（回収額 < 投入額）
+                const lossProb = normalCDF(investment, expectedReturn, stdDevN);
+                
+                html += `
+                    <div style="display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--sf-gray-6);">
+                        <span style="font-weight: 600;">${n}回</span>
+                        <span style="color: var(--sf-green); font-weight: 600;">${(profitProb * 100).toFixed(1)}%</span>
+                        <span style="color: var(--sf-red); font-weight: 600;">${(lossProb * 100).toFixed(1)}%</span>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // 倍率確率テーブル更新
+        function updateMultiplierTable(expectedValue, stdDev, packPrice) {
+            const container = document.getElementById('multiplierTable');
+            
+            let html = `
+                <div style="display: grid; grid-template-columns: auto 1fr 1fr 1fr 1fr; gap: 8px; align-items: center; font-weight: 500; border-bottom: 2px solid var(--sf-gray-5); padding-bottom: 8px; margin-bottom: 12px;">
+                    <span>回数</span>
+                    <span style="color: var(--sf-purple);">5倍以上</span>
+                    <span style="color: var(--sf-blue);">3倍以上</span>
+                    <span style="color: var(--sf-orange);">2倍以上</span>
+                    <span style="color: var(--sf-green);">1倍以上</span>
+                </div>
+            `;
+
+            for (let n = 1; n <= 20; n++) {
+                const investment = packPrice * n;
+                const expectedReturn = expectedValue * n;
+                const stdDevN = stdDev * Math.sqrt(n);
+                
+                // 各倍率以上になる確率
+                const prob5x = 1 - normalCDF(investment * 5, expectedReturn, stdDevN);
+                const prob3x = 1 - normalCDF(investment * 3, expectedReturn, stdDevN);
+                const prob2x = 1 - normalCDF(investment * 2, expectedReturn, stdDevN);
+                const prob1x = 1 - normalCDF(investment * 1, expectedReturn, stdDevN);
+                
+                html += `
+                    <div style="display: grid; grid-template-columns: auto 1fr 1fr 1fr 1fr; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--sf-gray-6);">
+                        <span style="font-weight: 600;">${n}回</span>
+                        <span style="color: var(--sf-purple); font-weight: 600;">${(prob5x * 100).toFixed(1)}%</span>
+                        <span style="color: var(--sf-blue); font-weight: 600;">${(prob3x * 100).toFixed(1)}%</span>
+                        <span style="color: var(--sf-orange); font-weight: 600;">${(prob2x * 100).toFixed(1)}%</span>
+                        <span style="color: var(--sf-green); font-weight: 600;">${(prob1x * 100).toFixed(1)}%</span>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // 履歴保存
+        function saveToHistory() {
+            const name = document.getElementById('historyName').value.trim();
+            
+            if (!name) {
+                alert('設定名を入力してください');
+                return;
+            }
+
+            const settings = {
+                id: Date.now(),
+                name: name,
+                date: new Date().toLocaleString('ja-JP'),
+                packPrice: document.getElementById('packPrice').value,
+                totalPacks: document.getElementById('totalPacks').value,
+                totalReturnRate: document.getElementById('totalReturnRate').value,
+                lossTypeCount: document.getElementById('lossTypeCount').value,
+                minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
+                prizes: [...prizes]
+            };
+
+            history.unshift(settings);
+            document.getElementById('historyName').value = '';
+            
+            updateHistoryList();
+            saveData();
+        }
+
+        // 履歴から読み込み
+        function loadFromHistory(id) {
+            const settings = history.find(h => h.id === id);
+            if (!settings) return;
+
+            document.getElementById('packPrice').value = settings.packPrice;
+            document.getElementById('totalPacks').value = settings.totalPacks;
+            document.getElementById('totalReturnRate').value = settings.totalReturnRate;
+            if (settings.lossTypeCount) document.getElementById('lossTypeCount').value = settings.lossTypeCount;
+            if (settings.minGuaranteeValue) document.getElementById('minGuaranteeValue').value = settings.minGuaranteeValue;
+            prizes = [...settings.prizes];
+
+            updatePrizeList();
+            calculate();
+        }
+
+        // 履歴削除
+        function removeFromHistory(id) {
+            if (confirm('この履歴を削除しますか？')) {
+                history = history.filter(h => h.id !== id);
+                updateHistoryList();
+                saveData();
+            }
+        }
+
+        // 履歴リスト更新
+        function updateHistoryList() {
+            const container = document.getElementById('historyList');
+            
+            if (history.length === 0) {
+                container.innerHTML = '<p style="color: var(--sf-gray); text-align: center; padding: 20px 0;">保存済みの設定はありません</p>';
+                return;
+            }
+
+            container.innerHTML = history.map(item => `
+                <div class="history-item" onclick="loadFromHistory(${item.id})">
+                    <div class="history-name">${item.name}</div>
+                    <div class="history-meta">${item.date}</div>
+                    <button class="btn btn-danger" onclick="event.stopPropagation(); removeFromHistory(${item.id})" style="float: right; margin-top: -30px;">削除</button>
+                </div>
+            `).join('');
+        }
+
+        // データ保存
+        function saveData() {
+            const data = {
+                prizes: prizes,
+                history: history,
+                settings: {
+                    packPrice: document.getElementById('packPrice').value,
+                    totalPacks: document.getElementById('totalPacks').value,
+                    totalReturnRate: document.getElementById('totalReturnRate').value,
+                    lossTypeCount: document.getElementById('lossTypeCount').value,
+                    minGuaranteeValue: document.getElementById('minGuaranteeValue').value
+                }
+            };
+
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.error('保存に失敗しました:', e);
+            }
+        }
+
+        // データ読み込み
+        function loadData() {
+            try {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    
+                    if (data.prizes) {
+                        prizes = data.prizes;
+                        updatePrizeList();
+                    }
+                    
+                    if (data.history) {
+                        history = data.history;
+                        updateHistoryList();
+                    }
+
+                    if (data.settings) {
+                        document.getElementById('packPrice').value = data.settings.packPrice || '40,000';
+                        document.getElementById('totalPacks').value = data.settings.totalPacks || '100';
+                        document.getElementById('totalReturnRate').value = data.settings.totalReturnRate || 98;
+                        document.getElementById('lossTypeCount').value = data.settings.lossTypeCount || 2;
+                        document.getElementById('minGuaranteeValue').value = data.settings.minGuaranteeValue || '1,000';
+                    }
+                }
+            } catch (e) {
+                console.error('データの読み込みに失敗しました:', e);
+            }
+        }
+
+        // モーダル関連
+        function showModal() {
+            document.getElementById('historyModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('historyModal').classList.remove('show');
+        }
+
+        function confirmSaveHistory() {
+            const name = document.getElementById('modalHistoryName').value.trim();
+            if (name) {
+                document.getElementById('historyName').value = name;
+                saveToHistory();
+                closeModal();
+                document.getElementById('modalHistoryName').value = '';
+            }
+        }
+
+        // キーボードイベント
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
