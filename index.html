@@ -707,48 +707,8 @@
                     </div>
                 </div>
 
-                <!-- 理論期待値 -->
-                <div class="result-panel">
-                    <h3>理論期待値（1〜20回）</h3>
-                    <div class="expected-values" id="expectedValues">
-                        <!-- 期待値がここに表示されます -->
-                    </div>
-                    <div style="margin-top: 20px;">
-                        <canvas id="expectedValueChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
 
-                <!-- ハズレ当選者分布 -->
-                <div class="result-panel">
-                    <h3>ハズレ当選者分布</h3>
-                    <div style="margin-top: 16px;">
-                        <canvas id="lossWinnersChart" width="400" height="250"></canvas>
-                    </div>
-                    <div id="lossWinnersLegend" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; justify-content: center; font-size: 12px;">
-                        <!-- 凡例がここに表示されます -->
-                    </div>
-                </div>
 
-                <!-- 期待値シミュレーション -->
-                <div class="result-panel" style="grid-column: 1 / -1;">
-                    <h3>期待値シミュレーション</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <!-- 収支確率 -->
-                        <div>
-                            <h4 style="margin: 0 0 12px 0; color: var(--sf-black); font-size: 1.1em;">収支確率</h4>
-                            <div id="profitLossTable" style="font-size: 13px;">
-                                <!-- 収支確率テーブルがここに表示されます -->
-                            </div>
-                        </div>
-                        <!-- 倍率確率 -->
-                        <div>
-                            <h4 style="margin: 0 0 12px 0; color: var(--sf-black); font-size: 1.1em;">倍率確率</h4>
-                            <div id="multiplierTable" style="font-size: 13px;">
-                                <!-- 倍率確率テーブルがここに表示されます -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- ガチャ体験 -->
                 <div class="result-panel" style="grid-column: 1 / -1;">
@@ -1209,11 +1169,6 @@
             // ハズレ分布チャート更新
             drawLossDistributionChart(data.lossTypes);
 
-            // 理論期待値（1-20回）更新
-            updateExpectedValues(data.expectedValue, data.stdDev);
-            
-            // 期待値シミュレーション更新
-            updateSimulationTables(data.expectedValue, data.stdDev, data.packPrice);
         }
 
         // 景品詳細更新
@@ -1261,129 +1216,7 @@
             document.getElementById('totalLossCount').textContent = `${lossCount}枚`;
         }
 
-        // 理論期待値更新
-        function updateExpectedValues(expectedValue, stdDev) {
-            const container = document.getElementById('expectedValues');
-            
-            let html = '';
-            const chartData = [];
-            for (let i = 1; i <= 20; i++) {
-                const ev = expectedValue * i;
-                const risk = stdDev * Math.sqrt(i);
-                chartData.push({ count: i, value: ev, risk: risk });
-                html += `
-                    <div class="ev-item">
-                        <div class="ev-count">${i}回</div>
-                        <div class="ev-value">¥${ev.toLocaleString()}</div>
-                    </div>
-                `;
-            }
-            
-            container.innerHTML = html;
-            
-            // チャートを描画
-            drawExpectedValueChart(chartData);
-        }
 
-        // 理論期待値チャート描画
-        function drawExpectedValueChart(data) {
-            const canvas = document.getElementById('expectedValueChart');
-            const ctx = canvas.getContext('2d');
-            
-            // キャンバスをクリア
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if (data.length === 0) return;
-            
-            const padding = 40;
-            const width = canvas.width - padding * 2;
-            const height = canvas.height - padding * 2;
-            
-            // データの最大値を取得
-            const maxValue = Math.max(...data.map(d => d.value));
-            const maxCount = Math.max(...data.map(d => d.count));
-            
-            // スケール計算
-            const xScale = width / (maxCount - 1);
-            const yScale = height / maxValue;
-            
-            // グリッド線を描画
-            ctx.strokeStyle = '#E5E5EA';
-            ctx.lineWidth = 1;
-            
-            // 縦のグリッド線
-            for (let i = 0; i < 21; i += 5) {
-                const x = padding + (i - 1) * xScale;
-                if (x >= padding && x <= canvas.width - padding) {
-                    ctx.beginPath();
-                    ctx.moveTo(x, padding);
-                    ctx.lineTo(x, canvas.height - padding);
-                    ctx.stroke();
-                }
-            }
-            
-            // 横のグリッド線
-            for (let i = 0; i <= 5; i++) {
-                const y = canvas.height - padding - (maxValue / 5 * i) * yScale;
-                ctx.beginPath();
-                ctx.moveTo(padding, y);
-                ctx.lineTo(canvas.width - padding, y);
-                ctx.stroke();
-            }
-            
-            // 期待値ライン（ブルー）
-            ctx.strokeStyle = '#007AFF';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            
-            data.forEach((point, index) => {
-                const x = padding + (point.count - 1) * xScale;
-                const y = canvas.height - padding - point.value * yScale;
-                
-                if (index === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            });
-            ctx.stroke();
-            
-            // データポイントを描画
-            ctx.fillStyle = '#007AFF';
-            data.forEach(point => {
-                const x = padding + (point.count - 1) * xScale;
-                const y = canvas.height - padding - point.value * yScale;
-                
-                ctx.beginPath();
-                ctx.arc(x, y, 4, 0, 2 * Math.PI);
-                ctx.fill();
-            });
-            
-            // ラベルを描画
-            ctx.fillStyle = '#8E8E93';
-            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-            ctx.textAlign = 'center';
-            
-            // X軸ラベル（回数）
-            for (let i = 1; i <= 20; i += 5) {
-                const x = padding + (i - 1) * xScale;
-                ctx.fillText(i + '回', x, canvas.height - 5);
-            }
-            
-            // Y軸ラベル（金額）
-            ctx.textAlign = 'right';
-            for (let i = 0; i <= 5; i++) {
-                const value = maxValue / 5 * i;
-                const y = canvas.height - padding - value * yScale;
-                ctx.fillText('¥' + value.toLocaleString(), padding - 10, y + 4);
-            }
-            
-            // チャートタイトル
-            ctx.fillStyle = '#000000';
-            ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('回数別理論期待値', canvas.width / 2, 20);
-        }
 
         // ハズレ当選者分布チャート描画
         function drawLossDistributionChart(lossTypes) {
@@ -1446,102 +1279,6 @@
             ctx.fillText('ハズレ当選者分布', canvas.width / 2, 20);
         }
 
-        // 正規分布の累積分布関数（近似）
-        function normalCDF(x, mean, stdDev) {
-            const z = (x - mean) / stdDev;
-            const a1 = 0.254829592;
-            const a2 = -0.284496736;
-            const a3 = 1.421413741;
-            const a4 = -1.453152027;
-            const a5 = 1.061405429;
-            const p = 0.3275911;
-            
-            const sign = z < 0 ? -1 : 1;
-            const absZ = Math.abs(z);
-            const t = 1.0 / (1.0 + p * absZ);
-            const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-absZ * absZ);
-            
-            return 0.5 * (1.0 + sign * y);
-        }
-
-        // 期待値シミュレーションテーブル更新
-        function updateSimulationTables(expectedValue, stdDev, packPrice) {
-            updateProfitLossTable(expectedValue, stdDev, packPrice);
-            updateMultiplierTable(expectedValue, stdDev, packPrice);
-        }
-
-        // 収支確率テーブル更新
-        function updateProfitLossTable(expectedValue, stdDev, packPrice) {
-            const container = document.getElementById('profitLossTable');
-            
-            let html = `
-                <div style="display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; align-items: center; font-weight: 500; border-bottom: 2px solid var(--sf-gray-5); padding-bottom: 8px; margin-bottom: 12px;">
-                    <span>回数</span>
-                    <span style="color: var(--sf-green);">プラス確率</span>
-                    <span style="color: var(--sf-red);">マイナス確率</span>
-                </div>
-            `;
-
-            for (let n = 1; n <= 20; n++) {
-                const investment = packPrice * n;
-                const expectedReturn = expectedValue * n;
-                const stdDevN = stdDev * Math.sqrt(n);
-                
-                // プラス確率（回収額 > 投入額）
-                const profitProb = 1 - normalCDF(investment, expectedReturn, stdDevN);
-                // マイナス確率（回収額 < 投入額）
-                const lossProb = normalCDF(investment, expectedReturn, stdDevN);
-                
-                html += `
-                    <div style="display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--sf-gray-6);">
-                        <span style="font-weight: 600;">${n}回</span>
-                        <span style="color: var(--sf-green); font-weight: 600;">${(profitProb * 100).toFixed(1)}%</span>
-                        <span style="color: var(--sf-red); font-weight: 600;">${(lossProb * 100).toFixed(1)}%</span>
-                    </div>
-                `;
-            }
-
-            container.innerHTML = html;
-        }
-
-        // 倍率確率テーブル更新
-        function updateMultiplierTable(expectedValue, stdDev, packPrice) {
-            const container = document.getElementById('multiplierTable');
-            
-            let html = `
-                <div style="display: grid; grid-template-columns: auto 1fr 1fr 1fr 1fr; gap: 8px; align-items: center; font-weight: 500; border-bottom: 2px solid var(--sf-gray-5); padding-bottom: 8px; margin-bottom: 12px;">
-                    <span>回数</span>
-                    <span style="color: var(--sf-purple);">5倍以上</span>
-                    <span style="color: var(--sf-blue);">3倍以上</span>
-                    <span style="color: var(--sf-orange);">2倍以上</span>
-                    <span style="color: var(--sf-green);">1倍以上</span>
-                </div>
-            `;
-
-            for (let n = 1; n <= 20; n++) {
-                const investment = packPrice * n;
-                const expectedReturn = expectedValue * n;
-                const stdDevN = stdDev * Math.sqrt(n);
-                
-                // 各倍率以上になる確率
-                const prob5x = 1 - normalCDF(investment * 5, expectedReturn, stdDevN);
-                const prob3x = 1 - normalCDF(investment * 3, expectedReturn, stdDevN);
-                const prob2x = 1 - normalCDF(investment * 2, expectedReturn, stdDevN);
-                const prob1x = 1 - normalCDF(investment * 1, expectedReturn, stdDevN);
-                
-                html += `
-                    <div style="display: grid; grid-template-columns: auto 1fr 1fr 1fr 1fr; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--sf-gray-6);">
-                        <span style="font-weight: 600;">${n}回</span>
-                        <span style="color: var(--sf-purple); font-weight: 600;">${(prob5x * 100).toFixed(1)}%</span>
-                        <span style="color: var(--sf-blue); font-weight: 600;">${(prob3x * 100).toFixed(1)}%</span>
-                        <span style="color: var(--sf-orange); font-weight: 600;">${(prob2x * 100).toFixed(1)}%</span>
-                        <span style="color: var(--sf-green); font-weight: 600;">${(prob1x * 100).toFixed(1)}%</span>
-                    </div>
-                `;
-            }
-
-            container.innerHTML = html;
-        }
 
         // 履歴保存
         function saveToHistory() {
