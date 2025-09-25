@@ -200,8 +200,8 @@
         .prize-content {
             margin-top: 8px;
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr auto;
-            gap: 12px;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 8px;
             align-items: center;
         }
 
@@ -210,8 +210,8 @@
             color: var(--sf-black);
         }
 
-        .prize-value, .prize-count {
-            font-size: 13px;
+        .prize-value, .prize-count, .prize-purchase {
+            font-size: 12px;
             color: var(--sf-gray);
             text-align: center;
         }
@@ -497,6 +497,14 @@
                 <div class="panel">
                     <h2>ハズレ設計</h2>
                     <div class="form-group">
+                        <label>ガチャ難易度</label>
+                        <select id="gachaDifficulty" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);" onchange="calculate()">
+                            <option value="easy">😊 比較的当たりやすい</option>
+                            <option value="normal" selected>😐 普通</option>
+                            <option value="hard">😤 当たりにくい</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label>ハズレの種類数</label>
                         <select id="lossTypeCount" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);" onchange="calculate()">
                             <option value="2">2種類</option>
@@ -507,6 +515,9 @@
                     <div class="form-group">
                         <label>最低保証価値 (円)</label>
                         <input type="text" id="minGuaranteeValue" value="1,000" oninput="formatBasicValue(this)">
+                    </div>
+                    <div class="difficulty-info" id="difficultyInfo" style="background: rgba(0, 122, 255, 0.1); padding: 12px; border-radius: 8px; font-size: 13px; margin-top: 12px;">
+                        <!-- 難易度説明がここに表示されます -->
                     </div>
                 </div>
 
@@ -522,16 +533,20 @@
                             <label>景品名</label>
                             <input type="text" id="prizeName" placeholder="例: レアカード">
                         </div>
+                        <div class="form-group">
+                            <label>等級</label>
+                            <select id="prizeRank" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
+                                <option value="1">1等</option>
+                                <option value="2">2等</option>
+                                <option value="3">3等</option>
+                                <option value="4">4等</option>
+                                <option value="5">5等</option>
+                            </select>
+                        </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>等級</label>
-                                <select id="prizeRank" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
-                                    <option value="1">1等</option>
-                                    <option value="2">2等</option>
-                                    <option value="3">3等</option>
-                                    <option value="4">4等</option>
-                                    <option value="5">5等</option>
-                                </select>
+                                <label>仕入れ価格</label>
+                                <input type="text" id="prizePurchasePrice" placeholder="50,000" oninput="formatPrizeValue(this)">
                             </div>
                             <div class="form-group">
                                 <label>ポイント還元価値</label>
@@ -588,6 +603,10 @@
                         <span class="result-label">標準偏差</span>
                         <span class="result-value" id="summaryStdDev">¥0</span>
                     </div>
+                    <div class="result-row">
+                        <span class="result-label">総当選者数</span>
+                        <span class="result-value" id="summaryWinnerCount">0人</span>
+                    </div>
                 </div>
 
                 <!-- 景品詳細 -->
@@ -610,6 +629,14 @@
                     </div>
                 </div>
 
+                <!-- ハズレ当選者分布 -->
+                <div class="result-panel">
+                    <h3>ハズレ当選者分布</h3>
+                    <div class="chart-container">
+                        <canvas id="lossDistributionChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
                 <!-- 理論期待値 -->
                 <div class="result-panel">
                     <h3>理論期待値（1〜20回）</h3>
@@ -618,6 +645,17 @@
                     </div>
                     <div style="margin-top: 20px;">
                         <canvas id="expectedValueChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- ハズレ当選者分布 -->
+                <div class="result-panel">
+                    <h3>ハズレ当選者分布</h3>
+                    <div style="margin-top: 16px;">
+                        <canvas id="lossWinnersChart" width="400" height="250"></canvas>
+                    </div>
+                    <div id="lossWinnersLegend" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; justify-content: center; font-size: 12px;">
+                        <!-- 凡例がここに表示されます -->
                     </div>
                 </div>
 
@@ -712,10 +750,11 @@
         function addPrize() {
             const name = document.getElementById('prizeName').value.trim();
             const rank = parseInt(document.getElementById('prizeRank').value);
+            const purchasePrice = parseFormattedNumber(document.getElementById('prizePurchasePrice').value);
             const value = parseFormattedNumber(document.getElementById('prizeValue').value);
             const count = parseInt(document.getElementById('prizeCount').value) || 0;
 
-            if (!name || value <= 0 || count <= 0) {
+            if (!name || purchasePrice <= 0 || value <= 0 || count <= 0) {
                 alert('すべての項目を正しく入力してください');
                 return;
             }
@@ -724,6 +763,7 @@
                 id: Date.now(),
                 name: name,
                 rank: rank,
+                purchasePrice: purchasePrice,
                 value: value,
                 count: count
             };
@@ -732,6 +772,7 @@
             
             // フォームリセット
             document.getElementById('prizeName').value = '';
+            document.getElementById('prizePurchasePrice').value = '';
             document.getElementById('prizeValue').value = '';
             document.getElementById('prizeCount').value = '1';
 
@@ -765,7 +806,8 @@
                     <div class="prize-rank rank-${prize.rank}">${prize.rank}等</div>
                     <div class="prize-content">
                         <div class="prize-name">${prize.name}</div>
-                        <div class="prize-value">¥${prize.value.toLocaleString()}</div>
+                        <div class="prize-purchase">仕入¥${prize.purchasePrice.toLocaleString()}</div>
+                        <div class="prize-value">還元¥${prize.value.toLocaleString()}</div>
                         <div class="prize-count">${prize.count}枚</div>
                         <button class="btn btn-danger" onclick="removePrize(${prize.id})">削除</button>
                     </div>
@@ -778,6 +820,36 @@
             return Math.round(value / 10) * 10;
         }
 
+        // ガチャ難易度設定を取得
+        function getDifficultySettings(difficulty) {
+            switch(difficulty) {
+                case 'easy':
+                    return {
+                        name: '比較的当たりやすい',
+                        description: 'ハズレの価値が高めで、ユーザーフレンドリーな設計',
+                        lossDistribution: [0.4, 0.35, 0.25], // 高還元重視
+                        minValueMultiplier: 1.2, // 最低保証を20%アップ
+                        maxValueCap: 0.8 // パック単価の80%まで
+                    };
+                case 'hard':
+                    return {
+                        name: '当たりにくい',
+                        description: 'ハズレの価値が低めで、大当たり重視の設計',
+                        lossDistribution: [0.15, 0.35, 0.5], // 低還元重視
+                        minValueMultiplier: 0.8, // 最低保証を20%ダウン
+                        maxValueCap: 0.5 // パック単価の50%まで
+                    };
+                default: // normal
+                    return {
+                        name: '普通',
+                        description: 'バランスの良い標準的な設計',
+                        lossDistribution: [0.2, 0.5, 0.3], // バランス重視
+                        minValueMultiplier: 1.0, // 標準
+                        maxValueCap: 0.7 // パック単価の70%まで
+                    };
+            }
+        }
+
         // メイン計算
         function calculate() {
             const packPrice = parseFormattedNumber(document.getElementById('packPrice').value);
@@ -786,10 +858,20 @@
             const totalReturnRate = totalReturnRatePercent / 100;
             const lossTypeCount = parseInt(document.getElementById('lossTypeCount').value) || 2;
             const minGuaranteeValue = parseFormattedNumber(document.getElementById('minGuaranteeValue').value);
+            const difficulty = document.getElementById('gachaDifficulty').value;
 
             if (packPrice <= 0 || totalPacks <= 0 || totalReturnRate <= 0) {
                 return;
             }
+
+            // 難易度設定を取得
+            const difficultySettings = getDifficultySettings(difficulty);
+            
+            // 難易度情報を表示
+            document.getElementById('difficultyInfo').innerHTML = `
+                <strong>${difficultySettings.name}</strong><br>
+                ${difficultySettings.description}
+            `;
 
             // 基本計算
             const totalValue = packPrice * totalPacks;
@@ -798,41 +880,72 @@
             // オリパ提供価値表示
             document.getElementById('totalValue').textContent = `¥${totalValue.toLocaleString()}`;
 
-            // 景品総価値計算
+            // 景品総価値計算（ポイント還元価値）
             const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
             const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
 
-            // 実質還元率計算
-            const realReturnRate = totalValue > 0 ? (prizesTotalValue / totalValue) * 100 : 0;
+            // 景品総仕入れ価格計算
+            const prizesTotalPurchasePrice = prizes.reduce((sum, prize) => sum + (prize.purchasePrice * prize.count), 0);
 
-            // ハズレ計算
+            // 実質還元率計算（仕入れ価格ベース）
+            const realReturnRate = totalValue > 0 ? (prizesTotalPurchasePrice / totalValue) * 100 : 0;
+
+            // ハズレ計算（難易度に応じた配分）
             const lossCount = totalPacks - prizesTotalCount;
             const lossValue = targetReturnValue - prizesTotalValue;
 
             const lossTypes = [];
 
             if (lossCount > 0 && lossValue > 0) {
-                const lossPerType = Math.floor(lossCount / lossTypeCount);
-                const remainder = lossCount % lossTypeCount;
+                // 難易度に応じた配分比率を使用
+                const distribution = difficultySettings.lossDistribution;
+                
+                // 各ハズレタイプの枚数を計算
+                const lossCounts = [];
+                let remaining = lossCount;
+                
+                for (let i = 0; i < lossTypeCount; i++) {
+                    if (i === lossTypeCount - 1) {
+                        // 最後は残り全て
+                        lossCounts.push(remaining);
+                    } else {
+                        const count = Math.floor(lossCount * (distribution[i] || distribution[distribution.length - 1]));
+                        lossCounts.push(count);
+                        remaining -= count;
+                    }
+                }
 
-                // 最低保証を最後に配置
-                const minValue = minGuaranteeValue;
-                const minCount = lossPerType + (remainder > 0 ? 1 : 0);
-                const minTotalValue = minValue * minCount;
+                // 最低保証価値（難易度補正）
+                const adjustedMinValue = roundToTens(minGuaranteeValue * difficultySettings.minValueMultiplier);
+
+                // 最低保証の総価値
+                const minTotalValue = adjustedMinValue * lossCounts[lossTypeCount - 1];
 
                 // 残りの価値を他のハズレに配分
                 const remainingValue = lossValue - minTotalValue;
                 const remainingTypes = lossTypeCount - 1;
 
                 for (let i = 0; i < remainingTypes; i++) {
-                    const count = lossPerType + (i < remainder - 1 ? 1 : 0);
+                    const count = lossCounts[i];
                     if (count > 0) {
-                        // 高い等級ほど価値を高く設定
-                        const valueRatio = (remainingTypes - i) / remainingTypes;
+                        // 難易度に応じた価値配分
+                        let valueRatio;
+                        if (difficulty === 'easy') {
+                            // 易しい：高還元ハズレを多めに
+                            valueRatio = (remainingTypes - i + 2) / (remainingTypes + 2);
+                        } else if (difficulty === 'hard') {
+                            // 厳しい：高還元ハズレを少なめに
+                            valueRatio = Math.pow((remainingTypes - i) / remainingTypes, 2);
+                        } else {
+                            // 普通：標準的な配分
+                            valueRatio = (remainingTypes - i) / remainingTypes;
+                        }
+                        
                         let value = remainingValue * valueRatio / count;
                         
-                        // パック単価を超えないように制限
-                        value = Math.min(value, packPrice);
+                        // 難易度に応じた最大値制限
+                        const maxValue = packPrice * difficultySettings.maxValueCap;
+                        value = Math.min(value, maxValue);
                         
                         // キリの良い数に丸める
                         value = roundToTens(value);
@@ -849,8 +962,8 @@
                 // 最低保証を追加
                 lossTypes.push({
                     name: `ハズレ${String.fromCharCode(65 + remainingTypes)}（最低保証）`,
-                    value: minValue,
-                    count: minCount,
+                    value: adjustedMinValue,
+                    count: lossCounts[lossTypeCount - 1],
                     type: 'min'
                 });
             }
@@ -898,12 +1011,19 @@
             document.getElementById('summaryRealReturn').textContent = `${data.realReturnRate.toFixed(1)}%`;
             document.getElementById('summaryExpectedValue').textContent = `¥${data.expectedValue.toLocaleString()}`;
             document.getElementById('summaryStdDev').textContent = `¥${data.stdDev.toLocaleString()}`;
+            
+            // 総当選者数を表示
+            const totalWinners = prizes.reduce((sum, prize) => sum + prize.count, 0);
+            document.getElementById('summaryWinnerCount').textContent = `${totalWinners}人`;
 
             // 景品詳細更新
             updatePrizeDetails();
 
             // ハズレ詳細更新
             updateLossDetails(data.lossTypes, data.lossCount);
+            
+            // ハズレ分布チャート更新
+            drawLossDistributionChart(data.lossTypes);
 
             // 理論期待値（1-20回）更新
             updateExpectedValues(data.expectedValue, data.stdDev);
@@ -928,7 +1048,7 @@
                 return `
                     <div class="result-row">
                         <span class="result-label">${prize.rank}等 ${prize.name}</span>
-                        <span class="result-value">${probability}% (¥${prize.value.toLocaleString()})</span>
+                        <span class="result-value">${probability}% (仕入¥${prize.purchasePrice.toLocaleString()} / 還元¥${prize.value.toLocaleString()})</span>
                     </div>
                 `;
             }).join('');
@@ -1081,6 +1201,67 @@
             ctx.fillText('回数別理論期待値', canvas.width / 2, 20);
         }
 
+        // ハズレ当選者分布チャート描画
+        function drawLossDistributionChart(lossTypes) {
+            const canvas = document.getElementById('lossDistributionChart');
+            const ctx = canvas.getContext('2d');
+            
+            // キャンバスをクリア
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (!lossTypes || lossTypes.length === 0) {
+                ctx.fillStyle = '#8E8E93';
+                ctx.font = '14px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('ハズレなし', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+            
+            const padding = 40;
+            const width = canvas.width - padding * 2;
+            const height = canvas.height - padding * 2;
+            
+            const colors = ['#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#007AFF'];
+            const total = lossTypes.reduce((sum, loss) => sum + loss.count, 0);
+            
+            if (total === 0) return;
+            
+            // 棒グラフとして描画
+            const barWidth = width / lossTypes.length * 0.8;
+            const barSpacing = width / lossTypes.length * 0.2;
+            const maxCount = Math.max(...lossTypes.map(loss => loss.count));
+            
+            lossTypes.forEach((loss, index) => {
+                const x = padding + index * (barWidth + barSpacing) + barSpacing / 2;
+                const barHeight = (loss.count / maxCount) * height;
+                const y = canvas.height - padding - barHeight;
+                
+                // 棒を描画
+                ctx.fillStyle = colors[index % colors.length];
+                ctx.fillRect(x, y, barWidth, barHeight);
+                
+                // 枚数を表示
+                ctx.fillStyle = '#000000';
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(loss.count + '枚', x + barWidth / 2, y - 5);
+                
+                // 名前を表示
+                ctx.fillText(loss.name, x + barWidth / 2, canvas.height - 10);
+                
+                // 割合を表示
+                const percentage = ((loss.count / total) * 100).toFixed(1);
+                ctx.font = '10px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.fillText(percentage + '%', x + barWidth / 2, y + barHeight / 2);
+            });
+            
+            // チャートタイトル
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('ハズレ当選者分布', canvas.width / 2, 20);
+        }
+
         // 正規分布の累積分布関数（近似）
         function normalCDF(x, mean, stdDev) {
             const z = (x - mean) / stdDev;
@@ -1196,6 +1377,7 @@
                 totalReturnRate: document.getElementById('totalReturnRate').value,
                 lossTypeCount: document.getElementById('lossTypeCount').value,
                 minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
+                gachaDifficulty: document.getElementById('gachaDifficulty').value,
                 prizes: [...prizes]
             };
 
@@ -1216,6 +1398,7 @@
             document.getElementById('totalReturnRate').value = settings.totalReturnRate;
             if (settings.lossTypeCount) document.getElementById('lossTypeCount').value = settings.lossTypeCount;
             if (settings.minGuaranteeValue) document.getElementById('minGuaranteeValue').value = settings.minGuaranteeValue;
+            if (settings.gachaDifficulty) document.getElementById('gachaDifficulty').value = settings.gachaDifficulty;
             prizes = [...settings.prizes];
 
             updatePrizeList();
@@ -1259,7 +1442,8 @@
                     totalPacks: document.getElementById('totalPacks').value,
                     totalReturnRate: document.getElementById('totalReturnRate').value,
                     lossTypeCount: document.getElementById('lossTypeCount').value,
-                    minGuaranteeValue: document.getElementById('minGuaranteeValue').value
+                    minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
+                    gachaDifficulty: document.getElementById('gachaDifficulty').value
                 }
             };
 
@@ -1293,6 +1477,7 @@
                         document.getElementById('totalReturnRate').value = data.settings.totalReturnRate || 98;
                         document.getElementById('lossTypeCount').value = data.settings.lossTypeCount || 2;
                         document.getElementById('minGuaranteeValue').value = data.settings.minGuaranteeValue || '1,000';
+                        document.getElementById('gachaDifficulty').value = data.settings.gachaDifficulty || 'normal';
                     }
                 }
             } catch (e) {
@@ -1330,6 +1515,7 @@
                     totalReturnRate: document.getElementById('totalReturnRate').value,
                     lossTypeCount: document.getElementById('lossTypeCount').value,
                     minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
+                    gachaDifficulty: document.getElementById('gachaDifficulty').value,
                     prizes: [...prizes]
                 },
                 history: [...history]
@@ -1393,6 +1579,7 @@
                         document.getElementById('totalReturnRate').value = settings.totalReturnRate || 98;
                         if (settings.lossTypeCount) document.getElementById('lossTypeCount').value = settings.lossTypeCount;
                         if (settings.minGuaranteeValue) document.getElementById('minGuaranteeValue').value = settings.minGuaranteeValue;
+                        if (settings.gachaDifficulty) document.getElementById('gachaDifficulty').value = settings.gachaDifficulty;
                         
                         // 景品データを復元
                         if (settings.prizes) {
