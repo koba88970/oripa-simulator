@@ -1766,21 +1766,35 @@
                 const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
                 const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
                 
-                const lossCount = totalPacks - prizesTotalCount;
-                const lossValue = targetReturnValue - prizesTotalValue;
+                let adjustedTotalPacks = totalPacks;
+                let adjustedPrizesTotalCount = prizesTotalCount;
+                
+                // 景品枚数が総口数を超える場合の調整
+                if (prizesTotalCount > totalPacks) {
+                    console.log('警告: 景品枚数が総口数を超えています。総口数を調整します。');
+                    adjustedTotalPacks = prizesTotalCount + Math.max(1, Math.floor(prizesTotalCount * 0.5)); // 景品数の1.5倍に調整
+                }
+                
+                const lossCount = adjustedTotalPacks - adjustedPrizesTotalCount;
+                const adjustedTargetReturnValue = packPrice * adjustedTotalPacks * (totalReturnRatePercent / 100);
+                const lossValue = adjustedTargetReturnValue - prizesTotalValue;
                 
                 console.log('ガチャプール生成デバッグ:', {
-                    totalPacks,
-                    prizesTotalCount,
+                    originalTotalPacks: totalPacks,
+                    adjustedTotalPacks,
+                    prizesTotalCount: adjustedPrizesTotalCount,
                     lossCount,
-                    targetReturnValue,
+                    targetReturnValue: adjustedTargetReturnValue,
                     prizesTotalValue,
                     lossValue
                 });
                 
-                if (lossCount > 0 && lossValue > 0) {
+                if (lossCount > 0) {
+                    console.log('ハズレ生成開始:', { lossCount, lossValue, difficulty, lossTypeCount });
+                    
                     // ハズレ配分計算（simulate.jsと同じロジック）
                     const distribution = difficultySettings.lossDistribution;
+                    console.log('配分比率:', distribution);
                     const lossCounts = [];
                     let allocated = 0;
                     
@@ -1799,8 +1813,34 @@
                         index++;
                     }
                     
-                    // 最低保証価値（難易度補正）
-                    const adjustedMinValue = Math.max(10, Math.round(minGuaranteeValue * difficultySettings.minValueMultiplier / 10) * 10);
+                    console.log('ハズレ枚数配分:', lossCounts);
+                    
+                    // lossValueがマイナスの場合は最低保証価値のみでハズレを生成
+                    if (lossValue <= 0) {
+                        console.log('lossValueがマイナスまたは0のため、最低保証価値でハズレを生成');
+                        const adjustedMinValue = Math.max(10, Math.round(minGuaranteeValue * difficultySettings.minValueMultiplier / 10) * 10);
+                        
+                        // 全てのハズレを最低保証価値で生成
+                        for (let i = 0; i < lossTypeCount; i++) {
+                            const count = lossCounts[i];
+                            if (count > 0) {
+                                console.log(`ハズレ${String.fromCharCode(65 + i)} 生成（最低保証）:`, { count, value: adjustedMinValue });
+                                for (let j = 0; j < count; j++) {
+                                    gachaPool.push({
+                                        type: 'loss',
+                                        item: {
+                                            name: `ハズレ${String.fromCharCode(65 + i)}`,
+                                            value: adjustedMinValue,
+                                            rank: 'loss'
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    } else {
+                        // 通常のハズレ価値配分処理
+                        // 最低保証価値（難易度補正）
+                        const adjustedMinValue = Math.max(10, Math.round(minGuaranteeValue * difficultySettings.minValueMultiplier / 10) * 10);
                     
                     // 最低保証の総価値
                     const minTotalValue = adjustedMinValue * lossCounts[lossTypeCount - 1];
@@ -1831,6 +1871,7 @@
                             value = Math.max(10, Math.round(value / 10) * 10);
                             
                             // ハズレをプールに追加
+                            console.log(`ハズレ${String.fromCharCode(65 + i)} 生成:`, { count, value });
                             for (let j = 0; j < count; j++) {
                                 gachaPool.push({
                                     type: 'loss',
@@ -1844,18 +1885,37 @@
                         }
                     }
                     
-                    // 最低保証ハズレを追加
-                    const minGuaranteeCount = lossCounts[lossTypeCount - 1];
-                    for (let i = 0; i < minGuaranteeCount; i++) {
-                        gachaPool.push({
-                            type: 'loss',
-                            item: {
-                                name: `ハズレ${String.fromCharCode(65 + remainingTypes)}（最低保証）`,
-                                value: adjustedMinValue,
-                                rank: 'loss'
-                            }
-                        });
+                        // 最低保証ハズレを追加
+                        const minGuaranteeCount = lossCounts[lossTypeCount - 1];
+                        console.log('最低保証ハズレ生成:', { minGuaranteeCount, adjustedMinValue });
+                        for (let i = 0; i < minGuaranteeCount; i++) {
+                            gachaPool.push({
+                                type: 'loss',
+                                item: {
+                                    name: `ハズレ${String.fromCharCode(65 + remainingTypes)}（最低保証）`,
+                                    value: adjustedMinValue,
+                                    rank: 'loss'
+                                }
+                            });
+                        }
                     }
+                } else {
+                    console.log('ハズレ生成スキップ:', { lossCount, reason: 'lossCount <= 0' });
+                    
+                    // 強制的に最小限のハズレを生成（テスト用）
+                    console.log('最小限のハズレを強制生成します');
+                    const minGuaranteeValue = parseFormattedNumber(document.getElementById('minGuaranteeValue').value);
+                    const adjustedMinValue = Math.max(10, Math.round(minGuaranteeValue * difficultySettings.minValueMultiplier / 10) * 10);
+                    
+                    // 最低1個のハズレを生成
+                    gachaPool.push({
+                        type: 'loss',
+                        item: {
+                            name: 'ハズレA',
+                            value: adjustedMinValue,
+                            rank: 'loss'
+                        }
+                    });
                 }
             }
             
@@ -1879,6 +1939,16 @@
                 return;
             }
             
+            // 設定の整合性チェック
+            const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
+            const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
+            if (prizesTotalCount > totalPacks) {
+                const message = `⚠️ 設定に問題があります\n\n` +
+                               `景品の総枚数（${prizesTotalCount}枚）が総口数（${totalPacks}口）を超えています。\n` +
+                               `ガチャプールは自動調整されましたが、設定を見直すことをお勧めします。`;
+                alert(message);
+            }
+            
             if (gachaPool.length < count) {
                 alert(`残り${gachaPool.length}枚しかありません`);
                 count = gachaPool.length;
@@ -1888,6 +1958,7 @@
             for (let i = 0; i < count; i++) {
                 if (gachaPool.length > 0) {
                     const drawnItem = gachaPool.shift();
+                    console.log('ガチャ結果:', drawnItem);
                     draws.push(drawnItem);
                     gachaDrawHistory.push(drawnItem);
                 }
