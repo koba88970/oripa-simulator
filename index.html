@@ -902,17 +902,23 @@
                 
                 // 各ハズレタイプの枚数を計算
                 const lossCounts = [];
-                let remaining = lossCount;
+                let allocated = 0;
                 
+                // 各タイプの基本配分を計算
                 for (let i = 0; i < lossTypeCount; i++) {
-                    if (i === lossTypeCount - 1) {
-                        // 最後は残り全て
-                        lossCounts.push(remaining);
-                    } else {
-                        const count = Math.floor(lossCount * (distribution[i] || distribution[distribution.length - 1]));
-                        lossCounts.push(count);
-                        remaining -= count;
-                    }
+                    const ratio = distribution[i] || distribution[distribution.length - 1];
+                    const count = Math.floor(lossCount * ratio);
+                    lossCounts.push(count);
+                    allocated += count;
+                }
+                
+                // 残り枚数を均等に配分
+                let remaining = lossCount - allocated;
+                let index = 0;
+                while (remaining > 0) {
+                    lossCounts[index % lossTypeCount]++;
+                    remaining--;
+                    index++;
                 }
 
                 // 最低保証価値（難易度補正）
@@ -1526,7 +1532,9 @@
             
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
-            link.download = `oripa-settings-${new Date().toISOString().split('T')[0]}.json`;
+            const now = new Date();
+            const dateTime = now.toISOString().slice(0, 19).replace(/:/g, '-');
+            link.download = `oripa-settings-${dateTime}.json`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
