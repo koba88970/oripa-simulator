@@ -258,6 +258,76 @@
         .btn-success:hover {
             background: #248A3D;
         }
+        .btn-accent {
+            background: var(--sf-orange);
+            color: var(--sf-white);
+        }
+        .btn-accent:hover {
+            background: #E6742A;
+            transform: scale(1.05);
+        }
+        
+        /* ガチャ体験スタイル */
+        .gacha-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .gacha-btn {
+            flex: 1;
+            min-width: 120px;
+            font-weight: 600;
+        }
+        .gacha-results {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--sf-gray-4);
+            border-radius: var(--border-radius-small);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .gacha-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .gacha-stat-item {
+            text-align: center;
+            padding: 12px;
+            background: rgba(0, 122, 255, 0.1);
+            border-radius: 8px;
+        }
+        .gacha-stat-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--sf-blue);
+        }
+        .gacha-stat-label {
+            font-size: 0.9em;
+            color: var(--sf-gray);
+        }
+        .gacha-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .gacha-draw-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .gacha-draw-prize {
+            background: linear-gradient(135deg, #34C759, #30D158);
+            color: white;
+        }
+        .gacha-draw-loss {
+            background: linear-gradient(135deg, #FF9500, #FF9F0A);
+            color: white;
+        }
 
         .add-prize-form {
             background: rgba(0, 122, 255, 0.05);
@@ -677,6 +747,37 @@
                                 <!-- 倍率確率テーブルがここに表示されます -->
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- ガチャ体験 -->
+                <div class="result-panel" style="grid-column: 1 / -1;">
+                    <h3>🎮 ガチャ体験</h3>
+                    <p style="color: var(--sf-gray); font-size: 14px; margin-bottom: 20px;">
+                        実際にオリパを引いて、設計したガチャの体験を確認できます
+                    </p>
+                    
+                    <!-- ガチャボタン -->
+                    <div class="gacha-controls">
+                        <button class="btn btn-primary gacha-btn" onclick="drawGacha(1)">
+                            🎲 1回引く
+                        </button>
+                        <button class="btn btn-secondary gacha-btn" onclick="drawGacha(10)">
+                            🎲 10回引く
+                        </button>
+                        <button class="btn btn-accent gacha-btn" onclick="drawGacha(100)">
+                            🎲 100回引く
+                        </button>
+                        <button class="btn btn-danger gacha-btn" onclick="resetGacha()" id="resetGachaBtn" style="display: none;">
+                            🔄 リセット
+                        </button>
+                    </div>
+                    
+                    <!-- ガチャ結果 -->
+                    <div id="gachaResults" class="gacha-results" style="display: none;">
+                        <h4>ガチャ結果</h4>
+                        <div id="gachaStats" class="gacha-stats"></div>
+                        <div id="gachaHistory" class="gacha-history"></div>
                     </div>
                 </div>
             </div>
@@ -1628,6 +1729,239 @@
                 closeModal();
             }
         });
+
+        // ガチャ体験機能
+        let gachaDrawHistory = [];
+        let gachaPool = [];
+
+        // ガチャプール生成
+        function generateGachaPool() {
+            gachaPool = [];
+            
+            // 景品を追加
+            prizes.forEach(prize => {
+                for (let i = 0; i < prize.count; i++) {
+                    gachaPool.push({
+                        type: 'prize',
+                        item: prize
+                    });
+                }
+            });
+            
+            // 現在の設定でハズレを計算
+            const packPrice = parseFormattedNumber(document.getElementById('packPrice').value);
+            const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
+            const totalReturnRatePercent = parseFloat(document.getElementById('totalReturnRate').value) || 95.0;
+            
+            if (packPrice > 0 && totalPacks > 0) {
+                const totalValue = packPrice * totalPacks;
+                const targetReturnValue = totalValue * (totalReturnRatePercent / 100);
+                
+                // 難易度設定を取得
+                const difficulty = document.getElementById('gachaDifficulty').value;
+                const difficultySettings = getDifficultySettings(difficulty);
+                const lossTypeCount = parseInt(document.getElementById('lossTypeCount').value) || 2;
+                const minGuaranteeValue = parseFormattedNumber(document.getElementById('minGuaranteeValue').value);
+                
+                const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
+                const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
+                
+                const lossCount = totalPacks - prizesTotalCount;
+                const lossValue = targetReturnValue - prizesTotalValue;
+                
+                console.log('ガチャプール生成デバッグ:', {
+                    totalPacks,
+                    prizesTotalCount,
+                    lossCount,
+                    targetReturnValue,
+                    prizesTotalValue,
+                    lossValue
+                });
+                
+                if (lossCount > 0 && lossValue > 0) {
+                    // ハズレ配分計算（simulate.jsと同じロジック）
+                    const distribution = difficultySettings.lossDistribution;
+                    const lossCounts = [];
+                    let allocated = 0;
+                    
+                    for (let i = 0; i < lossTypeCount; i++) {
+                        const ratio = distribution[i] || distribution[distribution.length - 1];
+                        const count = Math.floor(lossCount * ratio);
+                        lossCounts.push(count);
+                        allocated += count;
+                    }
+                    
+                    let remaining = lossCount - allocated;
+                    let index = 0;
+                    while (remaining > 0) {
+                        lossCounts[index % lossTypeCount]++;
+                        remaining--;
+                        index++;
+                    }
+                    
+                    // 最低保証価値（難易度補正）
+                    const adjustedMinValue = Math.max(10, Math.round(minGuaranteeValue * difficultySettings.minValueMultiplier / 10) * 10);
+                    
+                    // 最低保証の総価値
+                    const minTotalValue = adjustedMinValue * lossCounts[lossTypeCount - 1];
+                    
+                    // 残りの価値を他のハズレに配分
+                    const remainingValue = lossValue - minTotalValue;
+                    const remainingTypes = lossTypeCount - 1;
+                    
+                    for (let i = 0; i < remainingTypes; i++) {
+                        const count = lossCounts[i];
+                        if (count > 0) {
+                            let valueRatio;
+                            if (difficulty === 'easy') {
+                                valueRatio = (remainingTypes - i + 2) / (remainingTypes + 2);
+                            } else if (difficulty === 'hard') {
+                                valueRatio = Math.pow((remainingTypes - i) / remainingTypes, 2);
+                            } else {
+                                valueRatio = (remainingTypes - i) / remainingTypes;
+                            }
+                            
+                            let value = remainingValue * valueRatio / count;
+                            
+                            // 難易度に応じた最大値制限
+                            const maxValue = packPrice * difficultySettings.maxValueCap;
+                            value = Math.min(value, maxValue);
+                            
+                            // キリの良い数に丸める
+                            value = Math.max(10, Math.round(value / 10) * 10);
+                            
+                            // ハズレをプールに追加
+                            for (let j = 0; j < count; j++) {
+                                gachaPool.push({
+                                    type: 'loss',
+                                    item: {
+                                        name: `ハズレ${String.fromCharCode(65 + i)}`,
+                                        value: value,
+                                        rank: 'loss'
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    
+                    // 最低保証ハズレを追加
+                    const minGuaranteeCount = lossCounts[lossTypeCount - 1];
+                    for (let i = 0; i < minGuaranteeCount; i++) {
+                        gachaPool.push({
+                            type: 'loss',
+                            item: {
+                                name: `ハズレ${String.fromCharCode(65 + remainingTypes)}（最低保証）`,
+                                value: adjustedMinValue,
+                                rank: 'loss'
+                            }
+                        });
+                    }
+                }
+            }
+            
+            // プールをシャッフル
+            for (let i = gachaPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gachaPool[i], gachaPool[j]] = [gachaPool[j], gachaPool[i]];
+            }
+            
+            console.log('ガチャプール生成完了:', {
+                totalItems: gachaPool.length,
+                prizes: gachaPool.filter(item => item.type === 'prize').length,
+                losses: gachaPool.filter(item => item.type === 'loss').length
+            });
+        }
+
+        // ガチャを引く
+        function drawGacha(count) {
+            if (gachaPool.length === 0) {
+                alert('先にシミュレーション実行をしてガチャの設定を完了してください');
+                return;
+            }
+            
+            if (gachaPool.length < count) {
+                alert(`残り${gachaPool.length}枚しかありません`);
+                count = gachaPool.length;
+            }
+            
+            const draws = [];
+            for (let i = 0; i < count; i++) {
+                if (gachaPool.length > 0) {
+                    const drawnItem = gachaPool.shift();
+                    draws.push(drawnItem);
+                    gachaDrawHistory.push(drawnItem);
+                }
+            }
+            
+            updateGachaResults();
+            
+            // リセットボタンを表示
+            document.getElementById('resetGachaBtn').style.display = 'block';
+            document.getElementById('gachaResults').style.display = 'block';
+        }
+
+        // ガチャ結果を更新
+        function updateGachaResults() {
+            const packPrice = parseFormattedNumber(document.getElementById('packPrice').value);
+            
+            // 統計計算
+            const totalDraws = gachaDrawHistory.length;
+            const prizeCount = gachaDrawHistory.filter(draw => draw.type === 'prize').length;
+            const totalValue = gachaDrawHistory.reduce((sum, draw) => sum + draw.item.value, 0);
+            const totalCost = totalDraws * packPrice;
+            const profit = totalValue - totalCost;
+            
+            // 統計表示
+            document.getElementById('gachaStats').innerHTML = `
+                <div class="gacha-stat-item">
+                    <div class="gacha-stat-value">${totalDraws}</div>
+                    <div class="gacha-stat-label">総引き回数</div>
+                </div>
+                <div class="gacha-stat-item">
+                    <div class="gacha-stat-value">${prizeCount}</div>
+                    <div class="gacha-stat-label">当選回数</div>
+                </div>
+                <div class="gacha-stat-item">
+                    <div class="gacha-stat-value">¥${totalValue.toLocaleString()}</div>
+                    <div class="gacha-stat-label">総還元価値</div>
+                </div>
+                <div class="gacha-stat-item">
+                    <div class="gacha-stat-value" style="color: ${profit >= 0 ? 'var(--sf-green)' : 'var(--sf-red)'}">
+                        ${profit >= 0 ? '+' : ''}¥${profit.toLocaleString()}
+                    </div>
+                    <div class="gacha-stat-label">収支</div>
+                </div>
+            `;
+            
+            // 履歴表示（最新10件）
+            const recentDraws = gachaDrawHistory.slice(-10).reverse();
+            document.getElementById('gachaHistory').innerHTML = `
+                <h5 style="margin-bottom: 10px;">最新の引き結果</h5>
+                ${recentDraws.map(draw => `
+                    <div class="gacha-draw-item ${draw.type === 'prize' ? 'gacha-draw-prize' : 'gacha-draw-loss'}">
+                        <span>${draw.item.name}</span>
+                        <span>¥${draw.item.value.toLocaleString()}</span>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // ガチャリセット
+        function resetGacha() {
+            if (confirm('ガチャ結果をリセットしますか？')) {
+                gachaDrawHistory = [];
+                generateGachaPool();
+                document.getElementById('resetGachaBtn').style.display = 'none';
+                document.getElementById('gachaResults').style.display = 'none';
+            }
+        }
+
+        // シミュレーション実行時にガチャプールも生成
+        const originalCalculate = calculate;
+        calculate = function() {
+            originalCalculate();
+            generateGachaPool();
+        };
     </script>
 </body>
 </html>
