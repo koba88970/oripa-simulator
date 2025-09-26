@@ -677,6 +677,10 @@
                         <span class="result-label">総当選者数</span>
                         <span class="result-value" id="summaryWinnerCount">0人</span>
                     </div>
+                    <div class="result-row">
+                        <span class="result-label">総仕入れ額</span>
+                        <span class="result-value" id="summaryTotalPurchase">¥0</span>
+                    </div>
                 </div>
 
                 <!-- 景品詳細 -->
@@ -1159,6 +1163,10 @@
             // 総当選者数を表示
             const totalWinners = prizes.reduce((sum, prize) => sum + prize.count, 0);
             document.getElementById('summaryWinnerCount').textContent = `${totalWinners}人`;
+
+            // 総仕入れ額を表示
+            const totalPurchaseAmount = prizes.reduce((sum, prize) => sum + (prize.purchasePrice * prize.count), 0);
+            document.getElementById('summaryTotalPurchase').textContent = `¥${totalPurchaseAmount.toLocaleString()}`;
 
             // 景品詳細更新
             updatePrizeDetails();
