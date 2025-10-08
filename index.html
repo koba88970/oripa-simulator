@@ -547,11 +547,11 @@
                     <h2>基本設定</h2>
                     <div class="form-group">
                         <label>パック単価 (円)</label>
-                        <input type="text" id="packPrice" value="40,000" oninput="formatBasicValue(this)">
+                        <input type="number" id="packPrice" value="40000">
                     </div>
                     <div class="form-group">
                         <label>総口数</label>
-                        <input type="text" id="totalPacks" value="100" oninput="formatBasicValue(this)">
+                        <input type="number" id="totalPacks" value="100">
                     </div>
                     <div class="form-group">
                         <label>総還元率 (%)</label>
@@ -584,7 +584,7 @@
                     </div>
                     <div class="form-group">
                         <label>最低保証価値 (円)</label>
-                        <input type="text" id="minGuaranteeValue" value="1,000" oninput="formatBasicValue(this)">
+                        <input type="number" id="minGuaranteeValue" value="1000">
                     </div>
                     <div class="difficulty-info" id="difficultyInfo" style="background: rgba(0, 122, 255, 0.1); padding: 12px; border-radius: 8px; font-size: 13px; margin-top: 12px;">
                         <!-- 難易度説明がここに表示されます -->
@@ -784,6 +784,7 @@
             document.getElementById('packPrice').addEventListener('input', calculate);
             document.getElementById('totalPacks').addEventListener('input', calculate);
             document.getElementById('totalReturnRate').addEventListener('input', calculate);
+            document.getElementById('minGuaranteeValue').addEventListener('input', calculate);
         }
 
         // ポイント還元価値のフォーマット
@@ -914,12 +915,12 @@
 
         // メイン計算
         function calculate() {
-            const packPrice = parseFormattedNumber(document.getElementById('packPrice').value);
-            const totalPacks = parseFormattedNumber(document.getElementById('totalPacks').value);
+            const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
+            const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
             const totalReturnRatePercent = parseFloat(document.getElementById('totalReturnRate').value) || 0;
             const totalReturnRate = totalReturnRatePercent / 100;
             const lossTypeCount = parseInt(document.getElementById('lossTypeCount').value) || 2;
-            const minGuaranteeValue = parseFormattedNumber(document.getElementById('minGuaranteeValue').value);
+            const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
             const difficulty = document.getElementById('gachaDifficulty').value;
 
             if (packPrice <= 0 || totalPacks <= 0 || totalReturnRate <= 0) {
@@ -1401,11 +1402,11 @@
                     }
 
                     if (data.settings) {
-                        document.getElementById('packPrice').value = data.settings.packPrice || '40,000';
+                        document.getElementById('packPrice').value = data.settings.packPrice || '40000';
                         document.getElementById('totalPacks').value = data.settings.totalPacks || '100';
                         document.getElementById('totalReturnRate').value = data.settings.totalReturnRate || 98;
                         document.getElementById('lossTypeCount').value = data.settings.lossTypeCount || 2;
-                        document.getElementById('minGuaranteeValue').value = data.settings.minGuaranteeValue || '1,000';
+                        document.getElementById('minGuaranteeValue').value = data.settings.minGuaranteeValue || '1000';
                         document.getElementById('gachaDifficulty').value = data.settings.gachaDifficulty || 'normal';
                     }
                 }
@@ -1505,7 +1506,7 @@
                     // 現在の設定を復元
                     if (importData.currentSettings) {
                         const settings = importData.currentSettings;
-                        document.getElementById('packPrice').value = settings.packPrice || '40,000';
+                        document.getElementById('packPrice').value = settings.packPrice || '40000';
                         document.getElementById('totalPacks').value = settings.totalPacks || '100';
                         document.getElementById('totalReturnRate').value = settings.totalReturnRate || 98;
                         if (settings.lossTypeCount) document.getElementById('lossTypeCount').value = settings.lossTypeCount;
@@ -1571,19 +1572,19 @@
             });
             
             // 現在の設定でハズレを計算
-            const packPrice = parseFormattedNumber(document.getElementById('packPrice').value);
+            const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
             const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
             const totalReturnRatePercent = parseFloat(document.getElementById('totalReturnRate').value) || 95.0;
-            
+
             if (packPrice > 0 && totalPacks > 0) {
                 const totalValue = packPrice * totalPacks;
                 const targetReturnValue = totalValue * (totalReturnRatePercent / 100);
-                
+
                 // 難易度設定を取得
                 const difficulty = document.getElementById('gachaDifficulty').value;
                 const difficultySettings = getDifficultySettings(difficulty);
                 const lossTypeCount = parseInt(document.getElementById('lossTypeCount').value) || 2;
-                const minGuaranteeValue = parseFormattedNumber(document.getElementById('minGuaranteeValue').value);
+                const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
                 
                 const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
                 const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
@@ -1762,7 +1763,7 @@
                     
                     // 強制的に最小限のハズレを生成（テスト用）
                     console.log('最小限のハズレを強制生成します');
-                    const minGuaranteeValue = parseFormattedNumber(document.getElementById('minGuaranteeValue').value);
+                    const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
                     const adjustedMinValue = Math.max(10, Math.round(minGuaranteeValue / 10) * 10);
 
                     // 最低1個のハズレを生成
@@ -1831,7 +1832,7 @@
 
         // ガチャ結果を更新
         function updateGachaResults() {
-            const packPrice = parseFormattedNumber(document.getElementById('packPrice').value);
+            const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
             
             // 統計計算
             const totalDraws = gachaDrawHistory.length;
