@@ -597,7 +597,7 @@
                     </div>
                     <div class="form-group">
                         <label>最低保証価値 (円)</label>
-                        <input type="number" id="minGuaranteeValue" value="1000">
+                        <input type="number" id="minGuaranteeValue" value="1" min="1" step="1">
                     </div>
                     <div class="difficulty-info" id="difficultyInfo" style="background: rgba(0, 122, 255, 0.1); padding: 12px; border-radius: 8px; font-size: 13px; margin-top: 12px;">
                         <!-- 難易度説明がここに表示されます -->
@@ -1024,7 +1024,7 @@
                     }
 
                     // 最低保証価値（ユーザー入力値をそのまま使用）
-                    const adjustedMinValue = roundToTens(minGuaranteeValue);
+                    const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
 
                     // 各ハズレタイプに異なる価値を設定（最低保証より高く）
                     for (let i = 0; i < lossTypeCount; i++) {
@@ -1036,7 +1036,7 @@
                                 value = adjustedMinValue;
                             } else {
                                 // 他のタイプは最低保証より高く、段階的に設定
-                                value = adjustedMinValue + (lossTypeCount - 1 - i) * 10;
+                                value = adjustedMinValue + (lossTypeCount - 1 - i);
                             }
 
                             lossTypes.push({
@@ -1075,7 +1075,7 @@
                 }
 
                 // 最低保証価値（ユーザー入力値をそのまま使用）
-                const adjustedMinValue = roundToTens(minGuaranteeValue);
+                const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
 
                 // 最低保証の総価値
                 const minTotalValue = adjustedMinValue * lossCounts[lossTypeCount - 1];
@@ -1106,7 +1106,7 @@
                         // 制約の適用
                         const maxValue = packPrice * difficultySettings.maxValueCap;
                         value = Math.min(value, maxValue);
-                        value = Math.max(adjustedMinValue + 10, value);
+                        value = Math.max(adjustedMinValue + 1, value);
 
                         // 1円単位で丸める（より精密）
                         value = Math.round(value);
@@ -1129,7 +1129,7 @@
                     const adjustment = Math.round(difference / lastLoss.count);
 
                     const newValue = lastLoss.value + adjustment;
-                    if (newValue >= adjustedMinValue + 10) {
+                    if (newValue >= adjustedMinValue + 1) {
                         lastLoss.value = newValue;
                         lastLoss.totalValue = newValue * lastLoss.count;
                     }
@@ -1139,7 +1139,7 @@
                 lossValues.sort((a, b) => b.value - a.value);
                 for (let i = 1; i < lossValues.length; i++) {
                     if (lossValues[i].value >= lossValues[i-1].value) {
-                        const minValue = Math.max(adjustedMinValue + 10, lossValues[i-1].value - 1);
+                        const minValue = Math.max(adjustedMinValue + 1, lossValues[i-1].value - 1);
                         if (lossValues[i].value > minValue) {
                             lossValues[i].value = minValue;
                             lossValues[i].totalValue = minValue * lossValues[i].count;
@@ -1768,7 +1768,7 @@
                         }
 
                         // 最低保証価値（ユーザー入力値をそのまま使用）
-                        const adjustedMinValue = Math.max(10, Math.round(minGuaranteeValue / 10) * 10);
+                        const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
 
                         // 各ハズレタイプに異なる価値を設定（最低保証より高く）
                         for (let i = 0; i < lossTypeCount; i++) {
@@ -1780,7 +1780,7 @@
                                     value = adjustedMinValue;
                                 } else {
                                     // 他のタイプは最低保証より高く、段階的に設定
-                                    value = adjustedMinValue + (lossTypeCount - 1 - i) * 10;
+                                    value = adjustedMinValue + (lossTypeCount - 1 - i);
                                 }
 
                                 lossTypes.push({
@@ -1817,7 +1817,7 @@
                         }
 
                         // 最低保証価値（ユーザー入力値をそのまま使用）
-                        const adjustedMinValue = Math.max(10, Math.round(minGuaranteeValue / 10) * 10);
+                        const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
 
                         // 最低保証の総価値
                         const minTotalValue = adjustedMinValue * lossCounts[lossTypeCount - 1];
@@ -1871,7 +1871,7 @@
                             // 制約の適用
                             const maxValue = packPrice * difficultySettings.maxValueCap;
                             value = Math.min(value, maxValue);
-                            value = Math.max(adjustedMinValue + 10, value);
+                            value = Math.max(adjustedMinValue + 1, value);
 
                             // 1円単位で丸める（10円単位より精密）
                             value = Math.round(value);
@@ -1894,7 +1894,7 @@
 
                             // 調整可能範囲内であれば適用
                             const newValue = lastLoss.value + adjustment;
-                            if (newValue >= adjustedMinValue + 10) {
+                            if (newValue >= adjustedMinValue + 1) {
                                 console.log('精度調整:', {
                                     difference: difference,
                                     adjustment: adjustment,
@@ -1910,7 +1910,7 @@
                         lossValues.sort((a, b) => b.value - a.value);
                         for (let i = 1; i < lossValues.length; i++) {
                             if (lossValues[i].value >= lossValues[i-1].value) {
-                                const minValue = Math.max(adjustedMinValue + 10, lossValues[i-1].value - 1);
+                                const minValue = Math.max(adjustedMinValue + 1, lossValues[i-1].value - 1);
                                 if (lossValues[i].value > minValue) {
                                     lossValues[i].value = minValue;
                                     lossValues[i].totalValue = minValue * lossValues[i].count;
