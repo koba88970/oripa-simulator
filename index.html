@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>オリパ設計シミュレーター v2.0</title>
+    <title>オリパ設計シミュレーター v3.0</title>
     <style>
         :root {
             --sf-blue: #007AFF;
@@ -136,6 +136,16 @@
             outline: none;
             border-color: var(--sf-blue);
             box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+        }
+
+        .form-group input.error {
+            border-color: var(--sf-red);
+            background-color: rgba(255, 59, 48, 0.05);
+        }
+
+        .form-group input.error:focus {
+            border-color: var(--sf-red);
+            box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.1);
         }
 
         .form-row {
@@ -561,6 +571,9 @@
                         <label>オリパ提供価値</label>
                         <div class="calculated-value" id="totalValue">¥0</div>
                     </div>
+                    <button class="btn btn-success" onclick="calculate()" style="width: 100%; margin-top: 16px; font-size: 16px; padding: 14px;">
+                        🧮 計算する
+                    </button>
                 </div>
 
                 <!-- ハズレ設計 -->
@@ -568,7 +581,7 @@
                     <h2>ハズレ設計</h2>
                     <div class="form-group">
                         <label>ガチャ難易度</label>
-                        <select id="gachaDifficulty" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);" onchange="calculate()">
+                        <select id="gachaDifficulty" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
                             <option value="easy">😊 比較的当たりやすい</option>
                             <option value="normal" selected>😐 普通</option>
                             <option value="hard">😤 当たりにくい</option>
@@ -576,7 +589,7 @@
                     </div>
                     <div class="form-group">
                         <label>ハズレの種類数</label>
-                        <select id="lossTypeCount" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);" onchange="calculate()">
+                        <select id="lossTypeCount" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
                             <option value="2">2種類</option>
                             <option value="3">3種類</option>
                             <option value="4">4種類</option>
@@ -681,6 +694,14 @@
                         <span class="result-label">総仕入れ額</span>
                         <span class="result-value" id="summaryTotalPurchase">¥0</span>
                     </div>
+                    <div class="result-row">
+                        <span class="result-label">当たり景品還元総額</span>
+                        <span class="result-value" id="summaryPrizeTotalReward">¥0</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">ハズレ還元総額</span>
+                        <span class="result-value" id="summaryLossTotalReward">¥0</span>
+                    </div>
                 </div>
 
                 <!-- 景品詳細 -->
@@ -776,15 +797,28 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
             attachEventListeners();
-            calculate();
+            updateTotalValue();
         });
 
         // イベントリスナー設定
         function attachEventListeners() {
-            document.getElementById('packPrice').addEventListener('input', calculate);
-            document.getElementById('totalPacks').addEventListener('input', calculate);
-            document.getElementById('totalReturnRate').addEventListener('input', calculate);
-            document.getElementById('minGuaranteeValue').addEventListener('input', calculate);
+            // オリパ提供価値のリアルタイム更新のみ
+            document.getElementById('packPrice').addEventListener('input', updateTotalValue);
+            document.getElementById('totalPacks').addEventListener('input', updateTotalValue);
+            // 他の項目は手動計算に変更
+        }
+
+        // オリパ提供価値の更新（エラーチェックなし）
+        function updateTotalValue() {
+            const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
+            const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
+            const totalValue = packPrice * totalPacks;
+            document.getElementById('totalValue').textContent = `¥${totalValue.toLocaleString()}`;
+
+            // エラー状態をリセット（入力中はエラー表示しない）
+            document.getElementById('packPrice').classList.remove('error');
+            document.getElementById('totalPacks').classList.remove('error');
+            document.getElementById('totalReturnRate').classList.remove('error');
         }
 
         // ポイント還元価値のフォーマット
@@ -803,8 +837,8 @@
                 value = parseInt(value).toLocaleString(); // カンマ区切りに変換
             }
             input.value = value;
-            // 基本設定が変更されたら再計算
-            setTimeout(calculate, 100);
+            // オリパ提供価値のみ更新
+            setTimeout(updateTotalValue, 100);
         }
 
         // カンマ区切りの数字を数値に変換
@@ -835,7 +869,7 @@
             };
 
             prizes.push(prize);
-            
+
             // フォームリセット
             document.getElementById('prizeName').value = '';
             document.getElementById('prizePurchasePrice').value = '';
@@ -843,7 +877,6 @@
             document.getElementById('prizeCount').value = '1';
 
             updatePrizeList();
-            calculate();
             saveData();
         }
 
@@ -851,7 +884,6 @@
         function removePrize(id) {
             prizes = prizes.filter(p => p.id !== id);
             updatePrizeList();
-            calculate();
             saveData();
         }
 
@@ -924,6 +956,11 @@
             const difficulty = document.getElementById('gachaDifficulty').value;
 
             if (packPrice <= 0 || totalPacks <= 0 || totalReturnRate <= 0) {
+                return;
+            }
+
+            // 設定を検証し、エラーがある場合は処理を停止
+            if (!validateSettings()) {
                 return;
             }
 
@@ -1169,6 +1206,14 @@
             const totalPurchaseAmount = prizes.reduce((sum, prize) => sum + (prize.purchasePrice * prize.count), 0);
             document.getElementById('summaryTotalPurchase').textContent = `¥${totalPurchaseAmount.toLocaleString()}`;
 
+            // 当たり景品還元総額を表示
+            const prizeTotalReward = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
+            document.getElementById('summaryPrizeTotalReward').textContent = `¥${prizeTotalReward.toLocaleString()}`;
+
+            // ハズレ還元総額を表示
+            const lossTotalReward = data.lossTypes ? data.lossTypes.reduce((sum, loss) => sum + (loss.value * loss.count), 0) : 0;
+            document.getElementById('summaryLossTotalReward').textContent = `¥${lossTotalReward.toLocaleString()}`;
+
             // 景品詳細更新
             updatePrizeDetails();
 
@@ -1178,6 +1223,8 @@
             // ハズレ分布チャート更新
             drawLossDistributionChart(data.lossTypes);
 
+            // 警告表示の更新
+            updateWarnings(data);
         }
 
         // 景品詳細更新
@@ -1288,6 +1335,80 @@
             ctx.fillText('ハズレ当選者分布', canvas.width / 2, 20);
         }
 
+        // 設定検証とエラー表示
+        function validateSettings() {
+            const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
+            const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
+            const totalReturnRatePercent = parseFloat(document.getElementById('totalReturnRate').value) || 0;
+            const targetReturnValue = packPrice * totalPacks * (totalReturnRatePercent / 100);
+            const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
+            const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
+
+            // エラー状態をリセット
+            document.getElementById('totalReturnRate').classList.remove('error');
+            document.getElementById('totalPacks').classList.remove('error');
+
+            let hasError = false;
+            let errorMessages = [];
+
+            // 景品枚数が総口数を超えているかチェック
+            if (prizesTotalCount > totalPacks) {
+                document.getElementById('totalPacks').classList.add('error');
+                hasError = true;
+                errorMessages.push(`景品の総枚数（${prizesTotalCount}枚）が総口数（${totalPacks}口）を超えています。`);
+            }
+
+            // 景品価値が目標還元価値を超えているかチェック
+            if (prizesTotalValue > targetReturnValue) {
+                document.getElementById('totalReturnRate').classList.add('error');
+                hasError = true;
+                const requiredReturnRate = Math.ceil((prizesTotalValue / (packPrice * totalPacks)) * 100);
+                errorMessages.push(`景品の還元価値合計（¥${prizesTotalValue.toLocaleString()}）が目標還元価値（¥${targetReturnValue.toLocaleString()}）を超えています。総還元率を${requiredReturnRate}%以上に設定するか、景品価値を調整してください。`);
+            }
+
+            if (hasError) {
+                showErrorPopup(errorMessages);
+                return false;
+            }
+
+            return true;
+        }
+
+        // エラーポップアップ表示
+        function showErrorPopup(messages) {
+            const errorMessage = messages.join('\n\n');
+            alert(`⚠️ 設定にエラーがあります\n\n${errorMessage}`);
+        }
+
+        // 警告表示更新（軽微な警告用）
+        function updateWarnings(data) {
+            const warningsContainer = document.getElementById('warnings');
+            const warnings = [];
+
+            // 実際の総還元率と設定還元率の軽微な乖離を警告
+            const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
+            const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
+            const totalReturnRatePercent = parseFloat(document.getElementById('totalReturnRate').value) || 0;
+            const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
+            const lossTotalValue = data.lossTypes ? data.lossTypes.reduce((sum, loss) => sum + (loss.value * loss.count), 0) : 0;
+            const actualTotalReturnValue = prizesTotalValue + lossTotalValue;
+            const actualReturnRate = (actualTotalReturnValue / (packPrice * totalPacks)) * 100;
+            const returnRateDiff = Math.abs(actualReturnRate - totalReturnRatePercent);
+
+            // エラーレベルでない軽微な乖離のみ警告表示
+            if (returnRateDiff > 1 && returnRateDiff <= 5) {
+                warnings.push(`
+                    <div class="warning">
+                        ℹ️ <strong>還元率に軽微な乖離があります</strong><br>
+                        設定還元率: ${totalReturnRatePercent}% / 実際の還元率: ${actualReturnRate.toFixed(1)}%<br>
+                        差: ${returnRateDiff.toFixed(1)}%
+                    </div>
+                `);
+            }
+
+            warningsContainer.innerHTML = warnings.join('');
+        }
+
 
         // 履歴保存
         function saveToHistory() {
@@ -1332,7 +1453,7 @@
             prizes = [...settings.prizes];
 
             updatePrizeList();
-            calculate();
+            updateTotalValue();
         }
 
         // 履歴削除
@@ -1528,9 +1649,9 @@
 
                     // データを保存
                     saveData();
-                    
-                    // 再計算
-                    calculate();
+
+                    // オリパ提供価値のみ更新
+                    updateTotalValue();
 
                     alert('設定を正常にインポートしました！');
 
