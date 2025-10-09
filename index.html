@@ -1084,53 +1084,66 @@
                 const remainingValue = lossValue - minTotalValue;
                 const remainingTypes = lossTypeCount - 1;
 
-                // 各ハズレタイプの価値を計算（最低保証より必ず高く、かつ異なる価格に）
+                // 高精度計算: 目標還元率に正確に合わせるための価値計算
                 const lossValues = [];
+                let actualTotalValue = 0;
+
                 for (let i = 0; i < remainingTypes; i++) {
                     const count = lossCounts[i];
                     if (count > 0) {
                         // 難易度に応じた価値配分
                         let valueRatio;
                         if (difficulty === 'easy') {
-                            // 易しい：高還元ハズレを多めに
                             valueRatio = (remainingTypes - i + 2) / (remainingTypes + 2);
                         } else if (difficulty === 'hard') {
-                            // 厳しい：高還元ハズレを少なめに
                             valueRatio = Math.pow((remainingTypes - i) / remainingTypes, 2);
                         } else {
-                            // 普通：標準的な配分
                             valueRatio = (remainingTypes - i) / remainingTypes;
                         }
 
                         let value = remainingValue * valueRatio / count;
 
-                        // 難易度に応じた最大値制限
+                        // 制約の適用
                         const maxValue = packPrice * difficultySettings.maxValueCap;
                         value = Math.min(value, maxValue);
-
-                        // 最低保証価値より必ず高くする（最低+10円）
                         value = Math.max(adjustedMinValue + 10, value);
 
-                        // キリの良い数に丸める
-                        value = roundToTens(value);
+                        // 1円単位で丸める（より精密）
+                        value = Math.round(value);
 
-                        lossValues.push({ index: i, value: value, count: count });
+                        lossValues.push({
+                            index: i,
+                            value: value,
+                            count: count,
+                            totalValue: value * count
+                        });
+
+                        actualTotalValue += value * count;
                     }
                 }
 
-                // 価格の重複を避けるために調整
-                lossValues.sort((a, b) => b.value - a.value); // 高い順にソート
-                for (let i = 1; i < lossValues.length; i++) {
-                    // 前の価格と同じ場合は少し下げる（ただし最低保証より上を維持）
-                    if (lossValues[i].value >= lossValues[i-1].value) {
-                        lossValues[i].value = Math.max(
-                            adjustedMinValue + 10,
-                            lossValues[i-1].value - 10
-                        );
+                // 目標値との差を最後のハズレタイプで調整
+                const difference = remainingValue - actualTotalValue;
+                if (Math.abs(difference) > 0.01 && lossValues.length > 0) {
+                    const lastLoss = lossValues[lossValues.length - 1];
+                    const adjustment = Math.round(difference / lastLoss.count);
+
+                    const newValue = lastLoss.value + adjustment;
+                    if (newValue >= adjustedMinValue + 10) {
+                        lastLoss.value = newValue;
+                        lastLoss.totalValue = newValue * lastLoss.count;
                     }
-                    // さらに重複がある場合の調整
-                    while (i > 0 && lossValues[i].value >= lossValues[i-1].value && lossValues[i].value > adjustedMinValue + 10) {
-                        lossValues[i].value -= 10;
+                }
+
+                // 価格重複回避（最小限の調整）
+                lossValues.sort((a, b) => b.value - a.value);
+                for (let i = 1; i < lossValues.length; i++) {
+                    if (lossValues[i].value >= lossValues[i-1].value) {
+                        const minValue = Math.max(adjustedMinValue + 10, lossValues[i-1].value - 1);
+                        if (lossValues[i].value > minValue) {
+                            lossValues[i].value = minValue;
+                            lossValues[i].totalValue = minValue * lossValues[i].count;
+                        }
                     }
                 }
 
@@ -1395,13 +1408,15 @@
             const actualReturnRate = (actualTotalReturnValue / (packPrice * totalPacks)) * 100;
             const returnRateDiff = Math.abs(actualReturnRate - totalReturnRatePercent);
 
-            // エラーレベルでない軽微な乖離のみ警告表示
-            if (returnRateDiff > 1 && returnRateDiff <= 5) {
+            // エラーレベルでない軽微な乖離のみ警告表示（より厳密な閾値）
+            if (returnRateDiff > 0.1 && returnRateDiff <= 5) {
+                const severity = returnRateDiff <= 0.5 ? 'ℹ️' : '⚠️';
+                const label = returnRateDiff <= 0.5 ? '軽微な乖離' : '乖離';
                 warnings.push(`
                     <div class="warning">
-                        ℹ️ <strong>還元率に軽微な乖離があります</strong><br>
-                        設定還元率: ${totalReturnRatePercent}% / 実際の還元率: ${actualReturnRate.toFixed(1)}%<br>
-                        差: ${returnRateDiff.toFixed(1)}%
+                        ${severity} <strong>還元率に${label}があります</strong><br>
+                        設定還元率: ${totalReturnRatePercent}% / 実際の還元率: ${actualReturnRate.toFixed(2)}%<br>
+                        差: ${returnRateDiff.toFixed(2)}%
                     </div>
                 `);
             }
@@ -1811,53 +1826,95 @@
                         const remainingValue = lossValue - minTotalValue;
                         const remainingTypes = lossTypeCount - 1;
 
-                        // 各ハズレタイプの価値を計算（最低保証より必ず高く、かつ異なる価格に）
-                        const lossValues = [];
+                        // 高精度計算: 目標還元率に正確に合わせるための価値計算
+                        console.log('高精度ハズレ価値計算開始:', { remainingValue, remainingTypes, lossCounts });
+
+                        // まず理想的な価値配分を計算（丸めなし）
+                        const idealLossValues = [];
+                        let totalIdealValue = 0;
+
                         for (let i = 0; i < remainingTypes; i++) {
                             const count = lossCounts[i];
                             if (count > 0) {
                                 // 難易度に応じた価値配分
                                 let valueRatio;
                                 if (difficulty === 'easy') {
-                                    // 易しい：高還元ハズレを多めに
                                     valueRatio = (remainingTypes - i + 2) / (remainingTypes + 2);
                                 } else if (difficulty === 'hard') {
-                                    // 厳しい：高還元ハズレを少なめに
                                     valueRatio = Math.pow((remainingTypes - i) / remainingTypes, 2);
                                 } else {
-                                    // 普通：標準的な配分
                                     valueRatio = (remainingTypes - i) / remainingTypes;
                                 }
 
-                                let value = remainingValue * valueRatio / count;
+                                const idealTotalForType = remainingValue * valueRatio;
+                                const idealValuePerItem = idealTotalForType / count;
 
-                                // 難易度に応じた最大値制限
-                                const maxValue = packPrice * difficultySettings.maxValueCap;
-                                value = Math.min(value, maxValue);
+                                idealLossValues.push({
+                                    index: i,
+                                    count: count,
+                                    idealValuePerItem: idealValuePerItem,
+                                    idealTotalValue: idealTotalForType
+                                });
 
-                                // 最低保証価値より必ず高くする（最低+10円）
-                                value = Math.max(adjustedMinValue + 10, value);
-
-                                // キリの良い数に丸める
-                                value = Math.max(10, Math.round(value / 10) * 10);
-
-                                lossValues.push({ index: i, value: value, count: count });
+                                totalIdealValue += idealTotalForType;
                             }
                         }
 
-                        // 価格の重複を避けるために調整
-                        lossValues.sort((a, b) => b.value - a.value); // 高い順にソート
-                        for (let i = 1; i < lossValues.length; i++) {
-                            // 前の価格と同じ場合は少し下げる（ただし最低保証より上を維持）
-                            if (lossValues[i].value >= lossValues[i-1].value) {
-                                lossValues[i].value = Math.max(
-                                    adjustedMinValue + 10,
-                                    lossValues[i-1].value - 10
-                                );
+                        // 実際の価値を計算（制約を考慮）
+                        const lossValues = [];
+                        let actualTotalValue = 0;
+
+                        for (let i = 0; i < idealLossValues.length; i++) {
+                            const ideal = idealLossValues[i];
+                            let value = ideal.idealValuePerItem;
+
+                            // 制約の適用
+                            const maxValue = packPrice * difficultySettings.maxValueCap;
+                            value = Math.min(value, maxValue);
+                            value = Math.max(adjustedMinValue + 10, value);
+
+                            // 1円単位で丸める（10円単位より精密）
+                            value = Math.round(value);
+
+                            lossValues.push({
+                                index: ideal.index,
+                                value: value,
+                                count: ideal.count,
+                                totalValue: value * ideal.count
+                            });
+
+                            actualTotalValue += value * ideal.count;
+                        }
+
+                        // 目標値との差を最後のハズレタイプで調整
+                        const difference = remainingValue - actualTotalValue;
+                        if (Math.abs(difference) > 0.01 && lossValues.length > 0) {
+                            const lastLoss = lossValues[lossValues.length - 1];
+                            const adjustment = Math.round(difference / lastLoss.count);
+
+                            // 調整可能範囲内であれば適用
+                            const newValue = lastLoss.value + adjustment;
+                            if (newValue >= adjustedMinValue + 10) {
+                                console.log('精度調整:', {
+                                    difference: difference,
+                                    adjustment: adjustment,
+                                    oldValue: lastLoss.value,
+                                    newValue: newValue
+                                });
+                                lastLoss.value = newValue;
+                                lastLoss.totalValue = newValue * lastLoss.count;
                             }
-                            // さらに重複がある場合の調整
-                            while (i > 0 && lossValues[i].value >= lossValues[i-1].value && lossValues[i].value > adjustedMinValue + 10) {
-                                lossValues[i].value -= 10;
+                        }
+
+                        // 価格重複回避（最小限の調整）
+                        lossValues.sort((a, b) => b.value - a.value);
+                        for (let i = 1; i < lossValues.length; i++) {
+                            if (lossValues[i].value >= lossValues[i-1].value) {
+                                const minValue = Math.max(adjustedMinValue + 10, lossValues[i-1].value - 1);
+                                if (lossValues[i].value > minValue) {
+                                    lossValues[i].value = minValue;
+                                    lossValues[i].totalValue = minValue * lossValues[i].count;
+                                }
                             }
                         }
 
