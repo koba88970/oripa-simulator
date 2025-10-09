@@ -1709,61 +1709,52 @@
                 
                 const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
                 const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
-                
-                let adjustedTotalPacks = totalPacks;
-                let adjustedPrizesTotalCount = prizesTotalCount;
-                
-                // 景品枚数が総口数を超える場合の調整
-                if (prizesTotalCount > totalPacks) {
-                    console.log('警告: 景品枚数が総口数を超えています。総口数を調整します。');
-                    adjustedTotalPacks = prizesTotalCount + Math.max(1, Math.floor(prizesTotalCount * 0.5)); // 景品数の1.5倍に調整
-                }
-                
-                const lossCount = adjustedTotalPacks - adjustedPrizesTotalCount;
-                const adjustedTargetReturnValue = packPrice * adjustedTotalPacks * (totalReturnRatePercent / 100);
-                const lossValue = adjustedTargetReturnValue - prizesTotalValue;
+
+                const lossCount = totalPacks - prizesTotalCount;
+                const lossValue = targetReturnValue - prizesTotalValue;
                 
                 console.log('ガチャプール生成デバッグ:', {
-                    originalTotalPacks: totalPacks,
-                    adjustedTotalPacks,
-                    prizesTotalCount: adjustedPrizesTotalCount,
+                    totalPacks: totalPacks,
+                    prizesTotalCount: prizesTotalCount,
                     lossCount,
-                    targetReturnValue: adjustedTargetReturnValue,
+                    targetReturnValue: targetReturnValue,
                     prizesTotalValue,
                     lossValue
                 });
                 
                 if (lossCount > 0) {
-                    console.log('ハズレ生成開始:', { lossCount, lossValue, difficulty, lossTypeCount });
-                    
-                    // ハズレ配分計算（simulate.jsと同じロジック）
-                    const distribution = difficultySettings.lossDistribution;
-                    console.log('配分比率:', distribution);
-                    const lossCounts = [];
-                    let allocated = 0;
-                    
-                    for (let i = 0; i < lossTypeCount; i++) {
-                        const ratio = distribution[i] || distribution[distribution.length - 1];
-                        const count = Math.floor(lossCount * ratio);
-                        lossCounts.push(count);
-                        allocated += count;
-                    }
-                    
-                    let remaining = lossCount - allocated;
-                    let index = 0;
-                    while (remaining > 0) {
-                        lossCounts[index % lossTypeCount]++;
-                        remaining--;
-                        index++;
-                    }
-                    
-                    console.log('ハズレ枚数配分:', lossCounts);
-                    
-                    // lossValueがマイナスの場合は最低保証価値のみでハズレを生成
+                    // メイン計算と同じロジックでハズレタイプを生成
+                    const lossTypes = [];
+
                     if (lossValue <= 0) {
-                        console.log('lossValueがマイナスまたは0のため、最低保証価値でハズレを生成');
+                        // lossValueが0以下の場合、段階的な価値でハズレを生成
+                        console.log('lossValueが0以下のため、段階的価値でハズレを生成');
+
+                        // 難易度に応じた配分比率を使用
+                        const distribution = difficultySettings.lossDistribution;
+
+                        // 各ハズレタイプの枚数を計算
+                        const lossCounts = [];
+                        let allocated = 0;
+
+                        for (let i = 0; i < lossTypeCount; i++) {
+                            const ratio = distribution[i] || distribution[distribution.length - 1];
+                            const count = Math.floor(lossCount * ratio);
+                            lossCounts.push(count);
+                            allocated += count;
+                        }
+
+                        let remaining = lossCount - allocated;
+                        let index = 0;
+                        while (remaining > 0) {
+                            lossCounts[index % lossTypeCount]++;
+                            remaining--;
+                            index++;
+                        }
+
+                        // 最低保証価値（ユーザー入力値をそのまま使用）
                         const adjustedMinValue = Math.max(10, Math.round(minGuaranteeValue / 10) * 10);
-                        
+
                         // 各ハズレタイプに異なる価値を設定（最低保証より高く）
                         for (let i = 0; i < lossTypeCount; i++) {
                             const count = lossCounts[i];
@@ -1777,125 +1768,134 @@
                                     value = adjustedMinValue + (lossTypeCount - 1 - i) * 10;
                                 }
 
-                                console.log(`ハズレ${String.fromCharCode(65 + i)} 生成:`, { count, value });
-                                for (let j = 0; j < count; j++) {
-                                    gachaPool.push({
-                                        type: 'loss',
-                                        item: {
-                                            name: i === lossTypeCount - 1 ?
-                                                `ハズレ${String.fromCharCode(65 + i)}（最低保証）` :
-                                                `ハズレ${String.fromCharCode(65 + i)}`,
-                                            value: value,
-                                            rank: 'loss'
-                                        }
-                                    });
-                                }
+                                lossTypes.push({
+                                    name: i === lossTypeCount - 1 ?
+                                        `ハズレ${String.fromCharCode(65 + i)}（最低保証）` :
+                                        `ハズレ${String.fromCharCode(65 + i)}`,
+                                    value: value,
+                                    count: count,
+                                    type: i === lossTypeCount - 1 ? 'min' : 'normal'
+                                });
                             }
                         }
                     } else {
-                        // 通常のハズレ価値配分処理
+                        // 正常なハズレ価値配分処理（メイン計算と同じロジック）
+                        const distribution = difficultySettings.lossDistribution;
+
+                        // 各ハズレタイプの枚数を計算
+                        const lossCounts = [];
+                        let allocated = 0;
+
+                        for (let i = 0; i < lossTypeCount; i++) {
+                            const ratio = distribution[i] || distribution[distribution.length - 1];
+                            const count = Math.floor(lossCount * ratio);
+                            lossCounts.push(count);
+                            allocated += count;
+                        }
+
+                        let remaining = lossCount - allocated;
+                        let index = 0;
+                        while (remaining > 0) {
+                            lossCounts[index % lossTypeCount]++;
+                            remaining--;
+                            index++;
+                        }
+
                         // 最低保証価値（ユーザー入力値をそのまま使用）
                         const adjustedMinValue = Math.max(10, Math.round(minGuaranteeValue / 10) * 10);
-                    
-                    // 最低保証の総価値
-                    const minTotalValue = adjustedMinValue * lossCounts[lossTypeCount - 1];
-                    
-                    // 残りの価値を他のハズレに配分
-                    const remainingValue = lossValue - minTotalValue;
-                    const remainingTypes = lossTypeCount - 1;
 
-                    // 各ハズレタイプの価値を計算（最低保証より必ず高く、かつ異なる価格に）
-                    const lossValues = [];
-                    for (let i = 0; i < remainingTypes; i++) {
-                        const count = lossCounts[i];
-                        if (count > 0) {
-                            let valueRatio;
-                            if (difficulty === 'easy') {
-                                valueRatio = (remainingTypes - i + 2) / (remainingTypes + 2);
-                            } else if (difficulty === 'hard') {
-                                valueRatio = Math.pow((remainingTypes - i) / remainingTypes, 2);
-                            } else {
-                                valueRatio = (remainingTypes - i) / remainingTypes;
+                        // 最低保証の総価値
+                        const minTotalValue = adjustedMinValue * lossCounts[lossTypeCount - 1];
+
+                        // 残りの価値を他のハズレに配分
+                        const remainingValue = lossValue - minTotalValue;
+                        const remainingTypes = lossTypeCount - 1;
+
+                        // 各ハズレタイプの価値を計算（最低保証より必ず高く、かつ異なる価格に）
+                        const lossValues = [];
+                        for (let i = 0; i < remainingTypes; i++) {
+                            const count = lossCounts[i];
+                            if (count > 0) {
+                                // 難易度に応じた価値配分
+                                let valueRatio;
+                                if (difficulty === 'easy') {
+                                    // 易しい：高還元ハズレを多めに
+                                    valueRatio = (remainingTypes - i + 2) / (remainingTypes + 2);
+                                } else if (difficulty === 'hard') {
+                                    // 厳しい：高還元ハズレを少なめに
+                                    valueRatio = Math.pow((remainingTypes - i) / remainingTypes, 2);
+                                } else {
+                                    // 普通：標準的な配分
+                                    valueRatio = (remainingTypes - i) / remainingTypes;
+                                }
+
+                                let value = remainingValue * valueRatio / count;
+
+                                // 難易度に応じた最大値制限
+                                const maxValue = packPrice * difficultySettings.maxValueCap;
+                                value = Math.min(value, maxValue);
+
+                                // 最低保証価値より必ず高くする（最低+10円）
+                                value = Math.max(adjustedMinValue + 10, value);
+
+                                // キリの良い数に丸める
+                                value = Math.max(10, Math.round(value / 10) * 10);
+
+                                lossValues.push({ index: i, value: value, count: count });
                             }
-
-                            let value = remainingValue * valueRatio / count;
-
-                            // 難易度に応じた最大値制限
-                            const maxValue = packPrice * difficultySettings.maxValueCap;
-                            value = Math.min(value, maxValue);
-
-                            // 最低保証価値より必ず高くする（最低+10円）
-                            value = Math.max(adjustedMinValue + 10, value);
-
-                            // キリの良い数に丸める
-                            value = Math.max(10, Math.round(value / 10) * 10);
-
-                            lossValues.push({ index: i, value: value, count: count });
                         }
+
+                        // 価格の重複を避けるために調整
+                        lossValues.sort((a, b) => b.value - a.value); // 高い順にソート
+                        for (let i = 1; i < lossValues.length; i++) {
+                            // 前の価格と同じ場合は少し下げる（ただし最低保証より上を維持）
+                            if (lossValues[i].value >= lossValues[i-1].value) {
+                                lossValues[i].value = Math.max(
+                                    adjustedMinValue + 10,
+                                    lossValues[i-1].value - 10
+                                );
+                            }
+                            // さらに重複がある場合の調整
+                            while (i > 0 && lossValues[i].value >= lossValues[i-1].value && lossValues[i].value > adjustedMinValue + 10) {
+                                lossValues[i].value -= 10;
+                            }
+                        }
+
+                        // ハズレタイプを追加
+                        lossValues.forEach(loss => {
+                            lossTypes.push({
+                                name: `ハズレ${String.fromCharCode(65 + loss.index)}`,
+                                value: loss.value,
+                                count: loss.count,
+                                type: 'normal'
+                            });
+                        });
+
+                        // 最低保証を追加
+                        lossTypes.push({
+                            name: `ハズレ${String.fromCharCode(65 + remainingTypes)}（最低保証）`,
+                            value: adjustedMinValue,
+                            count: lossCounts[lossTypeCount - 1],
+                            type: 'min'
+                        });
                     }
 
-                    // 価格の重複を避けるために調整
-                    lossValues.sort((a, b) => b.value - a.value); // 高い順にソート
-                    for (let i = 1; i < lossValues.length; i++) {
-                        // 前の価格と同じ場合は少し下げる（ただし最低保証より上を維持）
-                        if (lossValues[i].value >= lossValues[i-1].value) {
-                            lossValues[i].value = Math.max(
-                                adjustedMinValue + 10,
-                                lossValues[i-1].value - 10
-                            );
-                        }
-                        // さらに重複がある場合の調整
-                        while (i > 0 && lossValues[i].value >= lossValues[i-1].value && lossValues[i].value > adjustedMinValue + 10) {
-                            lossValues[i].value -= 10;
-                        }
-                    }
-
-                    // ハズレをプールに追加
-                    lossValues.forEach(loss => {
-                        console.log(`ハズレ${String.fromCharCode(65 + loss.index)} 生成:`, { count: loss.count, value: loss.value });
-                        for (let j = 0; j < loss.count; j++) {
+                    // ガチャプールにハズレを追加
+                    lossTypes.forEach(lossType => {
+                        console.log(`${lossType.name} 生成:`, { count: lossType.count, value: lossType.value });
+                        for (let j = 0; j < lossType.count; j++) {
                             gachaPool.push({
                                 type: 'loss',
                                 item: {
-                                    name: `ハズレ${String.fromCharCode(65 + loss.index)}`,
-                                    value: loss.value,
+                                    name: lossType.name,
+                                    value: lossType.value,
                                     rank: 'loss'
                                 }
                             });
                         }
                     });
-                    
-                        // 最低保証ハズレを追加
-                        const minGuaranteeCount = lossCounts[lossTypeCount - 1];
-                        console.log('最低保証ハズレ生成:', { minGuaranteeCount, adjustedMinValue });
-                        for (let i = 0; i < minGuaranteeCount; i++) {
-                            gachaPool.push({
-                                type: 'loss',
-                                item: {
-                                    name: `ハズレ${String.fromCharCode(65 + remainingTypes)}（最低保証）`,
-                                    value: adjustedMinValue,
-                                    rank: 'loss'
-                                }
-                            });
-                        }
-                    }
                 } else {
                     console.log('ハズレ生成スキップ:', { lossCount, reason: 'lossCount <= 0' });
-                    
-                    // 強制的に最小限のハズレを生成（テスト用）
-                    console.log('最小限のハズレを強制生成します');
-                    const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
-                    const adjustedMinValue = Math.max(10, Math.round(minGuaranteeValue / 10) * 10);
-
-                    // 最低1個のハズレを生成
-                    gachaPool.push({
-                        type: 'loss',
-                        item: {
-                            name: 'ハズレA',
-                            value: adjustedMinValue,
-                            rank: 'loss'
-                        }
-                    });
                 }
             }
             
@@ -1908,8 +1908,18 @@
             console.log('ガチャプール生成完了:', {
                 totalItems: gachaPool.length,
                 prizes: gachaPool.filter(item => item.type === 'prize').length,
-                losses: gachaPool.filter(item => item.type === 'loss').length
+                losses: gachaPool.filter(item => item.type === 'loss').length,
+                expectedTotal: totalPacks
             });
+
+            // 最終的なサイズチェック
+            if (gachaPool.length !== totalPacks) {
+                console.error('ガチャプールサイズエラー:', {
+                    expected: totalPacks,
+                    actual: gachaPool.length,
+                    difference: gachaPool.length - totalPacks
+                });
+            }
         }
 
         // ガチャを引く
@@ -1919,14 +1929,13 @@
                 return;
             }
             
-            // 設定の整合性チェック
+            // ガチャプールのサイズチェック
             const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
-            const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
-            if (prizesTotalCount > totalPacks) {
-                const message = `⚠️ 設定に問題があります\n\n` +
-                               `景品の総枚数（${prizesTotalCount}枚）が総口数（${totalPacks}口）を超えています。\n` +
-                               `ガチャプールは自動調整されましたが、設定を見直すことをお勧めします。`;
-                alert(message);
+            if (gachaPool.length !== totalPacks) {
+                console.warn('ガチャプールサイズが設定と異なります:', {
+                    expected: totalPacks,
+                    actual: gachaPool.length
+                });
             }
             
             if (gachaPool.length < count) {
