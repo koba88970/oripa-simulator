@@ -664,6 +664,47 @@
                     </div>
                     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(event)">
                 </div>
+
+                <!-- クラウド設定管理 -->
+                <div class="panel" style="background: rgba(0, 122, 255, 0.05); border-color: var(--sf-blue);">
+                    <h2 style="border-bottom-color: var(--sf-blue);">☁️ クラウド設定共有</h2>
+
+                    <!-- 保存セクション -->
+                    <div class="form-group">
+                        <label>設定名</label>
+                        <input type="text" id="cloudConfigName" placeholder="設定名を入力（例: ポケモンオリパA案）">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;">
+                        <button class="btn btn-primary" onclick="saveToCloudWithName()" style="font-size: 12px;">
+                            💾 新規保存
+                        </button>
+                        <button class="btn btn-accent" onclick="updateCloudConfig()" style="font-size: 12px;" id="updateCloudBtn" disabled>
+                            🔄 上書き更新
+                        </button>
+                    </div>
+
+                    <!-- 読み込みセクション -->
+                    <div class="form-group">
+                        <label>クラウド設定一覧</label>
+                        <select id="cloudConfigList" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
+                            <option value="">設定を選択してください</option>
+                        </select>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;">
+                        <button class="btn btn-success" onclick="loadSelectedCloudConfig()" style="font-size: 12px;">
+                            📂 読み込み
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteSelectedCloudConfig()" style="font-size: 12px;">
+                            🗑️ 削除
+                        </button>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="refreshCloudConfigList()" style="width: 100%; font-size: 12px;">
+                        🔄 一覧を更新
+                    </button>
+
+                    <div id="cloudStatus" style="margin-top: 12px; font-size: 12px; color: var(--sf-gray);"></div>
+                </div>
             </div>
 
             <div class="results-grid">
@@ -1425,6 +1466,7 @@
         }
 
 
+
         // 履歴保存
         function saveToHistory() {
             const name = document.getElementById('historyName').value.trim();
@@ -2080,5 +2122,264 @@
             generateGachaPool();
         };
     </script>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<script>
+// Firebaseの設定（ここに取得した設定を貼り付け）
+const firebaseConfig = {
+  apiKey: "AIzaSyAe9gDljx8sz-amXm_BWyPJgskR_V1S3Oo",
+  authDomain: "oripa-simulator.firebaseapp.com",
+  databaseURL: "https://oripa-simulator-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "oripa-simulator",
+  storageBucket: "oripa-simulator.firebasestorage.app",
+  messagingSenderId: "546810114337",
+  appId: "1:546810114337:web:14a0657fd25998bef50e60"
+};
+
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// 現在の設定を取得する関数
+function getCurrentConfig() {
+  return {
+    packPrice: document.getElementById('packPrice').value,
+    totalPacks: document.getElementById('totalPacks').value,
+    totalReturnRate: document.getElementById('totalReturnRate').value,
+    lossTypeCount: document.getElementById('lossTypeCount').value,
+    minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
+    gachaDifficulty: document.getElementById('gachaDifficulty').value,
+    prizes: [...prizes]
+  };
+}
+
+// 設定を読み込む関数
+function loadConfig(config) {
+  document.getElementById('packPrice').value = config.packPrice || '40000';
+  document.getElementById('totalPacks').value = config.totalPacks || '100';
+  document.getElementById('totalReturnRate').value = config.totalReturnRate || 98;
+  document.getElementById('lossTypeCount').value = config.lossTypeCount || 2;
+  document.getElementById('minGuaranteeValue').value = config.minGuaranteeValue || '1';
+  document.getElementById('gachaDifficulty').value = config.gachaDifficulty || 'normal';
+
+  if (config.prizes) {
+    prizes = [...config.prizes];
+    updatePrizeList();
+  }
+
+  updateTotalValue();
+}
+
+// クラウド保存機能
+function saveToCloud(configName) {
+  const config = getCurrentConfig();
+  const configId = configName || prompt('設定名を入力してください');
+  if (!configId) return;
+
+  database.ref('configs/' + configId).set({
+    data: config,
+    updatedAt: Date.now()
+  }).then(() => {
+    alert('保存しました: ' + configId);
+    loadConfigList();
+  }).catch((error) => {
+    alert('保存に失敗しました: ' + error.message);
+  });
+}
+
+// クラウドから読み込み
+function loadFromCloud(configId) {
+  database.ref('configs/' + configId).once('value').then((snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      loadConfig(data.data);
+      alert('読み込みました: ' + configId);
+    } else {
+      alert('設定が見つかりませんでした');
+    }
+  }).catch((error) => {
+    alert('読み込みに失敗しました: ' + error.message);
+  });
+}
+
+// グローバル変数でクラウド設定を管理
+let cloudConfigs = {};
+let currentCloudConfigId = null;
+
+// 設定一覧表示
+function loadConfigList() {
+  database.ref('configs').once('value').then((snapshot) => {
+    const configs = snapshot.val();
+    console.log('保存済み設定:', Object.keys(configs || {}));
+    // 必要に応じてUI表示
+  });
+}
+
+// クラウド設定一覧を更新
+function refreshCloudConfigList() {
+  updateCloudStatus('設定一覧を読み込み中...');
+
+  database.ref('configs').once('value').then((snapshot) => {
+    cloudConfigs = snapshot.val() || {};
+    updateCloudConfigSelectBox();
+    updateCloudStatus(`${Object.keys(cloudConfigs).length}件の設定を読み込みました`);
+  }).catch((error) => {
+    updateCloudStatus('読み込みに失敗しました: ' + error.message);
+  });
+}
+
+// クラウド設定のセレクトボックスを更新
+function updateCloudConfigSelectBox() {
+  const selectBox = document.getElementById('cloudConfigList');
+  selectBox.innerHTML = '<option value="">設定を選択してください</option>';
+
+  Object.keys(cloudConfigs).forEach(configId => {
+    const config = cloudConfigs[configId];
+    const date = new Date(config.updatedAt).toLocaleString('ja-JP');
+    const option = document.createElement('option');
+    option.value = configId;
+    option.textContent = `${configId} (${date})`;
+    selectBox.appendChild(option);
+  });
+
+  // 現在選択中の設定があれば選択状態を維持
+  if (currentCloudConfigId && cloudConfigs[currentCloudConfigId]) {
+    selectBox.value = currentCloudConfigId;
+    document.getElementById('updateCloudBtn').disabled = false;
+  } else {
+    document.getElementById('updateCloudBtn').disabled = true;
+  }
+}
+
+// クラウドステータス表示を更新
+function updateCloudStatus(message) {
+  document.getElementById('cloudStatus').textContent = message;
+  setTimeout(() => {
+    document.getElementById('cloudStatus').textContent = '';
+  }, 3000);
+}
+
+// 新規クラウド保存
+function saveToCloudWithName() {
+  const configName = document.getElementById('cloudConfigName').value.trim();
+  if (!configName) {
+    alert('設定名を入力してください');
+    return;
+  }
+
+  // 同名の設定が既に存在するかチェック
+  if (cloudConfigs[configName]) {
+    if (!confirm(`「${configName}」という設定が既に存在します。上書きしますか？`)) {
+      return;
+    }
+  }
+
+  const config = getCurrentConfig();
+  updateCloudStatus('保存中...');
+
+  database.ref('configs/' + configName).set({
+    data: config,
+    updatedAt: Date.now(),
+    createdBy: 'user', // 将来的にユーザー管理を追加する場合
+    version: '1.0'
+  }).then(() => {
+    currentCloudConfigId = configName;
+    document.getElementById('updateCloudBtn').disabled = false;
+    updateCloudStatus(`「${configName}」を保存しました`);
+    refreshCloudConfigList();
+    document.getElementById('cloudConfigName').value = '';
+  }).catch((error) => {
+    updateCloudStatus('保存に失敗しました: ' + error.message);
+  });
+}
+
+// 現在の設定を上書き更新
+function updateCloudConfig() {
+  if (!currentCloudConfigId) {
+    alert('更新する設定が選択されていません');
+    return;
+  }
+
+  if (!confirm(`「${currentCloudConfigId}」を現在の設定で上書き更新しますか？`)) {
+    return;
+  }
+
+  const config = getCurrentConfig();
+  updateCloudStatus('更新中...');
+
+  database.ref('configs/' + currentCloudConfigId).update({
+    data: config,
+    updatedAt: Date.now()
+  }).then(() => {
+    updateCloudStatus(`「${currentCloudConfigId}」を更新しました`);
+    refreshCloudConfigList();
+  }).catch((error) => {
+    updateCloudStatus('更新に失敗しました: ' + error.message);
+  });
+}
+
+// 選択されたクラウド設定を読み込み
+function loadSelectedCloudConfig() {
+  const selectedConfigId = document.getElementById('cloudConfigList').value;
+  if (!selectedConfigId) {
+    alert('読み込む設定を選択してください');
+    return;
+  }
+
+  updateCloudStatus('読み込み中...');
+
+  database.ref('configs/' + selectedConfigId).once('value').then((snapshot) => {
+    const configData = snapshot.val();
+    if (configData && configData.data) {
+      loadConfig(configData.data);
+      currentCloudConfigId = selectedConfigId;
+      document.getElementById('updateCloudBtn').disabled = false;
+      document.getElementById('cloudConfigName').value = selectedConfigId;
+      updateCloudStatus(`「${selectedConfigId}」を読み込みました`);
+    } else {
+      updateCloudStatus('設定データが見つかりませんでした');
+    }
+  }).catch((error) => {
+    updateCloudStatus('読み込みに失敗しました: ' + error.message);
+  });
+}
+
+// 選択されたクラウド設定を削除
+function deleteSelectedCloudConfig() {
+  const selectedConfigId = document.getElementById('cloudConfigList').value;
+  if (!selectedConfigId) {
+    alert('削除する設定を選択してください');
+    return;
+  }
+
+  if (!confirm(`「${selectedConfigId}」を削除しますか？この操作は取り消せません。`)) {
+    return;
+  }
+
+  updateCloudStatus('削除中...');
+
+  database.ref('configs/' + selectedConfigId).remove().then(() => {
+    if (currentCloudConfigId === selectedConfigId) {
+      currentCloudConfigId = null;
+      document.getElementById('updateCloudBtn').disabled = true;
+      document.getElementById('cloudConfigName').value = '';
+    }
+    updateCloudStatus(`「${selectedConfigId}」を削除しました`);
+    refreshCloudConfigList();
+  }).catch((error) => {
+    updateCloudStatus('削除に失敗しました: ' + error.message);
+  });
+}
+
+// 初期化時にクラウド設定一覧を読み込み
+document.addEventListener('DOMContentLoaded', function() {
+  // 既存の初期化処理の後に追加
+  setTimeout(() => {
+    refreshCloudConfigList();
+  }, 1000); // Firebaseの初期化を待つ
+});
+</script>
 </body>
 </html>
