@@ -2441,14 +2441,86 @@ function generateShareLink() {
   navigator.clipboard.writeText(shareUrl).then(() => {
     updateShareStatus('✅ リンクをクリップボードにコピーしました');
 
-    // 詳細情報をアラートで表示
-    setTimeout(() => {
-      alert(`🔗 共有リンクをコピーしました！\n\n${shareUrl}\n\nこのリンクを共有すると、他のユーザーが同じ設定を読み込むことができます。`);
-    }, 200);
+    // 成功ポップアップを表示
+    showCopySuccessPopup(shareUrl);
   }).catch(() => {
     // フォールバック: モーダル表示
     showShareLinkModal(shareUrl);
   });
+}
+
+// コピー成功ポップアップを表示
+function showCopySuccessPopup(shareUrl) {
+  // 既存のポップアップがあれば削除
+  const existingPopup = document.getElementById('copySuccessPopup');
+  if (existingPopup) {
+    document.body.removeChild(existingPopup);
+  }
+
+  const popup = document.createElement('div');
+  popup.id = 'copySuccessPopup';
+  popup.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #34C759, #30D158);
+    color: white;
+    padding: 20px 24px;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(52, 199, 89, 0.3);
+    z-index: 10000;
+    transform: translateX(400px);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    max-width: 350px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    backdrop-filter: blur(20px);
+  `;
+
+  popup.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+      <div style="font-size: 24px;">✅</div>
+      <div style="font-size: 16px; font-weight: 600;">リンクをコピーしました！</div>
+    </div>
+    <div style="font-size: 13px; opacity: 0.9; margin-bottom: 12px;">
+      「${currentCloudConfigId}」の共有リンクがクリップボードにコピーされました
+    </div>
+    <div style="font-size: 11px; opacity: 0.8; word-break: break-all; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 8px;">
+      ${shareUrl}
+    </div>
+    <div style="position: absolute; top: 8px; right: 8px; cursor: pointer; font-size: 18px; opacity: 0.7; hover: opacity: 1;" onclick="document.body.removeChild(this.parentElement)">
+      ×
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  // アニメーション: スライドイン
+  setTimeout(() => {
+    popup.style.transform = 'translateX(0)';
+  }, 50);
+
+  // 4秒後に自動で非表示
+  setTimeout(() => {
+    if (popup.parentElement) {
+      popup.style.transform = 'translateX(400px)';
+      setTimeout(() => {
+        if (popup.parentElement) {
+          document.body.removeChild(popup);
+        }
+      }, 300);
+    }
+  }, 4000);
+
+  // クリックで閉じる
+  popup.onclick = (e) => {
+    if (e.target.tagName !== 'DIV') return;
+    popup.style.transform = 'translateX(400px)';
+    setTimeout(() => {
+      if (popup.parentElement) {
+        document.body.removeChild(popup);
+      }
+    }, 300);
+  };
 }
 
 // 共有リンクモーダル表示（クリップボードAPIが使えない場合）
@@ -2466,10 +2538,10 @@ function showShareLinkModal(shareUrl) {
       <p style="margin: 0 0 16px 0; color: #666;">以下のリンクをコピーして共有してください：</p>
       <input type="text" value="${shareUrl}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 16px;" readonly onclick="this.select()">
       <div style="display: flex; gap: 12px;">
-        <button onclick="navigator.clipboard.writeText('${shareUrl}').then(() => { alert('コピーしました！'); document.body.removeChild(this.closest('.modal')); })" style="flex: 1; padding: 12px; background: #007AFF; color: white; border: none; border-radius: 8px; cursor: pointer;">
+        <button onclick="copyFromModal('${shareUrl}', this)" style="flex: 1; padding: 12px; background: #007AFF; color: white; border: none; border-radius: 8px; cursor: pointer;">
           📋 コピー
         </button>
-        <button onclick="document.body.removeChild(this.closest('.modal'))" style="flex: 1; padding: 12px; background: #8E8E93; color: white; border: none; border-radius: 8px; cursor: pointer;">
+        <button onclick="document.body.removeChild(this.closest('div[style*=\"fixed\"]'))" style="flex: 1; padding: 12px; background: #8E8E93; color: white; border: none; border-radius: 8px; cursor: pointer;">
           閉じる
         </button>
       </div>
@@ -2481,6 +2553,37 @@ function showShareLinkModal(shareUrl) {
   };
 
   document.body.appendChild(modal);
+}
+
+// モーダルからのコピー処理
+function copyFromModal(shareUrl, buttonElement) {
+  navigator.clipboard.writeText(shareUrl).then(() => {
+    // ボタンテキストを一時的に変更
+    const originalText = buttonElement.textContent;
+    buttonElement.textContent = '✅ コピー済み';
+    buttonElement.style.background = '#34C759';
+
+    setTimeout(() => {
+      // モーダルを閉じる
+      const modal = buttonElement.closest('div[style*="fixed"]');
+      if (modal) {
+        document.body.removeChild(modal);
+      }
+
+      // 成功ポップアップを表示
+      showCopySuccessPopup(shareUrl);
+    }, 800);
+  }).catch(() => {
+    // フォールバック: テキストを選択状態にする
+    const input = buttonElement.closest('div').previousElementSibling;
+    input.select();
+    input.setSelectionRange(0, 99999);
+
+    buttonElement.textContent = '⚠️ 手動でコピー';
+    setTimeout(() => {
+      buttonElement.textContent = '📋 コピー';
+    }, 2000);
+  });
 }
 
 // 共有ステータス表示を更新
