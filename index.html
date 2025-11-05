@@ -640,7 +640,9 @@
                             <label>在庫数</label>
                             <input type="number" id="prizeCount" min="1" value="1">
                         </div>
-                        <button class="btn btn-success" onclick="addPrize()">景品を追加</button>
+                        <button class="btn btn-success" id="addPrizeBtn" onclick="addPrize()">景品を追加</button>
+                        <button class="btn btn-success" id="updatePrizeBtn" onclick="updatePrize()" style="display: none;">景品を更新</button>
+                        <button class="btn btn-danger" id="cancelEditBtn" onclick="cancelEdit()" style="display: none; margin-top: 8px;">キャンセル</button>
                     </div>
                 </div>
 
@@ -841,6 +843,7 @@
         // グローバル変数
         let prizes = [];
         let history = [];
+        let editingPrizeId = null; // 編集中の景品ID
 
         // ローカルストレージのキー
         const STORAGE_KEY = 'oripa_simulator_v2';
@@ -900,6 +903,12 @@
 
         // 景品追加
         function addPrize() {
+            // 編集モード中は追加しない
+            if (editingPrizeId) {
+                alert('編集モード中です。先に「キャンセル」または「景品を更新」を実行してください。');
+                return;
+            }
+
             const name = document.getElementById('prizeName').value.trim();
             const rank = parseInt(document.getElementById('prizeRank').value);
             const purchasePrice = parseFormattedNumber(document.getElementById('prizePurchasePrice').value);
@@ -939,6 +948,81 @@
             saveData();
         }
 
+        // 景品編集
+        function editPrize(id) {
+            const prize = prizes.find(p => p.id === id);
+            if (!prize) return;
+
+            // フォームに値を設定
+            document.getElementById('prizeName').value = prize.name;
+            document.getElementById('prizeRank').value = prize.rank;
+            document.getElementById('prizePurchasePrice').value = prize.purchasePrice.toLocaleString();
+            document.getElementById('prizeValue').value = prize.value.toLocaleString();
+            document.getElementById('prizeCount').value = prize.count;
+
+            // 編集モードを有効化
+            editingPrizeId = id;
+
+            // ボタンの表示を切り替え
+            document.getElementById('addPrizeBtn').style.display = 'none';
+            document.getElementById('updatePrizeBtn').style.display = 'inline-block';
+            document.getElementById('cancelEditBtn').style.display = 'inline-block';
+
+            // フォームまでスクロール
+            document.getElementById('prizeName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // 景品更新
+        function updatePrize() {
+            if (!editingPrizeId) return;
+
+            const name = document.getElementById('prizeName').value.trim();
+            const rank = parseInt(document.getElementById('prizeRank').value);
+            const purchasePrice = parseFormattedNumber(document.getElementById('prizePurchasePrice').value);
+            const value = parseFormattedNumber(document.getElementById('prizeValue').value);
+            const count = parseInt(document.getElementById('prizeCount').value) || 0;
+
+            if (!name || purchasePrice <= 0 || value <= 0 || count <= 0) {
+                alert('すべての項目を正しく入力してください');
+                return;
+            }
+
+            // 景品を更新
+            const prizeIndex = prizes.findIndex(p => p.id === editingPrizeId);
+            if (prizeIndex !== -1) {
+                prizes[prizeIndex] = {
+                    id: editingPrizeId,
+                    name: name,
+                    rank: rank,
+                    purchasePrice: purchasePrice,
+                    value: value,
+                    count: count
+                };
+            }
+
+            // 編集モードを解除
+            cancelEdit();
+
+            updatePrizeList();
+            saveData();
+        }
+
+        // 編集キャンセル
+        function cancelEdit() {
+            editingPrizeId = null;
+
+            // フォームをリセット
+            document.getElementById('prizeName').value = '';
+            document.getElementById('prizePurchasePrice').value = '';
+            document.getElementById('prizeValue').value = '';
+            document.getElementById('prizeCount').value = '1';
+
+            // ボタンの表示を元に戻す
+            document.getElementById('addPrizeBtn').style.display = 'inline-block';
+            document.getElementById('updatePrizeBtn').style.display = 'none';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+        }
+
         // 景品リスト更新
         function updatePrizeList() {
             const container = document.getElementById('prizeList');
@@ -959,7 +1043,10 @@
                         <div class="prize-purchase">仕入¥${prize.purchasePrice.toLocaleString()}</div>
                         <div class="prize-value">還元¥${prize.value.toLocaleString()}</div>
                         <div class="prize-count">${prize.count}枚</div>
-                        <button class="btn btn-danger" onclick="removePrize(${prize.id})">削除</button>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-primary" onclick="editPrize(${prize.id})">編集</button>
+                            <button class="btn btn-danger" onclick="removePrize(${prize.id})">削除</button>
+                        </div>
                     </div>
                 </div>
             `).join('');
