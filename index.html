@@ -442,44 +442,6 @@
             font-size: 11px;
         }
 
-        .history-panel {
-            background: rgba(175, 82, 222, 0.08);
-            border: 1px solid rgba(175, 82, 222, 0.2);
-        }
-
-        .history-panel h2 {
-            border-bottom-color: var(--sf-purple);
-        }
-
-        .history-list {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .history-item {
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            background: rgba(255, 255, 255, 0.6);
-            cursor: pointer;
-            transition: all 0.3s var(--transition);
-        }
-
-        .history-item:hover {
-            background: rgba(175, 82, 222, 0.1);
-            transform: translateX(4px);
-        }
-
-        .history-name {
-            font-weight: 500;
-            color: var(--sf-black);
-        }
-
-        .history-meta {
-            font-size: 12px;
-            color: var(--sf-gray);
-        }
-
         .warning {
             background: rgba(255, 59, 48, 0.1);
             color: var(--sf-red);
@@ -503,47 +465,6 @@
                 grid-template-columns: 1fr;
             }
         }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-        }
-
-        .modal.show {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: var(--sf-white);
-            padding: 32px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-heavy);
-            max-width: 500px;
-            width: 90%;
-        }
-
-        .modal h3 {
-            margin: 0 0 20px 0;
-            color: var(--sf-black);
-        }
-
-        .close-btn {
-            background: var(--sf-gray-4);
-            color: var(--sf-black);
-        }
-
-        .close-btn:hover {
-            background: var(--sf-gray-3);
-        }
     </style>
 </head>
 <body>
@@ -564,10 +485,6 @@
                         <input type="number" id="totalPacks" value="100">
                     </div>
                     <div class="form-group">
-                        <label>総還元率 (%)</label>
-                        <input type="number" id="totalReturnRate" value="98" min="0" step="0.1">
-                    </div>
-                    <div class="form-group">
                         <label>オリパ提供価値</label>
                         <div class="calculated-value" id="totalValue">¥0</div>
                     </div>
@@ -580,27 +497,8 @@
                 <div class="panel">
                     <h2>ハズレ設計</h2>
                     <div class="form-group">
-                        <label>ガチャ難易度</label>
-                        <select id="gachaDifficulty" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
-                            <option value="easy">😊 比較的当たりやすい</option>
-                            <option value="normal" selected>😐 普通</option>
-                            <option value="hard">😤 当たりにくい</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>ハズレの種類数</label>
-                        <select id="lossTypeCount" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
-                            <option value="2">2種類</option>
-                            <option value="3">3種類</option>
-                            <option value="4">4種類</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>最低保証価値 (円)</label>
+                        <label>ハズレ価値 (円)</label>
                         <input type="number" id="minGuaranteeValue" value="1" min="1" step="1">
-                    </div>
-                    <div class="difficulty-info" id="difficultyInfo" style="background: rgba(0, 122, 255, 0.1); padding: 12px; border-radius: 8px; font-size: 13px; margin-top: 12px;">
-                        <!-- 難易度説明がここに表示されます -->
                     </div>
                 </div>
 
@@ -644,27 +542,6 @@
                         <button class="btn btn-success" id="updatePrizeBtn" onclick="updatePrize()" style="display: none;">景品を更新</button>
                         <button class="btn btn-danger" id="cancelEditBtn" onclick="cancelEdit()" style="display: none; margin-top: 8px;">キャンセル</button>
                     </div>
-                </div>
-
-                <!-- 履歴管理 -->
-                <div class="panel history-panel">
-                    <h2>シミュレーション履歴</h2>
-                    <div class="form-group">
-                        <input type="text" id="historyName" placeholder="設定名を入力 (例: 新商品A案)">
-                        <button class="btn btn-primary" onclick="saveToHistory()" style="width: 100%; margin-top: 8px;">現在の設定を保存</button>
-                    </div>
-                    <div class="history-list" id="historyList">
-                        <!-- 履歴がここに表示されます -->
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px;">
-                        <button class="btn btn-success" onclick="exportSettings()" style="padding: 8px 12px; font-size: 12px;">
-                            💾 設定をエクスポート
-                        </button>
-                        <button class="btn btn-primary" onclick="importSettings()" style="padding: 8px 12px; font-size: 12px;">
-                            📂 設定をインポート
-                        </button>
-                    </div>
-                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(event)">
                 </div>
 
                 <!-- クラウド設定管理 -->
@@ -825,24 +702,9 @@
         <div id="warnings"></div>
     </div>
 
-    <!-- モーダル -->
-    <div class="modal" id="historyModal">
-        <div class="modal-content">
-            <h3>設定名を入力</h3>
-            <div class="form-group">
-                <input type="text" id="modalHistoryName" placeholder="設定名を入力してください">
-            </div>
-            <div style="display: flex; gap: 12px; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="confirmSaveHistory()">保存</button>
-                <button class="btn close-btn" onclick="closeModal()">キャンセル</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         // グローバル変数
         let prizes = [];
-        let history = [];
         let editingPrizeId = null; // 編集中の景品ID
 
         // ローカルストレージのキー
@@ -873,7 +735,6 @@
             // エラー状態をリセット（入力中はエラー表示しない）
             document.getElementById('packPrice').classList.remove('error');
             document.getElementById('totalPacks').classList.remove('error');
-            document.getElementById('totalReturnRate').classList.remove('error');
         }
 
         // ポイント還元価値のフォーマット
@@ -1088,13 +949,11 @@
         function calculate() {
             const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
             const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
-            const totalReturnRatePercent = parseFloat(document.getElementById('totalReturnRate').value) || 0;
-            const totalReturnRate = totalReturnRatePercent / 100;
-            const lossTypeCount = parseInt(document.getElementById('lossTypeCount').value) || 2;
+            const lossTypeCount = 1; // ハズレは1種類に固定
             const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
-            const difficulty = document.getElementById('gachaDifficulty').value;
+            const difficulty = 'hard'; // 固定値
 
-            if (packPrice <= 0 || totalPacks <= 0 || totalReturnRate <= 0) {
+            if (packPrice <= 0 || totalPacks <= 0) {
                 return;
             }
 
@@ -1103,18 +962,11 @@
                 return;
             }
 
-            // 難易度設定を取得
+            // 難易度設定を取得（固定でhard）
             const difficultySettings = getDifficultySettings(difficulty);
-            
-            // 難易度情報を表示
-            document.getElementById('difficultyInfo').innerHTML = `
-                <strong>${difficultySettings.name}</strong><br>
-                ${difficultySettings.description}
-            `;
 
             // 基本計算
             const totalValue = packPrice * totalPacks;
-            const targetReturnValue = totalValue * totalReturnRate;
 
             // オリパ提供価値表示
             document.getElementById('totalValue').textContent = `¥${totalValue.toLocaleString()}`;
@@ -1129,82 +981,25 @@
             // 実質還元率計算（仕入れ価格ベース）
             const realReturnRate = totalValue > 0 ? (prizesTotalPurchasePrice / totalValue) * 100 : 0;
 
-            // ハズレ計算（難易度に応じた配分）
+            // ハズレ計算（最低保証額をベースに段階的に設定）
             const lossCount = totalPacks - prizesTotalCount;
-            const lossValue = targetReturnValue - prizesTotalValue;
-
             const lossTypes = [];
 
             if (lossCount > 0) {
-                if (lossValue <= 0) {
-                    // lossValueが0以下の場合、段階的な価値でハズレを生成
-                    console.log('lossValueが0以下のため、段階的価値でハズレを生成');
-
-                    // 難易度に応じた配分比率を使用
-                    const distribution = difficultySettings.lossDistribution;
-
-                    // 各ハズレタイプの枚数を計算
-                    const lossCounts = [];
-                    let allocated = 0;
-
-                    for (let i = 0; i < lossTypeCount; i++) {
-                        const ratio = distribution[i] || distribution[distribution.length - 1];
-                        const count = Math.floor(lossCount * ratio);
-                        lossCounts.push(count);
-                        allocated += count;
-                    }
-
-                    let remaining = lossCount - allocated;
-                    let index = 0;
-                    while (remaining > 0) {
-                        lossCounts[index % lossTypeCount]++;
-                        remaining--;
-                        index++;
-                    }
-
-                    // 最低保証価値（ユーザー入力値をそのまま使用）
-                    const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
-
-                    // 各ハズレタイプに異なる価値を設定（最低保証より高く）
-                    for (let i = 0; i < lossTypeCount; i++) {
-                        const count = lossCounts[i];
-                        if (count > 0) {
-                            let value;
-                            if (i === lossTypeCount - 1) {
-                                // 最後のタイプは最低保証価値
-                                value = adjustedMinValue;
-                            } else {
-                                // 他のタイプは最低保証より高く、段階的に設定
-                                value = adjustedMinValue + (lossTypeCount - 1 - i);
-                            }
-
-                            lossTypes.push({
-                                name: i === lossTypeCount - 1 ?
-                                    `ハズレ${String.fromCharCode(65 + i)}（最低保証）` :
-                                    `ハズレ${String.fromCharCode(65 + i)}`,
-                                value: value,
-                                count: count,
-                                type: i === lossTypeCount - 1 ? 'min' : 'normal'
-                            });
-                        }
-                    }
-                } else {
-                // 難易度に応じた配分比率を使用
+                // 難易度に応じた配分比率を使用（hardで固定）
                 const distribution = difficultySettings.lossDistribution;
-                
+
                 // 各ハズレタイプの枚数を計算
                 const lossCounts = [];
                 let allocated = 0;
-                
-                // 各タイプの基本配分を計算
+
                 for (let i = 0; i < lossTypeCount; i++) {
                     const ratio = distribution[i] || distribution[distribution.length - 1];
                     const count = Math.floor(lossCount * ratio);
                     lossCounts.push(count);
                     allocated += count;
                 }
-                
-                // 残り枚数を均等に配分
+
                 let remaining = lossCount - allocated;
                 let index = 0;
                 while (remaining > 0) {
@@ -1216,93 +1011,29 @@
                 // 最低保証価値（ユーザー入力値をそのまま使用）
                 const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
 
-                // 最低保証の総価値
-                const minTotalValue = adjustedMinValue * lossCounts[lossTypeCount - 1];
-
-                // 残りの価値を他のハズレに配分
-                const remainingValue = lossValue - minTotalValue;
-                const remainingTypes = lossTypeCount - 1;
-
-                // 高精度計算: 目標還元率に正確に合わせるための価値計算
-                const lossValues = [];
-                let actualTotalValue = 0;
-
-                for (let i = 0; i < remainingTypes; i++) {
+                // 各ハズレタイプに異なる価値を設定（最低保証をベースに段階的）
+                for (let i = 0; i < lossTypeCount; i++) {
                     const count = lossCounts[i];
                     if (count > 0) {
-                        // 難易度に応じた価値配分
-                        let valueRatio;
-                        if (difficulty === 'easy') {
-                            valueRatio = (remainingTypes - i + 2) / (remainingTypes + 2);
-                        } else if (difficulty === 'hard') {
-                            valueRatio = Math.pow((remainingTypes - i) / remainingTypes, 2);
+                        let value;
+                        if (i === lossTypeCount - 1) {
+                            // 最後のタイプは最低保証価値
+                            value = adjustedMinValue;
                         } else {
-                            valueRatio = (remainingTypes - i) / remainingTypes;
+                            // 他のタイプは最低保証より高く、段階的に設定
+                            // hardモードでは低めの配分
+                            value = adjustedMinValue + (lossTypeCount - 1 - i);
                         }
 
-                        let value = remainingValue * valueRatio / count;
-
-                        // 制約の適用
-                        const maxValue = packPrice * difficultySettings.maxValueCap;
-                        value = Math.min(value, maxValue);
-                        value = Math.max(adjustedMinValue + 1, value);
-
-                        // 1円単位で丸める（より精密）
-                        value = Math.round(value);
-
-                        lossValues.push({
-                            index: i,
+                        lossTypes.push({
+                            name: i === lossTypeCount - 1 ?
+                                `ハズレ${String.fromCharCode(65 + i)}（最低保証）` :
+                                `ハズレ${String.fromCharCode(65 + i)}`,
                             value: value,
                             count: count,
-                            totalValue: value * count
+                            type: i === lossTypeCount - 1 ? 'min' : 'normal'
                         });
-
-                        actualTotalValue += value * count;
                     }
-                }
-
-                // 目標値との差を最後のハズレタイプで調整
-                const difference = remainingValue - actualTotalValue;
-                if (Math.abs(difference) > 0.01 && lossValues.length > 0) {
-                    const lastLoss = lossValues[lossValues.length - 1];
-                    const adjustment = Math.round(difference / lastLoss.count);
-
-                    const newValue = lastLoss.value + adjustment;
-                    if (newValue >= adjustedMinValue + 1) {
-                        lastLoss.value = newValue;
-                        lastLoss.totalValue = newValue * lastLoss.count;
-                    }
-                }
-
-                // 価格重複回避（最小限の調整）
-                lossValues.sort((a, b) => b.value - a.value);
-                for (let i = 1; i < lossValues.length; i++) {
-                    if (lossValues[i].value >= lossValues[i-1].value) {
-                        const minValue = Math.max(adjustedMinValue + 1, lossValues[i-1].value - 1);
-                        if (lossValues[i].value > minValue) {
-                            lossValues[i].value = minValue;
-                            lossValues[i].totalValue = minValue * lossValues[i].count;
-                        }
-                    }
-                }
-
-                // ハズレタイプを追加
-                lossValues.forEach(loss => {
-                    lossTypes.push({
-                        name: `ハズレ${String.fromCharCode(65 + loss.index)}`,
-                        value: loss.value,
-                        count: loss.count,
-                        type: 'normal'
-                    });
-                });
-
-                // 最低保証を追加
-                lossTypes.push({
-                    name: `ハズレ${String.fromCharCode(65 + remainingTypes)}（最低保証）`,
-                    value: adjustedMinValue,
-                    count: lossCounts[lossTypeCount - 1],
-                    type: 'min'
-                });
                 }
             }
 
@@ -1327,8 +1058,13 @@
                 const probability = loss.count / totalPacks;
                 variance += Math.pow(loss.value - expectedValue, 2) * probability;
             });
-            
+
             const stdDev = Math.sqrt(variance);
+
+            // 総還元率を計算（景品 + ハズレの合計から算出）
+            const lossTotalValue = lossTypes.reduce((sum, loss) => sum + (loss.value * loss.count), 0);
+            const actualTotalReturnValue = prizesTotalValue + lossTotalValue;
+            const totalReturnRatePercent = totalValue > 0 ? (actualTotalReturnValue / totalValue) * 100 : 0;
 
             // 結果表示更新
             updateResults({
@@ -1491,13 +1227,9 @@
         function validateSettings() {
             const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
             const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
-            const totalReturnRatePercent = parseFloat(document.getElementById('totalReturnRate').value) || 0;
-            const targetReturnValue = packPrice * totalPacks * (totalReturnRatePercent / 100);
-            const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
             const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
 
             // エラー状態をリセット
-            document.getElementById('totalReturnRate').classList.remove('error');
             document.getElementById('totalPacks').classList.remove('error');
 
             let hasError = false;
@@ -1508,14 +1240,6 @@
                 document.getElementById('totalPacks').classList.add('error');
                 hasError = true;
                 errorMessages.push(`景品の総枚数（${prizesTotalCount}枚）が総口数（${totalPacks}口）を超えています。`);
-            }
-
-            // 景品価値が目標還元価値を超えているかチェック
-            if (prizesTotalValue > targetReturnValue) {
-                document.getElementById('totalReturnRate').classList.add('error');
-                hasError = true;
-                const requiredReturnRate = Math.ceil((prizesTotalValue / (packPrice * totalPacks)) * 100);
-                errorMessages.push(`景品の還元価値合計（¥${prizesTotalValue.toLocaleString()}）が目標還元価値（¥${targetReturnValue.toLocaleString()}）を超えています。総還元率を${requiredReturnRate}%以上に設定するか、景品価値を調整してください。`);
             }
 
             if (hasError) {
@@ -1537,119 +1261,21 @@
             const warningsContainer = document.getElementById('warnings');
             const warnings = [];
 
-            // 実際の総還元率と設定還元率の軽微な乖離を警告
-            const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
-            const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
-            const totalReturnRatePercent = parseFloat(document.getElementById('totalReturnRate').value) || 0;
-            const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
-            const lossTotalValue = data.lossTypes ? data.lossTypes.reduce((sum, loss) => sum + (loss.value * loss.count), 0) : 0;
-            const actualTotalReturnValue = prizesTotalValue + lossTotalValue;
-            const actualReturnRate = (actualTotalReturnValue / (packPrice * totalPacks)) * 100;
-            const returnRateDiff = Math.abs(actualReturnRate - totalReturnRatePercent);
-
-            // エラーレベルでない軽微な乖離のみ警告表示（より厳密な閾値）
-            if (returnRateDiff > 0.1 && returnRateDiff <= 5) {
-                const severity = returnRateDiff <= 0.5 ? 'ℹ️' : '⚠️';
-                const label = returnRateDiff <= 0.5 ? '軽微な乖離' : '乖離';
-                warnings.push(`
-                    <div class="warning">
-                        ${severity} <strong>還元率に${label}があります</strong><br>
-                        設定還元率: ${totalReturnRatePercent}% / 実際の還元率: ${actualReturnRate.toFixed(2)}%<br>
-                        差: ${returnRateDiff.toFixed(2)}%
-                    </div>
-                `);
-            }
+            // 必要に応じて警告を追加できます
 
             warningsContainer.innerHTML = warnings.join('');
         }
 
 
 
-        // 履歴保存
-        function saveToHistory() {
-            const name = document.getElementById('historyName').value.trim();
-            
-            if (!name) {
-                alert('設定名を入力してください');
-                return;
-            }
-
-            const settings = {
-                id: Date.now(),
-                name: name,
-                date: new Date().toLocaleString('ja-JP'),
-                packPrice: document.getElementById('packPrice').value,
-                totalPacks: document.getElementById('totalPacks').value,
-                totalReturnRate: document.getElementById('totalReturnRate').value,
-                lossTypeCount: document.getElementById('lossTypeCount').value,
-                minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
-                gachaDifficulty: document.getElementById('gachaDifficulty').value,
-                prizes: [...prizes]
-            };
-
-            history.unshift(settings);
-            document.getElementById('historyName').value = '';
-            
-            updateHistoryList();
-            saveData();
-        }
-
-        // 履歴から読み込み
-        function loadFromHistory(id) {
-            const settings = history.find(h => h.id === id);
-            if (!settings) return;
-
-            document.getElementById('packPrice').value = settings.packPrice;
-            document.getElementById('totalPacks').value = settings.totalPacks;
-            document.getElementById('totalReturnRate').value = settings.totalReturnRate;
-            if (settings.lossTypeCount) document.getElementById('lossTypeCount').value = settings.lossTypeCount;
-            if (settings.minGuaranteeValue) document.getElementById('minGuaranteeValue').value = settings.minGuaranteeValue;
-            if (settings.gachaDifficulty) document.getElementById('gachaDifficulty').value = settings.gachaDifficulty;
-            prizes = [...settings.prizes];
-
-            updatePrizeList();
-            updateTotalValue();
-        }
-
-        // 履歴削除
-        function removeFromHistory(id) {
-            if (confirm('この履歴を削除しますか？')) {
-                history = history.filter(h => h.id !== id);
-                updateHistoryList();
-                saveData();
-            }
-        }
-
-        // 履歴リスト更新
-        function updateHistoryList() {
-            const container = document.getElementById('historyList');
-            
-            if (history.length === 0) {
-                container.innerHTML = '<p style="color: var(--sf-gray); text-align: center; padding: 20px 0;">保存済みの設定はありません</p>';
-                return;
-            }
-
-            container.innerHTML = history.map(item => `
-                <div class="history-item" onclick="loadFromHistory(${item.id})">
-                    <div class="history-name">${item.name}</div>
-                    <div class="history-meta">${item.date}</div>
-                    <button class="btn btn-danger" onclick="event.stopPropagation(); removeFromHistory(${item.id})" style="float: right; margin-top: -30px;">削除</button>
-                </div>
-            `).join('');
-        }
-
-        // データ保存
+        // データ保存（景品のみ）
         function saveData() {
             const data = {
                 prizes: prizes,
-                history: history,
                 settings: {
                     packPrice: document.getElementById('packPrice').value,
                     totalPacks: document.getElementById('totalPacks').value,
-                    totalReturnRate: document.getElementById('totalReturnRate').value,
-                    lossTypeCount: document.getElementById('lossTypeCount').value,
-                    minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
-                    gachaDifficulty: document.getElementById('gachaDifficulty').value
+                    minGuaranteeValue: document.getElementById('minGuaranteeValue').value
                 }
             };
 
@@ -1660,174 +1286,28 @@
             }
         }
 
-        // データ読み込み
+        // データ読み込み（景品のみ）
         function loadData() {
             try {
                 const savedData = localStorage.getItem(STORAGE_KEY);
                 if (savedData) {
                     const data = JSON.parse(savedData);
-                    
+
                     if (data.prizes) {
                         prizes = data.prizes;
                         updatePrizeList();
-                    }
-                    
-                    if (data.history) {
-                        history = data.history;
-                        updateHistoryList();
                     }
 
                     if (data.settings) {
                         document.getElementById('packPrice').value = data.settings.packPrice || '40000';
                         document.getElementById('totalPacks').value = data.settings.totalPacks || '100';
-                        document.getElementById('totalReturnRate').value = data.settings.totalReturnRate || 98;
-                        document.getElementById('lossTypeCount').value = data.settings.lossTypeCount || 2;
-                        document.getElementById('minGuaranteeValue').value = data.settings.minGuaranteeValue || '1000';
-                        document.getElementById('gachaDifficulty').value = data.settings.gachaDifficulty || 'normal';
+                        document.getElementById('minGuaranteeValue').value = data.settings.minGuaranteeValue || '1';
                     }
                 }
             } catch (e) {
                 console.error('データの読み込みに失敗しました:', e);
             }
         }
-
-        // モーダル関連
-        function showModal() {
-            document.getElementById('historyModal').classList.add('show');
-        }
-
-        function closeModal() {
-            document.getElementById('historyModal').classList.remove('show');
-        }
-
-        function confirmSaveHistory() {
-            const name = document.getElementById('modalHistoryName').value.trim();
-            if (name) {
-                document.getElementById('historyName').value = name;
-                saveToHistory();
-                closeModal();
-                document.getElementById('modalHistoryName').value = '';
-            }
-        }
-
-        // 設定エクスポート
-        function exportSettings() {
-            const exportData = {
-                version: '2.0',
-                exportDate: new Date().toISOString(),
-                currentSettings: {
-                    packPrice: document.getElementById('packPrice').value,
-                    totalPacks: document.getElementById('totalPacks').value,
-                    totalReturnRate: document.getElementById('totalReturnRate').value,
-                    lossTypeCount: document.getElementById('lossTypeCount').value,
-                    minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
-                    gachaDifficulty: document.getElementById('gachaDifficulty').value,
-                    prizes: [...prizes]
-                },
-                history: [...history]
-            };
-
-            const dataStr = JSON.stringify(exportData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            const now = new Date();
-            const dateTime = now.toISOString().slice(0, 19).replace(/:/g, '-');
-            link.download = `oripa-settings-${dateTime}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            alert('設定をエクスポートしました！\nダウンロードしたJSONファイルを他のブラウザでインポートできます。');
-        }
-
-        // 設定インポート
-        function importSettings() {
-            document.getElementById('importFile').click();
-        }
-
-        // ファイルインポート処理
-        function handleFileImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (file.type !== 'application/json') {
-                alert('JSONファイルを選択してください');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importData = JSON.parse(e.target.result);
-                    
-                    // バージョンチェック
-                    if (!importData.version) {
-                        alert('古いバージョンの設定ファイルです。インポートできません。');
-                        return;
-                    }
-
-                    // 確認ダイアログ
-                    const confirmMessage = `設定をインポートしますか？\n\n` +
-                        `- エクスポート日時: ${new Date(importData.exportDate).toLocaleString('ja-JP')}\n` +
-                        `- 履歴件数: ${importData.history ? importData.history.length : 0}件\n` +
-                        `- 景品数: ${importData.currentSettings.prizes ? importData.currentSettings.prizes.length : 0}個\n\n` +
-                        `※ 現在の設定と履歴は上書きされます`;
-
-                    if (!confirm(confirmMessage)) {
-                        return;
-                    }
-
-                    // 現在の設定を復元
-                    if (importData.currentSettings) {
-                        const settings = importData.currentSettings;
-                        document.getElementById('packPrice').value = settings.packPrice || '40000';
-                        document.getElementById('totalPacks').value = settings.totalPacks || '100';
-                        document.getElementById('totalReturnRate').value = settings.totalReturnRate || 98;
-                        if (settings.lossTypeCount) document.getElementById('lossTypeCount').value = settings.lossTypeCount;
-                        if (settings.minGuaranteeValue) document.getElementById('minGuaranteeValue').value = settings.minGuaranteeValue;
-                        if (settings.gachaDifficulty) document.getElementById('gachaDifficulty').value = settings.gachaDifficulty;
-                        
-                        // 景品データを復元
-                        if (settings.prizes) {
-                            prizes = [...settings.prizes];
-                            updatePrizeList();
-                        }
-                    }
-
-                    // 履歴を復元
-                    if (importData.history) {
-                        history = [...importData.history];
-                        updateHistoryList();
-                    }
-
-                    // データを保存
-                    saveData();
-
-                    // オリパ提供価値のみ更新
-                    updateTotalValue();
-
-                    alert('設定を正常にインポートしました！');
-
-                } catch (error) {
-                    console.error('インポートエラー:', error);
-                    alert('設定ファイルの読み込みに失敗しました。\nファイルが破損している可能性があります。');
-                }
-            };
-
-            reader.readAsText(file);
-            
-            // ファイル選択をリセット
-            event.target.value = '';
-        }
-
-        // キーボードイベント
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModal();
-            }
-        });
 
         // ガチャ体験機能
         let gachaDrawHistory = [];
@@ -1850,231 +1330,78 @@
             // 現在の設定でハズレを計算
             const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
             const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
-            const totalReturnRatePercent = parseFloat(document.getElementById('totalReturnRate').value) || 95.0;
 
             if (packPrice > 0 && totalPacks > 0) {
                 const totalValue = packPrice * totalPacks;
-                const targetReturnValue = totalValue * (totalReturnRatePercent / 100);
 
-                // 難易度設定を取得
-                const difficulty = document.getElementById('gachaDifficulty').value;
+                // 難易度設定を取得（hardで固定）
+                const difficulty = 'hard';
                 const difficultySettings = getDifficultySettings(difficulty);
-                const lossTypeCount = parseInt(document.getElementById('lossTypeCount').value) || 2;
+                const lossTypeCount = 1; // ハズレは1種類に固定
                 const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
-                
+
                 const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
                 const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
 
                 const lossCount = totalPacks - prizesTotalCount;
-                const lossValue = targetReturnValue - prizesTotalValue;
-                
+
                 console.log('ガチャプール生成デバッグ:', {
                     totalPacks: totalPacks,
                     prizesTotalCount: prizesTotalCount,
-                    lossCount,
-                    targetReturnValue: targetReturnValue,
-                    prizesTotalValue,
-                    lossValue
+                    lossCount
                 });
-                
+
                 if (lossCount > 0) {
                     // メイン計算と同じロジックでハズレタイプを生成
                     const lossTypes = [];
 
-                    if (lossValue <= 0) {
-                        // lossValueが0以下の場合、段階的な価値でハズレを生成
-                        console.log('lossValueが0以下のため、段階的価値でハズレを生成');
+                    // 難易度に応じた配分比率を使用（hardで固定）
+                    const distribution = difficultySettings.lossDistribution;
 
-                        // 難易度に応じた配分比率を使用
-                        const distribution = difficultySettings.lossDistribution;
+                    // 各ハズレタイプの枚数を計算
+                    const lossCounts = [];
+                    let allocated = 0;
 
-                        // 各ハズレタイプの枚数を計算
-                        const lossCounts = [];
-                        let allocated = 0;
+                    for (let i = 0; i < lossTypeCount; i++) {
+                        const ratio = distribution[i] || distribution[distribution.length - 1];
+                        const count = Math.floor(lossCount * ratio);
+                        lossCounts.push(count);
+                        allocated += count;
+                    }
 
-                        for (let i = 0; i < lossTypeCount; i++) {
-                            const ratio = distribution[i] || distribution[distribution.length - 1];
-                            const count = Math.floor(lossCount * ratio);
-                            lossCounts.push(count);
-                            allocated += count;
-                        }
+                    let remaining = lossCount - allocated;
+                    let index = 0;
+                    while (remaining > 0) {
+                        lossCounts[index % lossTypeCount]++;
+                        remaining--;
+                        index++;
+                    }
 
-                        let remaining = lossCount - allocated;
-                        let index = 0;
-                        while (remaining > 0) {
-                            lossCounts[index % lossTypeCount]++;
-                            remaining--;
-                            index++;
-                        }
+                    // 最低保証価値（ユーザー入力値をそのまま使用）
+                    const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
 
-                        // 最低保証価値（ユーザー入力値をそのまま使用）
-                        const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
-
-                        // 各ハズレタイプに異なる価値を設定（最低保証より高く）
-                        for (let i = 0; i < lossTypeCount; i++) {
-                            const count = lossCounts[i];
-                            if (count > 0) {
-                                let value;
-                                if (i === lossTypeCount - 1) {
-                                    // 最後のタイプは最低保証価値
-                                    value = adjustedMinValue;
-                                } else {
-                                    // 他のタイプは最低保証より高く、段階的に設定
-                                    value = adjustedMinValue + (lossTypeCount - 1 - i);
-                                }
-
-                                lossTypes.push({
-                                    name: i === lossTypeCount - 1 ?
-                                        `ハズレ${String.fromCharCode(65 + i)}（最低保証）` :
-                                        `ハズレ${String.fromCharCode(65 + i)}`,
-                                    value: value,
-                                    count: count,
-                                    type: i === lossTypeCount - 1 ? 'min' : 'normal'
-                                });
+                    // 各ハズレタイプに異なる価値を設定（最低保証をベースに段階的）
+                    for (let i = 0; i < lossTypeCount; i++) {
+                        const count = lossCounts[i];
+                        if (count > 0) {
+                            let value;
+                            if (i === lossTypeCount - 1) {
+                                // 最後のタイプは最低保証価値
+                                value = adjustedMinValue;
+                            } else {
+                                // 他のタイプは最低保証より高く、段階的に設定
+                                value = adjustedMinValue + (lossTypeCount - 1 - i);
                             }
-                        }
-                    } else {
-                        // 正常なハズレ価値配分処理（メイン計算と同じロジック）
-                        const distribution = difficultySettings.lossDistribution;
 
-                        // 各ハズレタイプの枚数を計算
-                        const lossCounts = [];
-                        let allocated = 0;
-
-                        for (let i = 0; i < lossTypeCount; i++) {
-                            const ratio = distribution[i] || distribution[distribution.length - 1];
-                            const count = Math.floor(lossCount * ratio);
-                            lossCounts.push(count);
-                            allocated += count;
-                        }
-
-                        let remaining = lossCount - allocated;
-                        let index = 0;
-                        while (remaining > 0) {
-                            lossCounts[index % lossTypeCount]++;
-                            remaining--;
-                            index++;
-                        }
-
-                        // 最低保証価値（ユーザー入力値をそのまま使用）
-                        const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
-
-                        // 最低保証の総価値
-                        const minTotalValue = adjustedMinValue * lossCounts[lossTypeCount - 1];
-
-                        // 残りの価値を他のハズレに配分
-                        const remainingValue = lossValue - minTotalValue;
-                        const remainingTypes = lossTypeCount - 1;
-
-                        // 高精度計算: 目標還元率に正確に合わせるための価値計算
-                        console.log('高精度ハズレ価値計算開始:', { remainingValue, remainingTypes, lossCounts });
-
-                        // まず理想的な価値配分を計算（丸めなし）
-                        const idealLossValues = [];
-                        let totalIdealValue = 0;
-
-                        for (let i = 0; i < remainingTypes; i++) {
-                            const count = lossCounts[i];
-                            if (count > 0) {
-                                // 難易度に応じた価値配分
-                                let valueRatio;
-                                if (difficulty === 'easy') {
-                                    valueRatio = (remainingTypes - i + 2) / (remainingTypes + 2);
-                                } else if (difficulty === 'hard') {
-                                    valueRatio = Math.pow((remainingTypes - i) / remainingTypes, 2);
-                                } else {
-                                    valueRatio = (remainingTypes - i) / remainingTypes;
-                                }
-
-                                const idealTotalForType = remainingValue * valueRatio;
-                                const idealValuePerItem = idealTotalForType / count;
-
-                                idealLossValues.push({
-                                    index: i,
-                                    count: count,
-                                    idealValuePerItem: idealValuePerItem,
-                                    idealTotalValue: idealTotalForType
-                                });
-
-                                totalIdealValue += idealTotalForType;
-                            }
-                        }
-
-                        // 実際の価値を計算（制約を考慮）
-                        const lossValues = [];
-                        let actualTotalValue = 0;
-
-                        for (let i = 0; i < idealLossValues.length; i++) {
-                            const ideal = idealLossValues[i];
-                            let value = ideal.idealValuePerItem;
-
-                            // 制約の適用
-                            const maxValue = packPrice * difficultySettings.maxValueCap;
-                            value = Math.min(value, maxValue);
-                            value = Math.max(adjustedMinValue + 1, value);
-
-                            // 1円単位で丸める（10円単位より精密）
-                            value = Math.round(value);
-
-                            lossValues.push({
-                                index: ideal.index,
-                                value: value,
-                                count: ideal.count,
-                                totalValue: value * ideal.count
-                            });
-
-                            actualTotalValue += value * ideal.count;
-                        }
-
-                        // 目標値との差を最後のハズレタイプで調整
-                        const difference = remainingValue - actualTotalValue;
-                        if (Math.abs(difference) > 0.01 && lossValues.length > 0) {
-                            const lastLoss = lossValues[lossValues.length - 1];
-                            const adjustment = Math.round(difference / lastLoss.count);
-
-                            // 調整可能範囲内であれば適用
-                            const newValue = lastLoss.value + adjustment;
-                            if (newValue >= adjustedMinValue + 1) {
-                                console.log('精度調整:', {
-                                    difference: difference,
-                                    adjustment: adjustment,
-                                    oldValue: lastLoss.value,
-                                    newValue: newValue
-                                });
-                                lastLoss.value = newValue;
-                                lastLoss.totalValue = newValue * lastLoss.count;
-                            }
-                        }
-
-                        // 価格重複回避（最小限の調整）
-                        lossValues.sort((a, b) => b.value - a.value);
-                        for (let i = 1; i < lossValues.length; i++) {
-                            if (lossValues[i].value >= lossValues[i-1].value) {
-                                const minValue = Math.max(adjustedMinValue + 1, lossValues[i-1].value - 1);
-                                if (lossValues[i].value > minValue) {
-                                    lossValues[i].value = minValue;
-                                    lossValues[i].totalValue = minValue * lossValues[i].count;
-                                }
-                            }
-                        }
-
-                        // ハズレタイプを追加
-                        lossValues.forEach(loss => {
                             lossTypes.push({
-                                name: `ハズレ${String.fromCharCode(65 + loss.index)}`,
-                                value: loss.value,
-                                count: loss.count,
-                                type: 'normal'
+                                name: i === lossTypeCount - 1 ?
+                                    `ハズレ${String.fromCharCode(65 + i)}（最低保証）` :
+                                    `ハズレ${String.fromCharCode(65 + i)}`,
+                                value: value,
+                                count: count,
+                                type: i === lossTypeCount - 1 ? 'min' : 'normal'
                             });
-                        });
-
-                        // 最低保証を追加
-                        lossTypes.push({
-                            name: `ハズレ${String.fromCharCode(65 + remainingTypes)}（最低保証）`,
-                            value: adjustedMinValue,
-                            count: lossCounts[lossTypeCount - 1],
-                            type: 'min'
-                        });
+                        }
                     }
 
                     // ガチャプールにハズレを追加
@@ -2245,10 +1572,7 @@ function getCurrentConfig() {
   return {
     packPrice: document.getElementById('packPrice').value,
     totalPacks: document.getElementById('totalPacks').value,
-    totalReturnRate: document.getElementById('totalReturnRate').value,
-    lossTypeCount: document.getElementById('lossTypeCount').value,
     minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
-    gachaDifficulty: document.getElementById('gachaDifficulty').value,
     prizes: [...prizes]
   };
 }
@@ -2257,10 +1581,7 @@ function getCurrentConfig() {
 function loadConfig(config) {
   document.getElementById('packPrice').value = config.packPrice || '40000';
   document.getElementById('totalPacks').value = config.totalPacks || '100';
-  document.getElementById('totalReturnRate').value = config.totalReturnRate || 98;
-  document.getElementById('lossTypeCount').value = config.lossTypeCount || 2;
   document.getElementById('minGuaranteeValue').value = config.minGuaranteeValue || '1';
-  document.getElementById('gachaDifficulty').value = config.gachaDifficulty || 'normal';
 
   if (config.prizes) {
     prizes = [...config.prizes];
@@ -2333,7 +1654,14 @@ function updateCloudConfigSelectBox() {
   const selectBox = document.getElementById('cloudConfigList');
   selectBox.innerHTML = '<option value="">設定を選択してください</option>';
 
-  Object.keys(cloudConfigs).forEach(configId => {
+  // 最終保存日の新しい順にソート
+  const sortedConfigIds = Object.keys(cloudConfigs).sort((a, b) => {
+    const dateA = cloudConfigs[a].updatedAt || 0;
+    const dateB = cloudConfigs[b].updatedAt || 0;
+    return dateB - dateA; // 降順（新しい順）
+  });
+
+  sortedConfigIds.forEach(configId => {
     const config = cloudConfigs[configId];
     const date = new Date(config.updatedAt).toLocaleString('ja-JP');
     const option = document.createElement('option');
