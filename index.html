@@ -493,12 +493,39 @@
                     </button>
                 </div>
 
-                <!-- ハズレ設計 -->
+                <!-- ハズレ管理 -->
                 <div class="panel">
-                    <h2>ハズレ設計</h2>
+                    <h2>ハズレ管理</h2>
+                    <p style="color: var(--sf-gray); font-size: 13px; margin-bottom: 16px;">
+                        ハズレを手動で設定しない場合、最低保証価値で自動計算されます
+                    </p>
                     <div class="form-group">
-                        <label>ハズレ価値 (円)</label>
+                        <label>自動計算用：最低保証価値 (円)</label>
                         <input type="number" id="minGuaranteeValue" value="1" min="1" step="1">
+                    </div>
+
+                    <div class="prize-list" id="lossList" style="margin-top: 16px;">
+                        <!-- ハズレリストがここに表示されます -->
+                    </div>
+
+                    <div class="add-prize-form">
+                        <div class="form-group">
+                            <label>ハズレ名</label>
+                            <input type="text" id="lossName" placeholder="例: ハズレA">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>価値 (円)</label>
+                                <input type="number" id="lossValue" placeholder="100" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>枚数</label>
+                                <input type="number" id="lossCount" min="1" value="1">
+                            </div>
+                        </div>
+                        <button class="btn btn-success" id="addLossBtn" onclick="addLoss()">ハズレを追加</button>
+                        <button class="btn btn-success" id="updateLossBtn" onclick="updateLoss()" style="display: none;">ハズレを更新</button>
+                        <button class="btn btn-danger" id="cancelEditLossBtn" onclick="cancelEditLoss()" style="display: none; margin-top: 8px;">キャンセル</button>
                     </div>
                 </div>
 
@@ -705,7 +732,9 @@
     <script>
         // グローバル変数
         let prizes = [];
+        let losses = []; // ハズレリスト
         let editingPrizeId = null; // 編集中の景品ID
+        let editingLossId = null; // 編集中のハズレID
 
         // ローカルストレージのキー
         const STORAGE_KEY = 'oripa_simulator_v2';
@@ -887,7 +916,7 @@
         // 景品リスト更新
         function updatePrizeList() {
             const container = document.getElementById('prizeList');
-            
+
             if (prizes.length === 0) {
                 container.innerHTML = '<p style="color: var(--sf-gray); text-align: center; margin: 20px 0;">景品を追加してください</p>';
                 return;
@@ -907,6 +936,169 @@
                         <div style="display: flex; gap: 8px;">
                             <button class="btn btn-primary" onclick="editPrize(${prize.id})">編集</button>
                             <button class="btn btn-danger" onclick="removePrize(${prize.id})">削除</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ========== 矛盾エラー表示関数 ==========
+
+        function showConflictError(errorData) {
+            let message = '';
+            let suggestions = '';
+
+            if (errorData.type === 'count_overflow') {
+                message = `⚠️ 枚数が合いません\n\n` +
+                    `景品枚数：${errorData.prizesTotalCount}枚\n` +
+                    `ハズレ枚数：${errorData.manualLossTotalCount}枚\n` +
+                    `合計：${errorData.prizesTotalCount + errorData.manualLossTotalCount}枚\n\n` +
+                    `総口数：${errorData.totalPacks}口\n` +
+                    `超過枚数：${errorData.excess}枚\n\n`;
+
+                suggestions = `📋 代替案：\n\n` +
+                    `1️⃣ 総口数を${errorData.prizesTotalCount + errorData.manualLossTotalCount}口に増やす\n\n` +
+                    `2️⃣ ハズレ枚数を${errorData.excess}枚減らす\n\n` +
+                    `3️⃣ 景品枚数を${errorData.excess}枚減らす`;
+
+            } else if (errorData.type === 'count_shortage') {
+                message = `⚠️ 枚数が不足しています\n\n` +
+                    `景品枚数：${errorData.prizesTotalCount}枚\n` +
+                    `ハズレ枚数：${errorData.manualLossTotalCount}枚\n` +
+                    `合計：${errorData.prizesTotalCount + errorData.manualLossTotalCount}枚\n\n` +
+                    `総口数：${errorData.totalPacks}口\n` +
+                    `不足枚数：${errorData.shortage}枚\n\n`;
+
+                suggestions = `📋 代替案：\n\n` +
+                    `1️⃣ 総口数を${errorData.prizesTotalCount + errorData.manualLossTotalCount}口に減らす\n\n` +
+                    `2️⃣ ハズレ枚数を${errorData.shortage}枚増やす\n\n` +
+                    `3️⃣ 景品枚数を${errorData.shortage}枚増やす\n\n` +
+                    `4️⃣ ハズレをすべて削除して自動計算に切り替える`;
+            }
+
+            alert(message + suggestions);
+        }
+
+        // ========== ハズレ管理関数 ==========
+
+        // ハズレ追加
+        function addLoss() {
+            if (editingLossId) {
+                alert('編集モード中です。先に「キャンセル」または「ハズレを更新」を実行してください。');
+                return;
+            }
+
+            const name = document.getElementById('lossName').value.trim();
+            const value = parseInt(document.getElementById('lossValue').value) || 0;
+            const count = parseInt(document.getElementById('lossCount').value) || 0;
+
+            if (!name || value <= 0 || count <= 0) {
+                alert('すべての項目を正しく入力してください');
+                return;
+            }
+
+            const loss = {
+                id: Date.now(),
+                name: name,
+                value: value,
+                count: count
+            };
+
+            losses.push(loss);
+
+            // フォームリセット
+            document.getElementById('lossName').value = '';
+            document.getElementById('lossValue').value = '';
+            document.getElementById('lossCount').value = '1';
+
+            updateLossList();
+            saveData();
+        }
+
+        // ハズレ削除
+        function removeLoss(id) {
+            losses = losses.filter(l => l.id !== id);
+            updateLossList();
+            saveData();
+        }
+
+        // ハズレ編集
+        function editLoss(id) {
+            const loss = losses.find(l => l.id === id);
+            if (!loss) return;
+
+            document.getElementById('lossName').value = loss.name;
+            document.getElementById('lossValue').value = loss.value;
+            document.getElementById('lossCount').value = loss.count;
+
+            editingLossId = id;
+
+            document.getElementById('addLossBtn').style.display = 'none';
+            document.getElementById('updateLossBtn').style.display = 'inline-block';
+            document.getElementById('cancelEditLossBtn').style.display = 'inline-block';
+
+            document.getElementById('lossName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // ハズレ更新
+        function updateLoss() {
+            if (!editingLossId) return;
+
+            const name = document.getElementById('lossName').value.trim();
+            const value = parseInt(document.getElementById('lossValue').value) || 0;
+            const count = parseInt(document.getElementById('lossCount').value) || 0;
+
+            if (!name || value <= 0 || count <= 0) {
+                alert('すべての項目を正しく入力してください');
+                return;
+            }
+
+            const lossIndex = losses.findIndex(l => l.id === editingLossId);
+            if (lossIndex !== -1) {
+                losses[lossIndex] = {
+                    id: editingLossId,
+                    name: name,
+                    value: value,
+                    count: count
+                };
+            }
+
+            cancelEditLoss();
+            updateLossList();
+            saveData();
+        }
+
+        // ハズレ編集キャンセル
+        function cancelEditLoss() {
+            editingLossId = null;
+
+            document.getElementById('lossName').value = '';
+            document.getElementById('lossValue').value = '';
+            document.getElementById('lossCount').value = '1';
+
+            document.getElementById('addLossBtn').style.display = 'inline-block';
+            document.getElementById('updateLossBtn').style.display = 'none';
+            document.getElementById('cancelEditLossBtn').style.display = 'none';
+        }
+
+        // ハズレリスト更新
+        function updateLossList() {
+            const container = document.getElementById('lossList');
+
+            if (losses.length === 0) {
+                container.innerHTML = '<p style="color: var(--sf-gray); text-align: center; margin: 20px 0;">ハズレを追加すると手動設定できます</p>';
+                return;
+            }
+
+            container.innerHTML = losses.map(loss => `
+                <div class="prize-item" style="background: rgba(255, 149, 0, 0.1); border-color: var(--sf-orange);">
+                    <div class="prize-content" style="grid-template-columns: 2fr 1fr 1fr auto; margin-top: 8px;">
+                        <div class="prize-name">${loss.name}</div>
+                        <div class="prize-value">¥${loss.value.toLocaleString()}</div>
+                        <div class="prize-count">${loss.count}枚</div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-primary" onclick="editLoss(${loss.id})">編集</button>
+                            <button class="btn btn-danger" onclick="removeLoss(${loss.id})">削除</button>
                         </div>
                     </div>
                 </div>
@@ -949,21 +1141,11 @@
         function calculate() {
             const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
             const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
-            const lossTypeCount = 1; // ハズレは1種類に固定
             const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
-            const difficulty = 'hard'; // 固定値
 
             if (packPrice <= 0 || totalPacks <= 0) {
                 return;
             }
-
-            // 設定を検証し、エラーがある場合は処理を停止
-            if (!validateSettings()) {
-                return;
-            }
-
-            // 難易度設定を取得（固定でhard）
-            const difficultySettings = getDifficultySettings(difficulty);
 
             // 基本計算
             const totalValue = packPrice * totalPacks;
@@ -981,59 +1163,64 @@
             // 実質還元率計算（仕入れ価格ベース）
             const realReturnRate = totalValue > 0 ? (prizesTotalPurchasePrice / totalValue) * 100 : 0;
 
-            // ハズレ計算（最低保証額をベースに段階的に設定）
-            const lossCount = totalPacks - prizesTotalCount;
-            const lossTypes = [];
+            // ハズレ計算（手動設定 or 自動計算）
+            const remainingSlots = totalPacks - prizesTotalCount;
+            let lossTypes = [];
 
-            if (lossCount > 0) {
-                // 難易度に応じた配分比率を使用（hardで固定）
-                const distribution = difficultySettings.lossDistribution;
+            // 手動でハズレが設定されている場合
+            if (losses.length > 0) {
+                const manualLossTotalCount = losses.reduce((sum, loss) => sum + loss.count, 0);
 
-                // 各ハズレタイプの枚数を計算
-                const lossCounts = [];
-                let allocated = 0;
-
-                for (let i = 0; i < lossTypeCount; i++) {
-                    const ratio = distribution[i] || distribution[distribution.length - 1];
-                    const count = Math.floor(lossCount * ratio);
-                    lossCounts.push(count);
-                    allocated += count;
+                // 矛盾チェック1: 景品枚数 + 手動ハズレ枚数 > 総口数
+                if (prizesTotalCount + manualLossTotalCount > totalPacks) {
+                    showConflictError({
+                        type: 'count_overflow',
+                        prizesTotalCount,
+                        manualLossTotalCount,
+                        totalPacks,
+                        excess: (prizesTotalCount + manualLossTotalCount) - totalPacks
+                    });
+                    return;
                 }
 
-                let remaining = lossCount - allocated;
-                let index = 0;
-                while (remaining > 0) {
-                    lossCounts[index % lossTypeCount]++;
-                    remaining--;
-                    index++;
+                // 矛盾チェック2: 景品枚数 + 手動ハズレ枚数 < 総口数
+                if (prizesTotalCount + manualLossTotalCount < totalPacks) {
+                    showConflictError({
+                        type: 'count_shortage',
+                        prizesTotalCount,
+                        manualLossTotalCount,
+                        totalPacks,
+                        shortage: totalPacks - (prizesTotalCount + manualLossTotalCount)
+                    });
+                    return;
                 }
 
-                // 最低保証価値（ユーザー入力値をそのまま使用）
-                const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
+                // 手動ハズレをlossTypesに変換
+                lossTypes = losses.map(loss => ({
+                    name: loss.name,
+                    value: loss.value,
+                    count: loss.count,
+                    type: 'manual'
+                }));
 
-                // 各ハズレタイプに異なる価値を設定（最低保証をベースに段階的）
-                for (let i = 0; i < lossTypeCount; i++) {
-                    const count = lossCounts[i];
-                    if (count > 0) {
-                        let value;
-                        if (i === lossTypeCount - 1) {
-                            // 最後のタイプは最低保証価値
-                            value = adjustedMinValue;
-                        } else {
-                            // 他のタイプは最低保証より高く、段階的に設定
-                            // hardモードでは低めの配分
-                            value = adjustedMinValue + (lossTypeCount - 1 - i);
-                        }
-
-                        lossTypes.push({
-                            name: i === lossTypeCount - 1 ?
-                                `ハズレ${String.fromCharCode(65 + i)}（最低保証）` :
-                                `ハズレ${String.fromCharCode(65 + i)}`,
-                            value: value,
-                            count: count,
-                            type: i === lossTypeCount - 1 ? 'min' : 'normal'
-                        });
+            } else {
+                // 自動計算モード
+                if (remainingSlots <= 0) {
+                    if (!validateSettings()) {
+                        return;
                     }
+                }
+
+                if (remainingSlots > 0) {
+                    // 最低保証価値で自動計算
+                    const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
+
+                    lossTypes.push({
+                        name: `ハズレ（最低保証）`,
+                        value: adjustedMinValue,
+                        count: remainingSlots,
+                        type: 'auto'
+                    });
                 }
             }
 
@@ -1268,10 +1455,11 @@
 
 
 
-        // データ保存（景品のみ）
+        // データ保存（景品とハズレ）
         function saveData() {
             const data = {
                 prizes: prizes,
+                losses: losses,
                 settings: {
                     packPrice: document.getElementById('packPrice').value,
                     totalPacks: document.getElementById('totalPacks').value,
@@ -1286,7 +1474,7 @@
             }
         }
 
-        // データ読み込み（景品のみ）
+        // データ読み込み（景品とハズレ）
         function loadData() {
             try {
                 const savedData = localStorage.getItem(STORAGE_KEY);
@@ -1296,6 +1484,11 @@
                     if (data.prizes) {
                         prizes = data.prizes;
                         updatePrizeList();
+                    }
+
+                    if (data.losses) {
+                        losses = data.losses;
+                        updateLossList();
                     }
 
                     if (data.settings) {
@@ -1328,98 +1521,50 @@
             });
             
             // 現在の設定でハズレを計算
-            const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
             const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
+            const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
 
-            if (packPrice > 0 && totalPacks > 0) {
-                const totalValue = packPrice * totalPacks;
-
-                // 難易度設定を取得（hardで固定）
-                const difficulty = 'hard';
-                const difficultySettings = getDifficultySettings(difficulty);
-                const lossTypeCount = 1; // ハズレは1種類に固定
-                const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
-
-                const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
+            if (totalPacks > 0) {
                 const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
-
-                const lossCount = totalPacks - prizesTotalCount;
+                const remainingSlots = totalPacks - prizesTotalCount;
 
                 console.log('ガチャプール生成デバッグ:', {
                     totalPacks: totalPacks,
                     prizesTotalCount: prizesTotalCount,
-                    lossCount
+                    remainingSlots
                 });
 
-                if (lossCount > 0) {
-                    // メイン計算と同じロジックでハズレタイプを生成
-                    const lossTypes = [];
-
-                    // 難易度に応じた配分比率を使用（hardで固定）
-                    const distribution = difficultySettings.lossDistribution;
-
-                    // 各ハズレタイプの枚数を計算
-                    const lossCounts = [];
-                    let allocated = 0;
-
-                    for (let i = 0; i < lossTypeCount; i++) {
-                        const ratio = distribution[i] || distribution[distribution.length - 1];
-                        const count = Math.floor(lossCount * ratio);
-                        lossCounts.push(count);
-                        allocated += count;
-                    }
-
-                    let remaining = lossCount - allocated;
-                    let index = 0;
-                    while (remaining > 0) {
-                        lossCounts[index % lossTypeCount]++;
-                        remaining--;
-                        index++;
-                    }
-
-                    // 最低保証価値（ユーザー入力値をそのまま使用）
-                    const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
-
-                    // 各ハズレタイプに異なる価値を設定（最低保証をベースに段階的）
-                    for (let i = 0; i < lossTypeCount; i++) {
-                        const count = lossCounts[i];
-                        if (count > 0) {
-                            let value;
-                            if (i === lossTypeCount - 1) {
-                                // 最後のタイプは最低保証価値
-                                value = adjustedMinValue;
-                            } else {
-                                // 他のタイプは最低保証より高く、段階的に設定
-                                value = adjustedMinValue + (lossTypeCount - 1 - i);
-                            }
-
-                            lossTypes.push({
-                                name: i === lossTypeCount - 1 ?
-                                    `ハズレ${String.fromCharCode(65 + i)}（最低保証）` :
-                                    `ハズレ${String.fromCharCode(65 + i)}`,
-                                value: value,
-                                count: count,
-                                type: i === lossTypeCount - 1 ? 'min' : 'normal'
-                            });
-                        }
-                    }
-
-                    // ガチャプールにハズレを追加
-                    lossTypes.forEach(lossType => {
-                        console.log(`${lossType.name} 生成:`, { count: lossType.count, value: lossType.value });
-                        for (let j = 0; j < lossType.count; j++) {
+                // 手動ハズレが設定されている場合
+                if (losses.length > 0) {
+                    losses.forEach(loss => {
+                        console.log(`${loss.name} 生成:`, { count: loss.count, value: loss.value });
+                        for (let j = 0; j < loss.count; j++) {
                             gachaPool.push({
                                 type: 'loss',
                                 item: {
-                                    name: lossType.name,
-                                    value: lossType.value,
+                                    name: loss.name,
+                                    value: loss.value,
                                     rank: 'loss'
                                 }
                             });
                         }
                     });
+                } else if (remainingSlots > 0) {
+                    // 自動計算モード
+                    const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
+
+                    for (let j = 0; j < remainingSlots; j++) {
+                        gachaPool.push({
+                            type: 'loss',
+                            item: {
+                                name: 'ハズレ（最低保証）',
+                                value: adjustedMinValue,
+                                rank: 'loss'
+                            }
+                        });
+                    }
                 } else {
-                    console.log('ハズレ生成スキップ:', { lossCount, reason: 'lossCount <= 0' });
+                    console.log('ハズレ生成スキップ:', { remainingSlots, reason: 'remainingSlots <= 0' });
                 }
             }
             
@@ -1573,7 +1718,8 @@ function getCurrentConfig() {
     packPrice: document.getElementById('packPrice').value,
     totalPacks: document.getElementById('totalPacks').value,
     minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
-    prizes: [...prizes]
+    prizes: [...prizes],
+    losses: [...losses]
   };
 }
 
@@ -1586,6 +1732,11 @@ function loadConfig(config) {
   if (config.prizes) {
     prizes = [...config.prizes];
     updatePrizeList();
+  }
+
+  if (config.losses) {
+    losses = [...config.losses];
+    updateLossList();
   }
 
   updateTotalValue();
