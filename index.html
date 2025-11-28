@@ -478,6 +478,92 @@
             accent-color: var(--sf-blue);
         }
 
+        /* モーダルのスタイル */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s var(--transition);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--sf-white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-heavy);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s var(--transition);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--sf-gray-5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.4em;
+            font-weight: 600;
+            color: var(--sf-black);
+        }
+
+        .modal-close {
+            font-size: 32px;
+            color: var(--sf-gray);
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s var(--transition);
+        }
+
+        .modal-close:hover {
+            color: var(--sf-red);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 24px;
+            border-top: 1px solid var(--sf-gray-5);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-footer .btn {
+            min-width: 100px;
+        }
+
         @media (max-width: 1024px) {
             .main-grid {
                 grid-template-columns: 1fr;
@@ -520,20 +606,12 @@
                         <label style="display: block; font-weight: 600; color: var(--sf-black); margin-bottom: 12px; font-size: 14px;">
                             ⚡ プリセットオリパ
                         </label>
-                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                            <label style="flex: 1; cursor: pointer;">
-                                <input type="radio" name="preset" value="319" style="margin-right: 4px;">
-                                <span style="font-size: 13px; font-weight: 500;">319</span>
-                            </label>
-                            <label style="flex: 1; cursor: pointer;">
-                                <input type="radio" name="preset" value="198" style="margin-right: 4px;">
-                                <span style="font-size: 13px; font-weight: 500;">198</span>
-                            </label>
-                            <label style="flex: 1; cursor: pointer;">
-                                <input type="radio" name="preset" value="nibuchi" style="margin-right: 4px;">
-                                <span style="font-size: 13px; font-weight: 500;">ニブイチ</span>
-                            </label>
+                        <div id="presetList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                            <!-- プリセット一覧がここに動的に生成されます -->
                         </div>
+                        <button class="btn btn-success" onclick="openAddPresetModal()" style="width: 100%; font-size: 12px; padding: 8px; margin-bottom: 8px;">
+                            ➕ 新規プリセット追加
+                        </button>
                         <button class="btn btn-primary" onclick="applyPreset()" style="width: 100%; font-size: 13px; padding: 10px;">
                             ⚡ プリセットから計算
                         </button>
@@ -772,6 +850,38 @@
         <div id="warnings"></div>
     </div>
 
+    <!-- プリセット編集モーダル -->
+    <div id="presetModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">プリセットを編集</h2>
+                <span class="modal-close" onclick="closePresetModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>プリセット名</label>
+                    <input type="text" id="modalPresetName" placeholder="例: カスタム500">
+                </div>
+                <div class="form-group">
+                    <label>倍率（何分の1で当たるか）</label>
+                    <input type="number" id="modalMultiplier" placeholder="例: 500" min="1">
+                </div>
+                <div class="form-group">
+                    <label>パック単価（デフォルト値）</label>
+                    <input type="number" id="modalPackPrice" placeholder="例: 10" min="1">
+                </div>
+                <div class="form-group">
+                    <label>ハズレ価値（デフォルト値）</label>
+                    <input type="number" id="modalMinGuarantee" placeholder="例: 1" min="1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="savePreset()">保存</button>
+                <button class="btn btn-danger" onclick="closePresetModal()">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // グローバル変数
         let prizes = [];
@@ -779,12 +889,43 @@
         let editingPrizeId = null; // 編集中の景品ID
         let editingLossId = null; // 編集中のハズレID
 
+        // プリセット管理
+        let presets = [];
+        let editingPresetId = null; // 編集中のプリセットID
+
+        // 初期プリセット（初回のみ使用）
+        const INITIAL_PRESETS = [
+            {
+                id: 'preset_319',
+                name: '319',
+                multiplier: 319,
+                packPrice: 13,
+                minGuaranteeValue: 1
+            },
+            {
+                id: 'preset_198',
+                name: '198',
+                multiplier: 198,
+                packPrice: 39,
+                minGuaranteeValue: 1
+            },
+            {
+                id: 'preset_nibuchi',
+                name: 'ニブイチ',
+                multiplier: 2,
+                packPrice: 350,
+                minGuaranteeValue: 1
+            }
+        ];
+
         // ローカルストレージのキー
         const STORAGE_KEY = 'oripa_simulator_v2';
+        const PRESETS_STORAGE_KEY = 'oripa_presets_v1';
 
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
+            loadPresetsFromStorage(); // プリセットを読み込み
             attachEventListeners();
             updateTotalValue();
         });
@@ -1124,6 +1265,173 @@
             document.getElementById('cancelEditLossBtn').style.display = 'none';
         }
 
+        // ========== プリセット管理機能 ==========
+
+        // プリセット一覧を更新
+        function updatePresetList() {
+            const container = document.getElementById('presetList');
+
+            if (presets.length === 0) {
+                container.innerHTML = '<p style="color: var(--sf-gray); text-align: center; margin: 12px 0; font-size: 13px;">プリセットを追加してください</p>';
+                return;
+            }
+
+            container.innerHTML = presets.map(preset => `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(255, 255, 255, 0.5); border-radius: 8px; border: 1px solid var(--sf-gray-4);">
+                    <label style="flex: 1; cursor: pointer; margin: 0; display: flex; align-items: center;">
+                        <input type="radio" name="preset" value="${preset.id}" style="margin-right: 8px;">
+                        <span style="font-size: 13px; font-weight: 500;">${preset.name}</span>
+                        <span style="font-size: 11px; color: var(--sf-gray); margin-left: 8px;">(${preset.multiplier}分の1)</span>
+                    </label>
+                    <button class="btn btn-primary" onclick="openEditPresetModal('${preset.id}')" style="font-size: 11px; padding: 4px 8px;">編集</button>
+                    <button class="btn btn-danger" onclick="deletePreset('${preset.id}')" style="font-size: 11px; padding: 4px 8px;">削除</button>
+                </div>
+            `).join('');
+        }
+
+        // プリセット追加モーダルを開く
+        function openAddPresetModal() {
+            editingPresetId = null;
+            document.getElementById('modalTitle').textContent = '新規プリセット追加';
+            document.getElementById('modalPresetName').value = '';
+            document.getElementById('modalMultiplier').value = '';
+            document.getElementById('modalPackPrice').value = '';
+            document.getElementById('modalMinGuarantee').value = '1';
+            document.getElementById('presetModal').style.display = 'flex';
+        }
+
+        // プリセット編集モーダルを開く
+        function openEditPresetModal(presetId) {
+            const preset = presets.find(p => p.id === presetId);
+            if (!preset) return;
+
+            editingPresetId = presetId;
+            document.getElementById('modalTitle').textContent = 'プリセットを編集';
+            document.getElementById('modalPresetName').value = preset.name;
+            document.getElementById('modalMultiplier').value = preset.multiplier;
+            document.getElementById('modalPackPrice').value = preset.packPrice;
+            document.getElementById('modalMinGuarantee').value = preset.minGuaranteeValue;
+            document.getElementById('presetModal').style.display = 'flex';
+        }
+
+        // モーダルを閉じる
+        function closePresetModal() {
+            document.getElementById('presetModal').style.display = 'none';
+            editingPresetId = null;
+        }
+
+        // プリセットを保存
+        function savePreset() {
+            const name = document.getElementById('modalPresetName').value.trim();
+            const multiplier = parseInt(document.getElementById('modalMultiplier').value) || 0;
+            const packPrice = parseInt(document.getElementById('modalPackPrice').value) || 0;
+            const minGuaranteeValue = parseInt(document.getElementById('modalMinGuarantee').value) || 1;
+
+            if (!name || multiplier <= 0 || packPrice <= 0 || minGuaranteeValue <= 0) {
+                alert('すべての項目を正しく入力してください');
+                return;
+            }
+
+            if (editingPresetId) {
+                // 編集モード
+                const presetIndex = presets.findIndex(p => p.id === editingPresetId);
+                if (presetIndex !== -1) {
+                    presets[presetIndex] = {
+                        id: editingPresetId,
+                        name: name,
+                        multiplier: multiplier,
+                        packPrice: packPrice,
+                        minGuaranteeValue: minGuaranteeValue
+                    };
+                }
+            } else {
+                // 新規追加モード
+                const newPreset = {
+                    id: 'preset_' + Date.now(),
+                    name: name,
+                    multiplier: multiplier,
+                    packPrice: packPrice,
+                    minGuaranteeValue: minGuaranteeValue
+                };
+                presets.push(newPreset);
+            }
+
+            savePresetsToStorage();
+            savePresetsToFirebase();
+            updatePresetList();
+            closePresetModal();
+        }
+
+        // プリセットを削除
+        function deletePreset(presetId) {
+            const preset = presets.find(p => p.id === presetId);
+            if (!preset) return;
+
+            if (!confirm(`プリセット「${preset.name}」を削除しますか？`)) {
+                return;
+            }
+
+            presets = presets.filter(p => p.id !== presetId);
+            savePresetsToStorage();
+            savePresetsToFirebase();
+            updatePresetList();
+        }
+
+        // プリセットをLocalStorageに保存
+        function savePresetsToStorage() {
+            try {
+                localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(presets));
+            } catch (e) {
+                console.error('プリセットの保存に失敗しました:', e);
+            }
+        }
+
+        // プリセットをLocalStorageから読み込み
+        function loadPresetsFromStorage() {
+            try {
+                const savedPresets = localStorage.getItem(PRESETS_STORAGE_KEY);
+                if (savedPresets) {
+                    presets = JSON.parse(savedPresets);
+                } else {
+                    // 初回起動時は初期プリセットを使用
+                    presets = [...INITIAL_PRESETS];
+                    savePresetsToStorage();
+                }
+                updatePresetList();
+            } catch (e) {
+                console.error('プリセットの読み込みに失敗しました:', e);
+                presets = [...INITIAL_PRESETS];
+                updatePresetList();
+            }
+        }
+
+        // プリセットをFirebaseに保存
+        function savePresetsToFirebase() {
+            database.ref('presets').set({
+                data: presets,
+                updatedAt: Date.now()
+            }).then(() => {
+                console.log('プリセットをFirebaseに保存しました');
+            }).catch((error) => {
+                console.error('Firebaseへの保存に失敗しました:', error);
+            });
+        }
+
+        // プリセットをFirebaseから読み込み
+        function loadPresetsFromFirebase() {
+            database.ref('presets').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data && data.data) {
+                    presets = data.data;
+                    savePresetsToStorage();
+                    updatePresetList();
+                    console.log('Firebaseからプリセットを読み込みました');
+                }
+            }).catch((error) => {
+                console.error('Firebaseからの読み込みに失敗しました:', error);
+            });
+        }
+
         // ハズレリスト更新
         function updateLossList() {
             const container = document.getElementById('lossList');
@@ -1156,9 +1464,9 @@
         // プリセットオリパを適用
         function applyPreset() {
             // 選択されたプリセットを取得
-            const selectedPreset = document.querySelector('input[name="preset"]:checked');
+            const selectedPresetRadio = document.querySelector('input[name="preset"]:checked');
 
-            if (!selectedPreset) {
+            if (!selectedPresetRadio) {
                 alert('プリセットを選択してください');
                 return;
             }
@@ -1169,43 +1477,25 @@
                 return;
             }
 
-            const presetType = selectedPreset.value;
+            const presetId = selectedPresetRadio.value;
+
+            // プリセットを検索
+            const preset = presets.find(p => p.id === presetId);
+            if (!preset) {
+                alert('プリセットが見つかりませんでした');
+                return;
+            }
 
             // 景品の総枚数を計算
             const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
 
-            let packPrice, multiplier, minGuaranteeValue, presetName;
-
-            switch(presetType) {
-                case '319':
-                    packPrice = 13;
-                    multiplier = 319;
-                    minGuaranteeValue = 1;
-                    presetName = '319';
-                    break;
-                case '198':
-                    packPrice = 39;
-                    multiplier = 198;
-                    minGuaranteeValue = 1;
-                    presetName = '198';
-                    break;
-                case 'nibuchi':
-                    packPrice = 350;
-                    multiplier = 2;
-                    minGuaranteeValue = 1;
-                    presetName = 'ニブイチ';
-                    break;
-                default:
-                    return;
-            }
-
             // 総口数を計算
-            const totalPacks = prizesTotalCount * multiplier;
+            const totalPacks = prizesTotalCount * preset.multiplier;
 
             // フォームに値を設定
-            document.getElementById('packPrice').value = packPrice;
+            document.getElementById('packPrice').value = preset.packPrice;
             document.getElementById('totalPacks').value = totalPacks;
-            document.getElementById('minGuaranteeValue').value = minGuaranteeValue;
+            document.getElementById('minGuaranteeValue').value = preset.minGuaranteeValue;
 
             // ハズレをクリア（自動計算モードにする）
             losses = [];
@@ -1222,7 +1512,7 @@
 
             // 確認メッセージを表示
             const lossCount = totalPacks - prizesTotalCount;
-            alert(`プリセット「${presetName}」を適用しました\n\n総口数: ${totalPacks}口\nパック単価: ¥${packPrice.toLocaleString()}\n景品枚数: ${prizesTotalCount}枚\nハズレ枚数: ${lossCount}枚\n\n値を編集して再計算することもできます。`);
+            alert(`プリセット「${preset.name}」を適用しました\n\n総口数: ${totalPacks}口\nパック単価: ¥${preset.packPrice.toLocaleString()}\n景品枚数: ${prizesTotalCount}枚\nハズレ枚数: ${lossCount}枚\n\n値を編集して再計算することもできます。`);
         }
 
         // ガチャ難易度設定を取得
