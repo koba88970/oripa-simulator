@@ -452,6 +452,32 @@
             font-size: 14px;
         }
 
+        /* プリセットオリパのスタイル */
+        .preset-section label {
+            transition: all 0.2s var(--transition);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .preset-section label:hover {
+            background: rgba(0, 122, 255, 0.1);
+            border-color: var(--sf-blue);
+        }
+
+        .preset-section input[type="radio"]:checked + span {
+            color: var(--sf-blue);
+            font-weight: 600;
+        }
+
+        .preset-section input[type="radio"]:checked {
+            accent-color: var(--sf-blue);
+        }
+
         @media (max-width: 1024px) {
             .main-grid {
                 grid-template-columns: 1fr;
@@ -488,6 +514,31 @@
                         <label>オリパ提供価値</label>
                         <div class="calculated-value" id="totalValue">¥0</div>
                     </div>
+
+                    <!-- プリセット設定 -->
+                    <div class="preset-section" style="margin-top: 20px; padding: 16px; background: rgba(0, 122, 255, 0.05); border: 1px solid var(--sf-blue); border-radius: var(--border-radius-small);">
+                        <label style="display: block; font-weight: 600; color: var(--sf-black); margin-bottom: 12px; font-size: 14px;">
+                            ⚡ プリセットオリパ
+                        </label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <label style="flex: 1; cursor: pointer;">
+                                <input type="radio" name="preset" value="319" style="margin-right: 4px;">
+                                <span style="font-size: 13px; font-weight: 500;">319</span>
+                            </label>
+                            <label style="flex: 1; cursor: pointer;">
+                                <input type="radio" name="preset" value="198" style="margin-right: 4px;">
+                                <span style="font-size: 13px; font-weight: 500;">198</span>
+                            </label>
+                            <label style="flex: 1; cursor: pointer;">
+                                <input type="radio" name="preset" value="nibuchi" style="margin-right: 4px;">
+                                <span style="font-size: 13px; font-weight: 500;">ニブイチ</span>
+                            </label>
+                        </div>
+                        <button class="btn btn-primary" onclick="applyPreset()" style="width: 100%; font-size: 13px; padding: 10px;">
+                            ⚡ プリセットから計算
+                        </button>
+                    </div>
+
                     <button class="btn btn-success" onclick="calculate()" style="width: 100%; margin-top: 16px; font-size: 16px; padding: 14px;">
                         🧮 計算する
                     </button>
@@ -1108,6 +1159,78 @@
         // 値を10の位で丸める（1桁を0にする）
         function roundToTens(value) {
             return Math.round(value / 10) * 10;
+        }
+
+        // プリセットオリパを適用
+        function applyPreset() {
+            // 選択されたプリセットを取得
+            const selectedPreset = document.querySelector('input[name="preset"]:checked');
+
+            if (!selectedPreset) {
+                alert('プリセットを選択してください');
+                return;
+            }
+
+            // 景品が登録されているかチェック
+            if (prizes.length === 0) {
+                alert('先に景品を登録してください');
+                return;
+            }
+
+            const presetType = selectedPreset.value;
+
+            // 景品の総枚数を計算
+            const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
+
+            let packPrice, multiplier, minGuaranteeValue, presetName;
+
+            switch(presetType) {
+                case '319':
+                    packPrice = 13;
+                    multiplier = 319;
+                    minGuaranteeValue = 1;
+                    presetName = '319';
+                    break;
+                case '198':
+                    packPrice = 39;
+                    multiplier = 198;
+                    minGuaranteeValue = 1;
+                    presetName = '198';
+                    break;
+                case 'nibuchi':
+                    packPrice = 350;
+                    multiplier = 2;
+                    minGuaranteeValue = 1;
+                    presetName = 'ニブイチ';
+                    break;
+                default:
+                    return;
+            }
+
+            // 総口数を計算
+            const totalPacks = prizesTotalCount * multiplier;
+
+            // フォームに値を設定
+            document.getElementById('packPrice').value = packPrice;
+            document.getElementById('totalPacks').value = totalPacks;
+            document.getElementById('minGuaranteeValue').value = minGuaranteeValue;
+
+            // ハズレをクリア（自動計算モードにする）
+            losses = [];
+            updateLossList();
+
+            // オリパ提供価値を更新
+            updateTotalValue();
+
+            // データを保存
+            saveData();
+
+            // 自動で計算を実行
+            calculate();
+
+            // 確認メッセージを表示
+            const lossCount = totalPacks - prizesTotalCount;
+            alert(`プリセット「${presetName}」を適用しました\n\n総口数: ${totalPacks}口\nパック単価: ¥${packPrice.toLocaleString()}\n景品枚数: ${prizesTotalCount}枚\nハズレ枚数: ${lossCount}枚\n\n値を編集して再計算することもできます。`);
         }
 
         // ガチャ難易度設定を取得
