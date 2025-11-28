@@ -1318,7 +1318,7 @@
                 return `
                     <div class="result-row">
                         <span class="result-label">${prize.rank}等 ${prize.name}</span>
-                        <span class="result-value">${probability}% (仕入¥${prize.purchasePrice.toLocaleString()} / 還元¥${prize.value.toLocaleString()})</span>
+                        <span class="result-value">${prize.count}枚 / ${probability}% (仕入¥${prize.purchasePrice.toLocaleString()} / 還元¥${prize.value.toLocaleString()})</span>
                     </div>
                 `;
             }).join('');
