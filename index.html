@@ -762,7 +762,7 @@
                         <span class="result-value" id="summaryTotalReturn">98.0%</span>
                     </div>
                     <div class="result-row">
-                        <span class="result-label">実質還元率</span>
+                        <span class="result-label">実質還元率（売上原価率）</span>
                         <span class="result-value highlight" id="summaryRealReturn">0.0%</span>
                     </div>
                     <div class="result-row">
@@ -1675,6 +1675,13 @@
         function updateResults(data) {
             document.getElementById('summaryTotalReturn').textContent = `${data.totalReturnRatePercent.toFixed(1)}%`;
             document.getElementById('summaryRealReturn').textContent = `${data.realReturnRate.toFixed(1)}%`;
+
+            // 実質還元率（売上原価率）が50％を超えた場合の警告
+            if (data.realReturnRate > 50) {
+                setTimeout(() => {
+                    alert(`⚠️ 警告：売上原価率が高すぎます\n\n現在の実質還元率（売上原価率）: ${data.realReturnRate.toFixed(1)}%\n\n売上原価率が50％を超えています。\nこのままでは利益率が低く、ビジネスとして成立しにくい可能性があります。\n\n推奨対応：\n• 景品の仕入れ価格を見直す\n• パック単価を上げる\n• 高額景品の枚数を減らす`);
+                }, 300);
+            }
 
             // 総当選者数を表示
             const totalWinners = prizes.reduce((sum, prize) => sum + prize.count, 0);
