@@ -751,6 +751,19 @@
 
                     <div id="cloudStatus" style="margin-top: 12px; font-size: 12px; color: var(--sf-gray);"></div>
                 </div>
+
+                <!-- 過去7日間の集計 -->
+                <div class="panel" style="background: rgba(175, 82, 222, 0.05); border-color: var(--sf-purple);">
+                    <h2 style="border-bottom-color: var(--sf-purple);">📊 過去7日間の集計</h2>
+
+                    <button class="btn btn-primary" onclick="refreshWeeklyStats()" style="width: 100%; margin-bottom: 16px;">
+                        🔄 集計を更新
+                    </button>
+
+                    <div id="weeklyStatsContainer" style="font-size: 13px;">
+                        <p style="color: var(--sf-gray); text-align: center;">「集計を更新」をクリックしてください</p>
+                    </div>
+                </div>
             </div>
 
             <div class="results-grid">
@@ -2277,6 +2290,8 @@ function saveToCloudWithName() {
     updateCloudStatus(`「${configName}」を保存しました`);
     refreshCloudConfigList();
     document.getElementById('cloudConfigName').value = '';
+    // 集計を自動更新
+    setTimeout(() => refreshWeeklyStats(), 500);
   }).catch((error) => {
     updateCloudStatus('保存に失敗しました: ' + error.message);
   });
@@ -2302,6 +2317,8 @@ function updateCloudConfig() {
   }).then(() => {
     updateCloudStatus(`「${currentCloudConfigId}」を更新しました`);
     refreshCloudConfigList();
+    // 集計を自動更新
+    setTimeout(() => refreshWeeklyStats(), 500);
   }).catch((error) => {
     updateCloudStatus('更新に失敗しました: ' + error.message);
   });
@@ -2604,6 +2621,211 @@ loadConfigFromURL = function() {
   return result;
 };
 
+// ========== 過去7日間の集計機能 ==========
+
+// 過去7日間の集計を更新
+function refreshWeeklyStats() {
+  const container = document.getElementById('weeklyStatsContainer');
+  container.innerHTML = '<p style="color: var(--sf-gray); text-align: center;">集計中...</p>';
+
+  // 7日前のタイムスタンプを取得
+  const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+
+  database.ref('configs').once('value').then((snapshot) => {
+    const allConfigs = snapshot.val() || {};
+
+    // 過去7日間のデータをフィルタリング
+    const recentConfigs = Object.entries(allConfigs).filter(([configId, configData]) => {
+      return configData.updatedAt && configData.updatedAt >= sevenDaysAgo;
+    });
+
+    if (recentConfigs.length === 0) {
+      container.innerHTML = '<p style="color: var(--sf-gray); text-align: center;">過去7日間のデータがありません</p>';
+      return;
+    }
+
+    // 集計処理
+    const stats = calculateWeeklyStats(recentConfigs);
+
+    // 結果を表示
+    displayWeeklyStats(stats);
+  }).catch((error) => {
+    container.innerHTML = `<p style="color: var(--sf-red); text-align: center;">集計に失敗しました: ${error.message}</p>`;
+  });
+}
+
+// 過去7日間のデータから統計を計算
+function calculateWeeklyStats(recentConfigs) {
+  let totalOripaCount = recentConfigs.length;
+  let totalValue = 0;
+  let totalPurchase = 0;
+  let totalPacks = 0;
+  let totalWinners = 0;
+  let totalPrizeCount = 0;
+  let totalLossCount = 0;
+  let totalReturnRates = [];
+  let totalRealReturnRates = [];
+
+  recentConfigs.forEach(([configId, configData]) => {
+    const config = configData.data;
+    if (!config) return;
+
+    const packPrice = parseFloat(config.packPrice) || 0;
+    const packs = parseInt(config.totalPacks) || 0;
+    const prizes = config.prizes || [];
+    const losses = config.losses || [];
+
+    // オリパ提供価値
+    const oripaValue = packPrice * packs;
+    totalValue += oripaValue;
+
+    // 総口数
+    totalPacks += packs;
+
+    // 景品の集計
+    let prizeTotalValue = 0;
+    let prizeTotalPurchase = 0;
+    let prizeCount = 0;
+
+    prizes.forEach(prize => {
+      prizeCount += prize.count || 0;
+      prizeTotalValue += (prize.value || 0) * (prize.count || 0);
+      prizeTotalPurchase += (prize.purchasePrice || 0) * (prize.count || 0);
+    });
+
+    totalWinners += prizeCount;
+    totalPrizeCount += prizeCount;
+    totalPurchase += prizeTotalPurchase;
+
+    // ハズレの集計
+    let lossTotalValue = 0;
+    let lossCount = 0;
+
+    if (losses.length > 0) {
+      losses.forEach(loss => {
+        lossCount += loss.count || 0;
+        lossTotalValue += (loss.value || 0) * (loss.count || 0);
+      });
+    } else {
+      // 自動計算の場合
+      const minGuaranteeValue = parseFloat(config.minGuaranteeValue) || 1;
+      const remainingSlots = packs - prizeCount;
+      if (remainingSlots > 0) {
+        lossCount = remainingSlots;
+        lossTotalValue = minGuaranteeValue * remainingSlots;
+      }
+    }
+
+    totalLossCount += lossCount;
+
+    // 総還元率
+    const actualTotalReturnValue = prizeTotalValue + lossTotalValue;
+    const totalReturnRate = oripaValue > 0 ? (actualTotalReturnValue / oripaValue) * 100 : 0;
+    totalReturnRates.push(totalReturnRate);
+
+    // 実質還元率（売上原価率）
+    const realReturnRate = oripaValue > 0 ? (prizeTotalPurchase / oripaValue) * 100 : 0;
+    totalRealReturnRates.push(realReturnRate);
+  });
+
+  // 平均を計算
+  const avgValue = totalOripaCount > 0 ? totalValue / totalOripaCount : 0;
+  const avgPurchase = totalOripaCount > 0 ? totalPurchase / totalOripaCount : 0;
+  const avgReturnRate = totalReturnRates.length > 0 ? totalReturnRates.reduce((a, b) => a + b, 0) / totalReturnRates.length : 0;
+  const avgRealReturnRate = totalRealReturnRates.length > 0 ? totalRealReturnRates.reduce((a, b) => a + b, 0) / totalRealReturnRates.length : 0;
+  const avgPacks = totalOripaCount > 0 ? totalPacks / totalOripaCount : 0;
+
+  return {
+    totalOripaCount,
+    totalValue,
+    avgValue,
+    totalPurchase,
+    avgPurchase,
+    totalPacks,
+    avgPacks,
+    totalWinners,
+    totalPrizeCount,
+    totalLossCount,
+    avgReturnRate,
+    avgRealReturnRate,
+    totalReturnRates,
+    totalRealReturnRates
+  };
+}
+
+// 集計結果を表示
+function displayWeeklyStats(stats) {
+  const container = document.getElementById('weeklyStatsContainer');
+
+  container.innerHTML = `
+    <div style="margin-bottom: 16px; padding: 12px; background: rgba(175, 82, 222, 0.1); border-radius: 8px; text-align: center;">
+      <div style="font-size: 24px; font-weight: 700; color: var(--sf-purple);">${stats.totalOripaCount}</div>
+      <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">オリパ設定数</div>
+    </div>
+
+    <div style="display: grid; gap: 8px;">
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">提供価値合計</span>
+        <span style="font-weight: 600;">¥${stats.totalValue.toLocaleString()}</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">提供価値平均</span>
+        <span style="font-weight: 600;">¥${Math.round(stats.avgValue).toLocaleString()}</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">仕入れ合計</span>
+        <span style="font-weight: 600; color: var(--sf-orange);">¥${stats.totalPurchase.toLocaleString()}</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">仕入れ平均</span>
+        <span style="font-weight: 600; color: var(--sf-orange);">¥${Math.round(stats.avgPurchase).toLocaleString()}</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">総還元率平均</span>
+        <span style="font-weight: 600; color: var(--sf-blue);">${stats.avgReturnRate.toFixed(1)}%</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">実質還元率平均</span>
+        <span style="font-weight: 600; color: var(--sf-green);">${stats.avgRealReturnRate.toFixed(1)}%</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">総口数合計</span>
+        <span style="font-weight: 600;">${stats.totalPacks.toLocaleString()}口</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">平均口数</span>
+        <span style="font-weight: 600;">${Math.round(stats.avgPacks).toLocaleString()}口</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">当選者総数</span>
+        <span style="font-weight: 600; color: var(--sf-purple);">${stats.totalWinners.toLocaleString()}人</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">景品総枚数</span>
+        <span style="font-weight: 600;">${stats.totalPrizeCount.toLocaleString()}枚</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+        <span style="color: var(--sf-gray);">ハズレ総枚数</span>
+        <span style="font-weight: 600;">${stats.totalLossCount.toLocaleString()}枚</span>
+      </div>
+    </div>
+
+    <div style="margin-top: 12px; padding: 8px; background: rgba(0, 122, 255, 0.05); border-radius: 6px; font-size: 11px; color: var(--sf-gray); text-align: center;">
+      過去7日間のデータ（${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString('ja-JP')} 〜 ${new Date().toLocaleDateString('ja-JP')}）
+    </div>
+  `;
+}
+
 // 初期化時にクラウド設定一覧を読み込み
 document.addEventListener('DOMContentLoaded', function() {
   // 既存の初期化処理の後に追加
@@ -2613,6 +2835,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loadConfigFromURL();
     // 共有ボタンの初期状態を設定
     updateShareButtonState();
+    // 過去7日間の集計を自動読み込み
+    refreshWeeklyStats();
   }, 1000); // Firebaseの初期化を待つ
 });
 </script>
