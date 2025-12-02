@@ -3,14 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>オリパ設計シミュレーターオンライン v1.0</title>
+    <title>オリパ設計シミュレーターオンライン v2.4</title>
     <style>
         :root {
+            /* 最新のiOS風カラーパレット */
             --sf-blue: #007AFF;
+            --sf-indigo: #5856D6;
             --sf-orange: #FF9500;
             --sf-green: #34C759;
+            --sf-teal: #5AC8FA;
             --sf-red: #FF3B30;
             --sf-purple: #AF52DE;
+            --sf-pink: #FF2D55;
+            --sf-yellow: #FFCC00;
             --sf-gray: #8E8E93;
             --sf-gray-2: #AEAEB2;
             --sf-gray-3: #C7C7CC;
@@ -19,63 +24,193 @@
             --sf-gray-6: #F2F2F7;
             --sf-white: #FFFFFF;
             --sf-black: #000000;
-            --shadow-light: 0 2px 20px rgba(0, 0, 0, 0.08);
-            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
-            --shadow-heavy: 0 20px 60px rgba(0, 0, 0, 0.15);
-            --border-radius: 16px;
-            --border-radius-small: 12px;
-            --transition: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+            /* 強化されたシャドウ */
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+            --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+            --shadow-2xl: 0 24px 64px rgba(0, 0, 0, 0.20);
+
+            /* グラスモーフィズム用シャドウ */
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+
+            /* より大きなborder-radius */
+            --radius-xs: 8px;
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --radius-2xl: 32px;
+            --radius-full: 9999px;
+
+            /* スムーズなトランジション */
+            --transition-fast: cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --transition-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 動的なグラデーション背景 */
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background: linear-gradient(135deg, #F2F2F7 0%, #FFFFFF 100%);
+            background: linear-gradient(
+                135deg,
+                #e8eef3 0%,
+                #dce4ec 25%,
+                #e0e7ed 50%,
+                #dde5ee 75%,
+                #e5ebf1 100%
+            );
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
             min-height: 100vh;
-            letter-spacing: -0.01em;
-            line-height: 1.5;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(20px);
-            padding: 32px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-heavy);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        h1 {
-            color: var(--sf-black);
-            text-align: center;
-            margin-bottom: 32px;
-            font-size: 2.2em;
-            font-weight: 600;
             letter-spacing: -0.02em;
+            line-height: 1.6;
+            color: rgba(0, 0, 0, 0.9);
+            position: relative;
+            overflow-x: hidden;
         }
 
+        /* グラスモーフィズム背景レイヤー */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(
+                circle at 30% 50%,
+                rgba(0, 122, 255, 0.03) 0%,
+                transparent 50%
+            ),
+            radial-gradient(
+                circle at 70% 80%,
+                rgba(100, 126, 234, 0.04) 0%,
+                transparent 50%
+            );
+            animation: float 25s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            33% {
+                transform: translate(30px, -50px) rotate(120deg);
+            }
+            66% {
+                transform: translate(-20px, 20px) rotate(240deg);
+            }
+        }
+
+        /* メインコンテナ - グラスモーフィズム */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(80px) saturate(200%);
+            -webkit-backdrop-filter: blur(80px) saturate(200%);
+            padding: 40px;
+            border-radius: var(--radius-2xl);
+            box-shadow:
+                0 30px 90px rgba(0, 0, 0, 0.1),
+                0 12px 40px rgba(0, 0, 0, 0.06),
+                0 0 0 0.5px rgba(255, 255, 255, 0.9) inset,
+                0 2px 8px rgba(255, 255, 255, 0.7) inset;
+            border: 0.5px solid rgba(255, 255, 255, 0.9);
+            position: relative;
+            z-index: 1;
+            animation: containerFadeIn 0.8s var(--transition-smooth);
+        }
+
+        @keyframes containerFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* タイトル */
+        h1 {
+            color: rgba(0, 0, 0, 0.9);
+            text-align: center;
+            margin: 0 0 40px 0;
+            font-size: 3em;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            animation: titleSlideIn 1s var(--transition-smooth);
+        }
+
+        @keyframes titleSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* バージョンバッジ */
         .version-badge {
             background: var(--sf-blue);
             color: var(--sf-white);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+            padding: 6px 16px;
+            border-radius: var(--radius-full);
+            font-size: 13px;
+            font-weight: 700;
             margin-left: 16px;
             vertical-align: middle;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
         }
 
+        /* グリッドレイアウト */
         .main-grid {
             display: grid;
-            grid-template-columns: 380px 1fr;
+            grid-template-columns: 460px 1fr;
             gap: 32px;
+            animation: gridFadeIn 1s var(--transition-smooth) 0.2s both;
+        }
+
+        @keyframes gridFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .left-panel {
@@ -84,68 +219,165 @@
             gap: 24px;
         }
 
+        /* left-panelの表示順を制御 */
+        .left-panel > .panel:nth-child(1) { order: 1; } /* 基本設定 */
+        .left-panel > .panel:nth-child(2) { order: 4; } /* ハズレ管理 → 4番目へ */
+        .left-panel > .panel:nth-child(3) { order: 3; } /* 景品管理 */
+        .left-panel > .panel:nth-child(4) { order: 2; } /* クラウド設定 → 2番目へ */
+        .left-panel > .panel:nth-child(5) { order: 5; } /* 過去7日間の集計 */
+
+        /* パネル - 強化されたグラスモーフィズム */
         .panel {
             background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            padding: 24px;
-            border-radius: var(--border-radius);
-            border: 1px solid var(--sf-gray-5);
-            box-shadow: var(--shadow-light);
-            transition: all 0.3s var(--transition);
+            backdrop-filter: blur(60px) saturate(180%);
+            -webkit-backdrop-filter: blur(60px) saturate(180%);
+            padding: 28px;
+            border-radius: var(--radius-xl);
+            border: 0.5px solid rgba(255, 255, 255, 0.8);
+            box-shadow:
+                0 16px 50px rgba(0, 0, 0, 0.07),
+                0 6px 20px rgba(0, 0, 0, 0.04),
+                0 0 0 0.5px rgba(255, 255, 255, 0.9) inset,
+                0 1px 4px rgba(255, 255, 255, 0.7) inset;
+            transition: all 0.4s var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* パネルのホバー効果 */
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                135deg,
+                rgba(0, 122, 255, 0.03) 0%,
+                transparent 100%
+            );
+            opacity: 0;
+            transition: opacity 0.4s var(--transition-smooth);
+            pointer-events: none;
         }
 
         .panel:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-medium);
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08),
+                        0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+            border-color: rgba(255, 255, 255, 0.8);
         }
 
+        .panel:hover::before {
+            opacity: 1;
+        }
+
+        /* パネルヘッダー */
         .panel h2 {
-            margin: 0 0 20px 0;
-            color: var(--sf-black);
-            border-bottom: 2px solid var(--sf-blue);
-            padding-bottom: 12px;
-            font-size: 1.3em;
-            font-weight: 600;
-            letter-spacing: -0.01em;
+            margin: 0 0 24px 0;
+            color: rgba(0, 0, 0, 0.9);
+            padding-bottom: 16px;
+            font-size: 1.5em;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            position: relative;
         }
 
+        .panel h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: var(--sf-blue);
+            border-radius: var(--radius-full);
+            transition: width 0.3s var(--transition-smooth);
+        }
+
+        .panel:hover h2::after {
+            width: 120px;
+        }
+
+        /* フォームグループ */
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
+            position: relative;
         }
 
         .form-group label {
             display: block;
-            font-weight: 500;
-            color: var(--sf-black);
-            margin-bottom: 6px;
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.8);
+            margin-bottom: 10px;
             font-size: 14px;
+            letter-spacing: -0.01em;
+            transition: color 0.3s var(--transition-smooth);
         }
 
-        .form-group input {
+        .form-group:focus-within label {
+            color: var(--sf-blue);
+        }
+
+        /* インプット */
+        .form-group input,
+        .form-group select {
             width: 100%;
-            padding: 12px 16px;
-            border: 1px solid var(--sf-gray-4);
-            border-radius: var(--border-radius-small);
+            padding: 14px 18px;
+            border: 1.5px solid rgba(0, 0, 0, 0.12);
+            border-radius: var(--radius-md);
             font-size: 15px;
-            font-weight: 400;
-            background: var(--sf-white);
-            transition: all 0.3s var(--transition);
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.04),
+                0 0 0 0.5px rgba(255, 255, 255, 0.7) inset;
+            transition: all 0.3s var(--transition-smooth);
+            color: rgba(0, 0, 0, 0.9);
         }
 
-        .form-group input:focus {
+        .form-group input:hover,
+        .form-group select:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(0, 0, 0, 0.15);
+            box-shadow:
+                0 4px 12px rgba(0, 0, 0, 0.06),
+                0 0 0 0.5px rgba(255, 255, 255, 0.8) inset;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
             outline: none;
             border-color: var(--sf-blue);
-            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            box-shadow:
+                0 0 0 4px rgba(0, 122, 255, 0.12),
+                0 4px 16px rgba(0, 0, 0, 0.08),
+                0 0 0 0.5px rgba(255, 255, 255, 0.9) inset;
+            transform: translateY(-1px);
         }
 
+        /* エラー状態 */
         .form-group input.error {
             border-color: var(--sf-red);
-            background-color: rgba(255, 59, 48, 0.05);
+            background-color: rgba(255, 59, 48, 0.08);
+            animation: shakeError 0.4s var(--transition-smooth);
+        }
+
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
         }
 
         .form-group input.error:focus {
             border-color: var(--sf-red);
-            box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.1);
+            box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.15);
         }
 
         .form-row {
@@ -161,10 +393,10 @@
             background: rgba(52, 199, 89, 0.1);
             color: var(--sf-green);
             padding: 12px 16px;
-            border-radius: var(--border-radius-small);
+            border-radius: var(--radius-md);
             font-weight: 600;
             text-align: center;
-            border: 1px solid rgba(52, 199, 89, 0.3);
+            border: 2px solid rgba(52, 199, 89, 0.3);
         }
 
         .prize-list {
@@ -176,17 +408,19 @@
         }
 
         .prize-item {
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid var(--sf-gray-4);
-            border-radius: var(--border-radius-small);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--radius-md);
             padding: 16px;
             position: relative;
-            transition: all 0.3s var(--transition);
+            transition: all 0.3s var(--transition-smooth);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
         }
 
         .prize-item:hover {
             border-color: var(--sf-blue);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
         }
 
         .prize-rank {
@@ -205,7 +439,7 @@
         .prize-rank.rank-2 { background: #C0C0C0; color: var(--sf-black); }
         .prize-rank.rank-3 { background: #CD7F32; color: var(--sf-white); }
         .prize-rank.rank-4 { background: var(--sf-green); }
-        .prize-rank.rank-5 { background: var(--sf-purple); }
+        .prize-rank.rank-5 { background: var(--sf-blue); }
 
         .prize-content {
             margin-top: 8px;
@@ -226,55 +460,151 @@
             text-align: center;
         }
 
+        /* ボタン - シンプルなiOS風 */
         .btn {
-            padding: 8px 16px;
+            padding: 12px 24px;
             border: none;
-            border-radius: var(--border-radius-small);
-            font-size: 13px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s var(--transition);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            letter-spacing: -0.01em;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn-primary {
-            background: var(--sf-blue);
+            background: rgba(0, 122, 255, 0.85);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
             color: var(--sf-white);
+            border: 0.5px solid rgba(255, 255, 255, 0.8);
+            box-shadow:
+                0 6px 20px rgba(0, 122, 255, 0.35),
+                0 2px 10px rgba(0, 122, 255, 0.25),
+                0 0 0 0.5px rgba(255, 255, 255, 0.7) inset,
+                0 1px 4px rgba(255, 255, 255, 0.6) inset;
         }
 
         .btn-primary:hover {
-            background: #0051D5;
-            transform: scale(1.05);
+            background: rgba(0, 102, 221, 0.9);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow:
+                0 10px 30px rgba(0, 122, 255, 0.45),
+                0 4px 15px rgba(0, 122, 255, 0.35),
+                0 0 0 0.5px rgba(255, 255, 255, 0.8) inset,
+                0 2px 6px rgba(255, 255, 255, 0.7) inset;
+        }
+
+        .btn-primary:active {
+            transform: translateY(0) scale(0.98);
+            background: rgba(0, 81, 213, 0.95);
+            box-shadow:
+                0 3px 12px rgba(0, 122, 255, 0.35),
+                0 1px 6px rgba(0, 122, 255, 0.25),
+                0 0 0 0.5px rgba(255, 255, 255, 0.6) inset;
         }
 
         .btn-danger {
-            background: var(--sf-red);
+            background: rgba(255, 59, 48, 0.8);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
             color: var(--sf-white);
+            border: 0.5px solid rgba(255, 255, 255, 0.75);
+            box-shadow:
+                0 6px 20px rgba(255, 59, 48, 0.35),
+                0 2px 10px rgba(255, 59, 48, 0.25),
+                0 0 0 0.5px rgba(255, 255, 255, 0.6) inset,
+                0 1px 4px rgba(255, 255, 255, 0.5) inset;
         }
 
         .btn-danger:hover {
-            background: #E6342A;
-            transform: scale(1.05);
+            background: rgba(230, 52, 42, 0.85);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow:
+                0 10px 30px rgba(255, 59, 48, 0.45),
+                0 4px 15px rgba(255, 59, 48, 0.35),
+                0 0 0 0.5px rgba(255, 255, 255, 0.5) inset,
+                0 2px 6px rgba(255, 255, 255, 0.4) inset;
+        }
+
+        .btn-danger:active {
+            transform: translateY(0) scale(0.98);
+            background: rgba(204, 46, 36, 0.8);
+            box-shadow:
+                0 3px 12px rgba(255, 59, 48, 0.35),
+                0 1px 6px rgba(255, 59, 48, 0.25),
+                0 0 0 0.5px rgba(255, 255, 255, 0.3) inset;
         }
 
         .btn-success {
-            background: var(--sf-green);
+            background: rgba(52, 199, 89, 0.8);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
             color: var(--sf-white);
             width: 100%;
-            padding: 12px;
-            font-size: 14px;
+            padding: 16px;
+            font-size: 15px;
             margin-top: 16px;
+            border: 0.5px solid rgba(255, 255, 255, 0.75);
+            box-shadow:
+                0 6px 20px rgba(52, 199, 89, 0.35),
+                0 2px 10px rgba(52, 199, 89, 0.25),
+                0 0 0 0.5px rgba(255, 255, 255, 0.6) inset,
+                0 1px 4px rgba(255, 255, 255, 0.5) inset;
         }
 
         .btn-success:hover {
-            background: #248A3D;
+            background: rgba(47, 179, 80, 0.85);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow:
+                0 10px 30px rgba(52, 199, 89, 0.45),
+                0 4px 15px rgba(52, 199, 89, 0.35),
+                0 0 0 0.5px rgba(255, 255, 255, 0.7) inset,
+                0 2px 6px rgba(255, 255, 255, 0.6) inset;
         }
+
+        .btn-success:active {
+            transform: translateY(0) scale(0.98);
+            background: rgba(40, 167, 69, 0.9);
+            box-shadow:
+                0 3px 12px rgba(52, 199, 89, 0.35),
+                0 1px 6px rgba(52, 199, 89, 0.25),
+                0 0 0 0.5px rgba(255, 255, 255, 0.5) inset;
+        }
+
+        /* btn-accentをbtn-primaryと統一 */
         .btn-accent {
-            background: var(--sf-orange);
+            background: rgba(0, 122, 255, 0.85);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
             color: var(--sf-white);
+            border: 0.5px solid rgba(255, 255, 255, 0.8);
+            box-shadow:
+                0 6px 20px rgba(0, 122, 255, 0.35),
+                0 2px 10px rgba(0, 122, 255, 0.25),
+                0 0 0 0.5px rgba(255, 255, 255, 0.7) inset,
+                0 1px 4px rgba(255, 255, 255, 0.6) inset;
         }
+
         .btn-accent:hover {
-            background: #E6742A;
-            transform: scale(1.05);
+            background: rgba(0, 102, 221, 0.9);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow:
+                0 10px 30px rgba(0, 122, 255, 0.45),
+                0 4px 15px rgba(0, 122, 255, 0.35),
+                0 0 0 0.5px rgba(255, 255, 255, 0.8) inset,
+                0 2px 6px rgba(255, 255, 255, 0.7) inset;
+        }
+
+        .btn-accent:active {
+            transform: translateY(0) scale(0.98);
+            background: rgba(0, 81, 213, 0.95);
+            box-shadow:
+                0 3px 12px rgba(0, 122, 255, 0.35),
+                0 1px 6px rgba(0, 122, 255, 0.25),
+                0 0 0 0.5px rgba(255, 255, 255, 0.6) inset;
         }
         
         /* ガチャ体験スタイル */
@@ -290,11 +620,16 @@
             font-weight: 600;
         }
         .gacha-results {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid var(--sf-gray-4);
-            border-radius: var(--border-radius-small);
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border: 0.5px solid rgba(255, 255, 255, 0.85);
+            border-radius: var(--radius-md);
             padding: 20px;
             margin-top: 20px;
+            box-shadow:
+                0 8px 24px rgba(0, 0, 0, 0.06),
+                0 0 0 0.5px rgba(255, 255, 255, 0.8) inset;
         }
         .gacha-stats {
             display: grid;
@@ -305,13 +640,13 @@
         .gacha-stat-item {
             text-align: center;
             padding: 12px;
-            background: rgba(0, 122, 255, 0.1);
+            background: rgba(52, 199, 89, 0.08);
             border-radius: 8px;
         }
         .gacha-stat-value {
             font-size: 1.5em;
             font-weight: 700;
-            color: var(--sf-blue);
+            color: var(--sf-green);
         }
         .gacha-stat-label {
             font-size: 0.9em;
@@ -331,50 +666,98 @@
             font-size: 14px;
         }
         .gacha-draw-prize {
-            background: linear-gradient(135deg, #34C759, #30D158);
+            background: var(--sf-green);
             color: white;
         }
         .gacha-draw-loss {
-            background: linear-gradient(135deg, #FF9500, #FF9F0A);
+            background: var(--sf-orange);
             color: white;
         }
 
         .add-prize-form {
-            background: rgba(0, 122, 255, 0.05);
-            border: 1px dashed var(--sf-blue);
-            border-radius: var(--border-radius-small);
+            background: rgba(0, 122, 255, 0.03);
+            border: 2px dashed rgba(0, 122, 255, 0.3);
+            border-radius: var(--radius-md);
             padding: 20px;
             margin-top: 16px;
         }
 
         .results-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
             gap: 24px;
         }
 
+        /* 結果パネル */
         .result-panel {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            padding: 24px;
-            border-radius: var(--border-radius);
-            border: 1px solid var(--sf-gray-5);
-            box-shadow: var(--shadow-light);
-            transition: all 0.3s var(--transition);
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(60px) saturate(180%);
+            -webkit-backdrop-filter: blur(60px) saturate(180%);
+            padding: 28px;
+            border-radius: var(--radius-xl);
+            border: 0.5px solid rgba(255, 255, 255, 0.8);
+            box-shadow:
+                0 16px 50px rgba(0, 0, 0, 0.07),
+                0 6px 20px rgba(0, 0, 0, 0.04),
+                0 0 0 0.5px rgba(255, 255, 255, 0.9) inset,
+                0 1px 4px rgba(255, 255, 255, 0.7) inset;
+            transition: all 0.4s var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                135deg,
+                rgba(52, 199, 89, 0.03) 0%,
+                transparent 100%
+            );
+            opacity: 0;
+            transition: opacity 0.4s var(--transition-smooth);
+            pointer-events: none;
         }
 
         .result-panel:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-medium);
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08),
+                        0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .result-panel:hover::before {
+            opacity: 1;
         }
 
         .result-panel h3 {
-            margin: 0 0 16px 0;
-            color: var(--sf-black);
-            border-bottom: 2px solid var(--sf-green);
-            padding-bottom: 8px;
-            font-size: 1.2em;
-            font-weight: 600;
+            margin: 0 0 20px 0;
+            color: rgba(0, 0, 0, 0.9);
+            padding-bottom: 16px;
+            font-size: 1.4em;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            position: relative;
+        }
+
+        .result-panel h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--sf-blue);
+            border-radius: var(--radius-full);
+            transition: width 0.3s var(--transition-smooth);
+        }
+
+        .result-panel:hover h3::after {
+            width: 100px;
         }
 
         .result-row {
@@ -400,7 +783,7 @@
         }
 
         .highlight {
-            background: rgba(255, 149, 0, 0.15);
+            background: rgba(255, 149, 0, 0.12);
             padding: 4px 8px;
             border-radius: 6px;
             border: 1px solid rgba(255, 149, 0, 0.3);
@@ -409,12 +792,12 @@
         }
 
         .loss-panel {
-            background: rgba(255, 149, 0, 0.08);
-            border: 1px solid rgba(255, 149, 0, 0.2);
+            background: rgba(255, 149, 0, 0.05);
+            border: 1px solid rgba(255, 149, 0, 0.15);
         }
 
-        .loss-panel h3 {
-            border-bottom-color: var(--sf-orange);
+        .loss-panel h3::after {
+            background: var(--sf-orange);
         }
 
         .expected-values {
@@ -427,14 +810,14 @@
         .ev-item {
             text-align: center;
             padding: 8px;
-            background: rgba(0, 122, 255, 0.1);
+            background: rgba(52, 199, 89, 0.08);
             border-radius: 8px;
             font-size: 12px;
         }
 
         .ev-count {
             font-weight: 600;
-            color: var(--sf-blue);
+            color: var(--sf-green);
         }
 
         .ev-value {
@@ -454,7 +837,7 @@
 
         /* プリセットオリパのスタイル */
         .preset-section label {
-            transition: all 0.2s var(--transition);
+            transition: all 0.2s var(--transition-smooth);
             padding: 8px 12px;
             border-radius: 8px;
             border: 1px solid transparent;
@@ -465,8 +848,8 @@
         }
 
         .preset-section label:hover {
-            background: rgba(0, 122, 255, 0.1);
-            border-color: var(--sf-blue);
+            background: rgba(0, 122, 255, 0.05);
+            border-color: rgba(0, 122, 255, 0.2);
         }
 
         .preset-section input[type="radio"]:checked + span {
@@ -485,13 +868,13 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 10000;
-            animation: fadeIn 0.3s var(--transition);
+            animation: fadeIn 0.3s var(--transition-smooth);
         }
 
         @keyframes fadeIn {
@@ -500,14 +883,20 @@
         }
 
         .modal-content {
-            background: var(--sf-white);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-heavy);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(60px) saturate(180%);
+            -webkit-backdrop-filter: blur(60px) saturate(180%);
+            border: 0.5px solid rgba(255, 255, 255, 0.9);
+            border-radius: var(--radius-xl);
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.15),
+                0 0 0 0.5px rgba(255, 255, 255, 0.9) inset,
+                0 2px 8px rgba(255, 255, 255, 0.6) inset;
             max-width: 500px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            animation: slideUp 0.3s var(--transition);
+            animation: slideUp 0.3s var(--transition-smooth);
         }
 
         @keyframes slideUp {
@@ -564,27 +953,438 @@
             min-width: 100px;
         }
 
-        @media (max-width: 1024px) {
+        /* レスポンシブデザイン - 強化 */
+        @media (max-width: 1400px) {
             .main-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 420px 1fr;
+                gap: 28px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 400px 1fr;
+                gap: 24px;
+            }
+
+            .results-grid {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            }
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                padding: 16px;
             }
 
             .container {
-                padding: 20px;
+                padding: 28px;
+                border-radius: var(--radius-xl);
+            }
+
+            h1 {
+                font-size: 2.2em;
+                margin-bottom: 32px;
+            }
+
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
             }
 
             .results-grid {
                 grid-template-columns: 1fr;
             }
         }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            .container {
+                padding: 20px;
+                border-radius: var(--radius-lg);
+            }
+
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 24px;
+            }
+
+            .version-badge {
+                display: block;
+                margin: 12px auto 0;
+                width: fit-content;
+            }
+
+            .panel, .result-panel {
+                padding: 20px;
+                border-radius: var(--radius-lg);
+            }
+
+            .btn {
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .container {
+                padding: 16px;
+                border-radius: var(--radius-md);
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .panel, .result-panel {
+                padding: 16px;
+            }
+        }
+
+        /* スムーズスクロール */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* スクロールバーのカスタマイズ */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-full);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-full);
+            transition: background 0.3s var(--transition-smooth);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* セレクション */
+        ::selection {
+            background: rgba(0, 122, 255, 0.3);
+            color: var(--sf-white);
+        }
+
+        /* フォーカス表示の改善 */
+        *:focus-visible {
+            outline: 2px solid var(--sf-blue);
+            outline-offset: 2px;
+        }
+
+        /* ========== スコア評価モーダル ========== */
+        #scoreModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+            z-index: 10000;
+            animation: fadeIn 0.3s var(--transition-smooth);
+            overflow: visible;
+        }
+
+        #scoreModal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+        }
+
+        .score-modal-content {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.85), rgba(248, 249, 250, 0.85));
+            backdrop-filter: blur(60px) saturate(180%);
+            -webkit-backdrop-filter: blur(60px) saturate(180%);
+            border: 0.5px solid rgba(255, 255, 255, 0.9);
+            border-radius: var(--radius-2xl);
+            box-shadow:
+                0 30px 80px rgba(0, 0, 0, 0.15),
+                0 0 0 0.5px rgba(255, 255, 255, 0.9) inset,
+                0 2px 8px rgba(255, 255, 255, 0.6) inset;
+            width: 90%;
+            max-width: 600px;
+            padding: 60px 48px;
+            text-align: center;
+            position: relative;
+            animation: slideUp 0.4s var(--transition-smooth);
+            overflow: visible;
+        }
+
+        .score-close {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: all 0.2s var(--transition-smooth);
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .score-close:hover {
+            background: rgba(0, 0, 0, 0.08);
+            color: rgba(0, 0, 0, 0.7);
+            transform: scale(1.1);
+        }
+
+        .score-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 48px;
+            color: rgba(0, 0, 0, 0.85);
+            letter-spacing: -0.02em;
+        }
+
+        /* スロットコンテナ */
+        .score-gauge-container {
+            position: relative;
+            width: 100%;
+            margin: 0 auto 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ランク表示 - 高級感のあるスロット */
+        .score-rank {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(248, 249, 250, 0.8));
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border-radius: 50%;
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.08),
+                0 0 0 0.5px rgba(255, 255, 255, 0.9) inset,
+                0 0 60px rgba(0, 0, 0, 0.03);
+            border: 3px solid rgba(255, 255, 255, 0.95);
+        }
+
+        .score-rank-container {
+            font-size: 6em;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .score-rank-item {
+            display: inline-block;
+        }
+
+        /* スライドアニメーション */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+        }
+
+        @keyframes confirmPop {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            70% {
+                transform: scale(0.95);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .score-rank-item.slide-in {
+            animation: slideIn 0.1s ease-out forwards;
+        }
+
+        .score-rank-item.slide-out {
+            animation: slideOut 0.1s ease-in forwards;
+        }
+
+        .score-rank-item.confirm {
+            animation: confirmPop 0.4s ease-out forwards;
+        }
+
+        /* ランク別カラー - 落ち着いた配色 */
+        .score-rank.rank-S {
+            background: linear-gradient(145deg, rgba(255, 223, 0, 0.15), rgba(255, 240, 100, 0.15));
+            border-color: rgba(255, 215, 0, 0.4);
+        }
+
+        .score-rank.rank-S .score-rank-container {
+            color: #D4AF37;
+            text-shadow: 0 2px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        .score-rank.rank-A {
+            background: linear-gradient(145deg, rgba(0, 122, 255, 0.08), rgba(0, 122, 255, 0.12));
+            border-color: rgba(0, 122, 255, 0.3);
+        }
+
+        .score-rank.rank-A .score-rank-container {
+            color: #007AFF;
+            text-shadow: 0 2px 20px rgba(0, 122, 255, 0.2);
+        }
+
+        .score-rank.rank-B {
+            background: linear-gradient(145deg, rgba(52, 199, 89, 0.08), rgba(52, 199, 89, 0.12));
+            border-color: rgba(52, 199, 89, 0.3);
+        }
+
+        .score-rank.rank-B .score-rank-container {
+            color: #34C759;
+            text-shadow: 0 2px 20px rgba(52, 199, 89, 0.2);
+        }
+
+        .score-rank.rank-C {
+            background: linear-gradient(145deg, rgba(255, 149, 0, 0.08), rgba(255, 149, 0, 0.12));
+            border-color: rgba(255, 149, 0, 0.3);
+        }
+
+        .score-rank.rank-C .score-rank-container {
+            color: #FF9500;
+            text-shadow: 0 2px 20px rgba(255, 149, 0, 0.2);
+        }
+
+        .score-rank.rank-D {
+            background: linear-gradient(145deg, rgba(255, 59, 48, 0.08), rgba(255, 59, 48, 0.12));
+            border-color: rgba(255, 59, 48, 0.3);
+        }
+
+        .score-rank.rank-D .score-rank-container {
+            color: #FF3B30;
+            text-shadow: 0 2px 20px rgba(255, 59, 48, 0.2);
+        }
+
+        .score-rank.rank-E {
+            background: linear-gradient(145deg, rgba(142, 142, 147, 0.08), rgba(142, 142, 147, 0.12));
+            border-color: rgba(142, 142, 147, 0.3);
+        }
+
+        .score-rank.rank-E .score-rank-container {
+            color: #8E8E93;
+            text-shadow: 0 2px 20px rgba(142, 142, 147, 0.2);
+        }
+
+        /* スコア詳細 - 高級感のあるデザイン */
+        .score-details {
+            margin-top: 40px;
+            text-align: left;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.75), rgba(248, 249, 250, 0.75));
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            padding: 28px;
+            border-radius: var(--radius-lg);
+            font-size: 14px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .score-detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .score-detail-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .score-detail-label {
+            color: rgba(0, 0, 0, 0.6);
+            font-weight: 500;
+            font-size: 14px;
+            letter-spacing: -0.01em;
+        }
+
+        .score-detail-value {
+            color: rgba(0, 0, 0, 0.9);
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: -0.01em;
+        }
+
+        /* クラッカーエフェクト */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #FFD700;
+            border-radius: 50%;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        /* 自然な散らばりアニメーション */
+        @keyframes confettiBurst {
+            0% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.1);
+                opacity: 0;
+            }
+        }
+
+        .confetti {
+            animation: confettiBurst var(--duration) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>オリパ設計シミュレーターオンライン <span class="version-badge">v1.0</span></h1>
+        <h1>オリパ設計シミュレーターオンライン <span class="version-badge">v2.4</span></h1>
         
         <div class="main-grid">
-            <div class="left-panel">
+            <div class="left-panel" style="display: grid; gap: 24px;">
                 <!-- 基本設定 -->
                 <div class="panel">
                     <h2>基本設定</h2>
@@ -617,9 +1417,14 @@
                         </button>
                     </div>
 
-                    <button class="btn btn-success" onclick="calculate()" style="width: 100%; margin-top: 16px; font-size: 16px; padding: 14px;">
-                        🧮 計算する
-                    </button>
+                    <div style="display: flex; gap: 12px; margin-top: 16px;">
+                        <button class="btn btn-success" onclick="calculate()" style="flex: 1; font-size: 16px; padding: 14px;">
+                            🧮 計算する
+                        </button>
+                        <button class="btn btn-primary" onclick="showScoreEvaluation()" style="flex: 1; font-size: 16px; padding: 14px;">
+                            ⭐ スコア評価
+                        </button>
+                    </div>
                 </div>
 
                 <!-- ハズレ管理 -->
@@ -804,7 +1609,7 @@
                     </div>
                 </div>
 
-                <!-- ハズレ詳細 -->
+                <!-- ハズレ詳細 + 分布 -->
                 <div class="result-panel loss-panel">
                     <h3>ハズレ詳細（自動計算）</h3>
                     <div id="lossDetailsContainer">
@@ -814,13 +1619,13 @@
                         <span class="result-label">ハズレ総枚数</span>
                         <span class="result-value" id="totalLossCount">0枚</span>
                     </div>
-                </div>
 
-                <!-- ハズレ当選者分布 -->
-                <div class="result-panel">
-                    <h3>ハズレ当選者分布</h3>
-                    <div class="chart-container">
-                        <canvas id="lossDistributionChart" width="400" height="200"></canvas>
+                    <!-- ハズレ当選者分布 -->
+                    <div style="margin-top: 24px; padding-top: 24px; border-top: 1.5px solid rgba(255, 255, 255, 0.4);">
+                        <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--sf-black);">ハズレ当選者分布</h4>
+                        <div class="chart-container">
+                            <canvas id="lossDistributionChart" width="400" height="200"></canvas>
+                        </div>
                     </div>
                 </div>
 
@@ -2839,6 +3644,287 @@ document.addEventListener('DOMContentLoaded', function() {
     refreshWeeklyStats();
   }, 1000); // Firebaseの初期化を待つ
 });
+
+// ========== オリパスコア評価機能 ==========
+
+// スコア計算関数
+function calculateOripaScore() {
+    const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
+    const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
+    const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
+
+    if (totalPacks === 0 || packPrice === 0) {
+        alert('基本設定を入力してください');
+        return null;
+    }
+
+    if (prizes.length === 0) {
+        alert('景品を追加してください');
+        return null;
+    }
+
+    // 計算ロジック
+    const totalValue = packPrice * totalPacks;
+
+    // 景品総価値計算（ポイント還元価値）
+    const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
+    const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
+
+    // 景品総仕入れ価格計算
+    const prizesTotalPurchasePrice = prizes.reduce((sum, prize) => sum + (prize.purchasePrice * prize.count), 0);
+
+    // 実質還元率計算（仕入れ価格ベース）
+    const realReturnRate = totalValue > 0 ? (prizesTotalPurchasePrice / totalValue) * 100 : 0;
+
+    // ハズレ計算
+    const remainingSlots = totalPacks - prizesTotalCount;
+    let lossTypes = [];
+
+    if (losses.length > 0) {
+        lossTypes = losses.map(loss => ({
+            name: loss.name,
+            value: loss.value,
+            count: loss.count
+        }));
+    } else {
+        if (remainingSlots > 0) {
+            lossTypes = [{
+                name: 'ハズレ（自動）',
+                value: minGuaranteeValue,
+                count: remainingSlots
+            }];
+        }
+    }
+
+    // 総還元率計算
+    const lossTotalValue = lossTypes.reduce((sum, loss) => sum + (loss.value * loss.count), 0);
+    const actualTotalReturnValue = prizesTotalValue + lossTotalValue;
+    const totalReturnRatePercent = totalValue > 0 ? (actualTotalReturnValue / totalValue) * 100 : 0;
+
+    const prizeCount = prizesTotalCount;
+
+    // スコア計算ロジック（実質還元率のみで評価：100点満点）
+    let score = 0;
+
+    // 実質還元率スコア（100点満点）
+    // 実質還元率が低いほど利益率が高く、良い評価
+    if (realReturnRate <= 20) {
+        score = 100; // S評価：非常に優れた利益率
+    } else if (realReturnRate <= 30) {
+        score = 85; // A評価：優れた利益率
+    } else if (realReturnRate <= 40) {
+        score = 70; // B評価：良好な利益率
+    } else if (realReturnRate <= 50) {
+        score = 55; // C評価：まあまあの利益率
+    } else if (realReturnRate <= 60) {
+        score = 40; // D評価：やや厳しい利益率
+    } else {
+        score = 20; // E評価：厳しい利益率
+    }
+
+    // ランク判定
+    let rank = 'E';
+    if (score >= 90) rank = 'S';
+    else if (score >= 75) rank = 'A';
+    else if (score >= 60) rank = 'B';
+    else if (score >= 45) rank = 'C';
+    else if (score >= 30) rank = 'D';
+
+    return {
+        score: score,
+        rank: rank,
+        realReturnRate: realReturnRate,
+        totalReturnRate: totalReturnRatePercent,
+        prizeCount: prizeCount,
+        totalValue: totalValue,
+        totalPacks: totalPacks
+    };
+}
+
+// スコア評価モーダルを表示
+function showScoreEvaluation() {
+    const scoreData = calculateOripaScore();
+
+    if (!scoreData) {
+        return;
+    }
+
+    // モーダルを表示
+    const modal = document.getElementById('scoreModal');
+    modal.classList.add('show');
+
+    // アニメーション開始
+    animateScore(scoreData);
+}
+
+// スコア評価モーダルを閉じる
+function closeScoreModal() {
+    const modal = document.getElementById('scoreModal');
+    modal.classList.remove('show');
+}
+
+// スコア表示（スライドアニメーション）
+function animateScore(scoreData) {
+    const rankElement = document.getElementById('scoreRank');
+    const rankContainer = document.getElementById('scoreRankContainer');
+
+    // ランクの配列（E → D → C → B → A → S の順）
+    const ranks = ['E', 'D', 'C', 'B', 'A', 'S'];
+    const targetRankIndex = ranks.indexOf(scoreData.rank);
+
+    // Eから目標ランクまでの配列を作成（低い方から順番に上がる）
+    const ranksToShow = ranks.slice(0, targetRankIndex + 1);
+
+    let currentIndex = 0;
+    const slideInDuration = 100; // スライドインの時間（超高速）
+    const displayDuration = 100; // 表示時間（超高速）
+    const transitionDelay = 50; // 次のアニメーションまでの遅延（連続的に見えるように短く）
+
+    function showNextRank() {
+        if (currentIndex >= ranksToShow.length) return;
+
+        const currentRank = ranksToShow[currentIndex];
+        const isLastRank = currentIndex === ranksToShow.length - 1;
+
+        // ランク要素を作成してスライドイン
+        rankContainer.innerHTML = `<span class="score-rank-item slide-in">${currentRank}</span>`;
+        rankElement.className = `score-rank rank-${currentRank}`;
+
+        if (isLastRank) {
+            // 最終ランク：確定アニメーション
+            setTimeout(() => {
+                const item = rankContainer.querySelector('.score-rank-item');
+                item.className = 'score-rank-item confirm';
+
+                // スコア詳細を表示
+                setTimeout(() => {
+                    displayScoreDetails(scoreData);
+                }, 300);
+            }, slideInDuration);
+        } else {
+            // 中間ランク：表示後すぐにスライドアウトし、連続的に次を表示
+            setTimeout(() => {
+                const item = rankContainer.querySelector('.score-rank-item');
+                item.className = 'score-rank-item slide-out';
+
+                // スライドアウトが始まったらすぐに次のランクを準備（連続的な動き）
+                setTimeout(() => {
+                    currentIndex++;
+                    showNextRank();
+                }, transitionDelay);
+            }, slideInDuration + displayDuration);
+        }
+    }
+
+    showNextRank();
+}
+
+// スコア詳細を表示
+function displayScoreDetails(scoreData) {
+    const detailsElement = document.getElementById('scoreDetails');
+
+    detailsElement.innerHTML = `
+        <div class="score-detail-item">
+            <span class="score-detail-label">総合スコア</span>
+            <span class="score-detail-value">${scoreData.score.toFixed(1)}点 / 100点</span>
+        </div>
+        <div class="score-detail-item">
+            <span class="score-detail-label">実質還元率（売上原価率）</span>
+            <span class="score-detail-value">${scoreData.realReturnRate.toFixed(1)}%</span>
+        </div>
+        <div class="score-detail-item">
+            <span class="score-detail-label">景品当選者数</span>
+            <span class="score-detail-value">${scoreData.prizeCount}人</span>
+        </div>
+        <div class="score-detail-item">
+            <span class="score-detail-label">オリパ提供価値</span>
+            <span class="score-detail-value">¥${scoreData.totalValue.toLocaleString()}</span>
+        </div>
+        <div class="score-detail-item">
+            <span class="score-detail-label">総口数</span>
+            <span class="score-detail-value">${scoreData.totalPacks}口</span>
+        </div>
+    `;
+}
+
+// クラッカーエフェクト - 自然な散らばり
+function showConfetti() {
+    const modal = document.querySelector('.score-modal-content');
+    const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#FF1493', '#00CED1', '#FFD700', '#FF69B4'];
+
+    // 左側から40個、右側から40個の紙吹雪
+    const totalConfetti = 80;
+
+    for (let i = 0; i < totalConfetti; i++) {
+        setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+
+            const isLeft = i < totalConfetti / 2;
+
+            // 発射位置の設定
+            if (isLeft) {
+                confetti.style.left = '10px';
+            } else {
+                confetti.style.right = '10px';
+            }
+
+            // 垂直位置（中央付近からランダムに）
+            confetti.style.top = (40 + Math.random() * 20) + '%';
+
+            // ランダムな移動距離と角度を計算
+            const angle = isLeft
+                ? (Math.random() * 80 - 10) // 左から: -10度〜70度
+                : (Math.random() * 80 + 110); // 右から: 110度〜190度
+
+            const distance = 150 + Math.random() * 200; // 150px〜350px
+            const angleRad = (angle * Math.PI) / 180;
+
+            const tx = Math.cos(angleRad) * distance;
+            const ty = Math.sin(angleRad) * distance;
+
+            // CSS変数に値を設定
+            confetti.style.setProperty('--tx', `${tx}px`);
+            confetti.style.setProperty('--ty', `${ty}px`);
+            confetti.style.setProperty('--rot', `${Math.random() * 720 - 360}deg`); // -360〜360度
+            confetti.style.setProperty('--duration', `${0.8 + Math.random() * 0.8}s`); // 0.8〜1.6秒
+
+            // ランダムな色
+            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+            // ランダムな遅延
+            confetti.style.animationDelay = Math.random() * 0.15 + 's';
+
+            modal.appendChild(confetti);
+
+            setTimeout(() => {
+                confetti.remove();
+            }, 2000);
+        }, i * 12);
+    }
+}
+
 </script>
+
+<!-- スコア評価モーダル -->
+<div id="scoreModal" onclick="event.target === this && closeScoreModal()">
+    <div class="score-modal-content">
+        <span class="score-close" onclick="closeScoreModal()">&times;</span>
+        <h2 class="score-title">🎯 オリパスコア測定</h2>
+
+        <div class="score-gauge-container">
+            <div class="score-rank" id="scoreRank">
+                <div class="score-rank-container" id="scoreRankContainer">
+                    <!-- スコアランクがここに表示されます -->
+                </div>
+            </div>
+        </div>
+
+        <div class="score-details" id="scoreDetails">
+            <!-- スコア詳細がここに表示されます -->
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
