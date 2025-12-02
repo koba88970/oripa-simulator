@@ -1397,6 +1397,10 @@
                         <input type="number" id="totalPacks" value="100">
                     </div>
                     <div class="form-group">
+                        <label>公開日</label>
+                        <input type="date" id="releaseDate" style="width: 100%;">
+                    </div>
+                    <div class="form-group">
                         <label>オリパ提供価値</label>
                         <div class="calculated-value" id="totalValue">¥0</div>
                     </div>
@@ -2945,6 +2949,7 @@ function getCurrentConfig() {
   return {
     packPrice: document.getElementById('packPrice').value,
     totalPacks: document.getElementById('totalPacks').value,
+    releaseDate: document.getElementById('releaseDate').value,
     minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
     prizes: [...prizes],
     losses: [...losses]
@@ -2955,6 +2960,7 @@ function getCurrentConfig() {
 function loadConfig(config) {
   document.getElementById('packPrice').value = config.packPrice || '40000';
   document.getElementById('totalPacks').value = config.totalPacks || '100';
+  document.getElementById('releaseDate').value = config.releaseDate || '';
   document.getElementById('minGuaranteeValue').value = config.minGuaranteeValue || '1';
 
   if (config.prizes) {
