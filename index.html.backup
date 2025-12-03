@@ -1597,18 +1597,6 @@
             gap: 12px;
             margin-top: 24px;
         }
-
-        /* カスタムアラートモーダルのアニメーション */
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
     </style>
 </head>
 <body>
@@ -2100,15 +2088,7 @@
                         <label>目標還元率 (%)</label>
                         <input type="number" id="autoReturnRate" value="95" min="50" max="100" step="0.1">
                         <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">
-                            全体の還元率（景品＋ハズレ）の目標値
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>実質還元率の上限 (%)</label>
-                        <input type="number" id="autoActualReturnRateLimit" value="50" min="10" max="100" step="0.1">
-                        <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">
-                            カード景品のみの還元率上限（この値を超えないように調整します）
+                            この還元率に近いオリパを作成します
                         </div>
                     </div>
 
@@ -2150,23 +2130,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label>ハズレの種類数</label>
-                        <select id="autoLossTypes" onchange="toggleAutoMinGuarantee()" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
-                            <option value="1">1種類（最低保証は自動計算）</option>
-                            <option value="2">2種類</option>
-                            <option value="3">3種類</option>
-                        </select>
-                        <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">
-                            ハズレの種類数を選択（1種類の場合は最低保証が自動計算されます）
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="autoMinGuaranteeGroup" style="display: none;">
                         <label>最低保証価値（ハズレ1枚あたり）</label>
                         <input type="number" id="autoMinGuarantee" value="100" min="1">
-                        <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">
-                            ハズレが2種類以上の場合の最低保証価値
-                        </div>
                     </div>
 
                     <button class="btn btn-primary" onclick="createAutoOripa()" style="width: 100%; font-size: 16px; padding: 16px; margin-top: 8px;">
@@ -2204,18 +2169,6 @@
             </div>
         </div>
         <!-- /オリパ自動作成タブコンテンツ -->
-    </div>
-
-    <!-- カスタムアラートモーダル -->
-    <div id="customAlertModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10000; align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); animation: slideIn 0.2s ease-out;">
-            <div id="customAlertIcon" style="font-size: 48px; text-align: center; margin-bottom: 16px;">⚠️</div>
-            <div id="customAlertTitle" style="font-size: 18px; font-weight: 700; color: rgba(0, 0, 0, 0.9); margin-bottom: 12px; text-align: center;"></div>
-            <div id="customAlertMessage" style="font-size: 14px; color: rgba(0, 0, 0, 0.7); line-height: 1.6; white-space: pre-wrap; margin-bottom: 20px;"></div>
-            <button onclick="closeCustomAlert()" style="width: 100%; padding: 12px; background: var(--sf-blue); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                OK
-            </button>
-        </div>
     </div>
 
     <!-- 景品編集モーダル -->
@@ -2473,40 +2426,6 @@
     </div>
 
     <script>
-        // ==================== カスタムアラート ====================
-        function showCustomAlert(message, title = '', icon = '⚠️') {
-            const modal = document.getElementById('customAlertModal');
-            const iconEl = document.getElementById('customAlertIcon');
-            const titleEl = document.getElementById('customAlertTitle');
-            const messageEl = document.getElementById('customAlertMessage');
-
-            iconEl.textContent = icon;
-            titleEl.textContent = title;
-            messageEl.textContent = message;
-
-            modal.style.display = 'flex';
-        }
-
-        function closeCustomAlert() {
-            const modal = document.getElementById('customAlertModal');
-            modal.style.display = 'none';
-        }
-
-        // Escapeキーでモーダルを閉じる
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeCustomAlert();
-            }
-        });
-
-        // モーダル背景クリックで閉じる
-        document.addEventListener('click', function(event) {
-            const modal = document.getElementById('customAlertModal');
-            if (event.target === modal) {
-                closeCustomAlert();
-            }
-        });
-
         // グローバル変数
         let prizes = [];
         let losses = []; // ハズレリスト
@@ -2999,14 +2918,7 @@
             // ソート処理
             let sortedPrizes = [...filteredPrizes];
 
-            // オリパ自動作成の置き換えモードの場合、還元価値に近い順でソート
-            if (isReplacingAutoCreateMode && targetPrizeValue !== null) {
-                sortedPrizes.sort((a, b) => {
-                    const diffA = Math.abs(a.value - targetPrizeValue);
-                    const diffB = Math.abs(b.value - targetPrizeValue);
-                    return diffA - diffB;
-                });
-            } else if (sortBy === 'price') {
+            if (sortBy === 'price') {
                 sortedPrizes.sort((a, b) => {
                     if (sortOrder === 'desc') {
                         return b.purchasePrice - a.purchasePrice;
@@ -3069,20 +2981,11 @@
 
         // 置き換えモードフラグ
         let isReplacingMode = false;
-        let isReplacingAutoCreateMode = false;
-        let autoCreateReplaceIndex = -1;
-        let targetPrizeValue = null; // 置き換え対象の景品の還元価値
 
         // メインタブ用：マスターから景品を選択してフォームに反映
         function selectPrizeFromMasterForMain(prizeId) {
             const prize = prizeMaster.find(p => p.id === prizeId);
             if (!prize) return;
-
-            // オリパ自動作成の置き換えモードの場合
-            if (isReplacingAutoCreateMode && autoCreateReplaceIndex >= 0) {
-                selectPrizeForReplacement(prizeId, autoCreateReplaceIndex);
-                return;
-            }
 
             // 置き換えモードの場合
             if (isReplacingMode) {
@@ -3182,9 +3085,6 @@
 
             // 置き換えモードをリセット
             isReplacingMode = false;
-            isReplacingAutoCreateMode = false;
-            autoCreateReplaceIndex = -1;
-            targetPrizeValue = null;
         }
 
         // モーダル内の新規登録フォームを表示
@@ -3880,14 +3780,12 @@
             document.getElementById('summaryRealReturn').textContent = `${data.realReturnRate.toFixed(1)}%`;
 
             // 実質還元率（売上原価率）が50％を超えた場合の警告
-            // 値が変わった場合のみ警告を表示（0.1%以上の変化で警告）
-            if (data.realReturnRate > 50 && Math.abs(data.realReturnRate - lastWarningRealReturnRate) > 0.1) {
+            // 値が変わった場合のみ警告を表示
+            if (data.realReturnRate > 50 && Math.abs(data.realReturnRate - lastWarningRealReturnRate) > 0.5) {
                 lastWarningRealReturnRate = data.realReturnRate;
-                showCustomAlert(
-                    `現在の実質還元率（売上原価率）: ${data.realReturnRate.toFixed(1)}%\n\n売上原価率が50％を超えています。\nこのままでは利益率が低く、ビジネスとして成立しにくい可能性があります。\n\n推奨対応：\n• 景品の仕入れ価格を見直す\n• パック単価を上げる\n• 高額景品の枚数を減らす`,
-                    '警告：売上原価率が高すぎます',
-                    '⚠️'
-                );
+                setTimeout(() => {
+                    alert(`⚠️ 警告：売上原価率が高すぎます\n\n現在の実質還元率（売上原価率）: ${data.realReturnRate.toFixed(1)}%\n\n売上原価率が50％を超えています。\nこのままでは利益率が低く、ビジネスとして成立しにくい可能性があります。\n\n推奨対応：\n• 景品の仕入れ価格を見直す\n• パック単価を上げる\n• 高額景品の枚数を減らす`);
+                }, 300);
             } else if (data.realReturnRate <= 50) {
                 // 50％以下になったらフラグをリセット
                 lastWarningRealReturnRate = 0;
@@ -5907,26 +5805,10 @@
         let autoCreatedPrizes = []; // 自動作成された景品リスト
         let autoCreatedSettings = {}; // 自動作成時の設定
 
-        // ハズレの種類数に応じて最低保証の表示を切り替え
-        function toggleAutoMinGuarantee() {
-            const lossTypes = document.getElementById('autoLossTypes').value;
-            const minGuaranteeGroup = document.getElementById('autoMinGuaranteeGroup');
-
-            if (lossTypes === '1') {
-                minGuaranteeGroup.style.display = 'none';
-            } else {
-                minGuaranteeGroup.style.display = 'block';
-            }
-        }
-
         // オリパを自動作成
         function createAutoOripa() {
             if (prizeMaster.length === 0) {
-                showCustomAlert(
-                    'まず景品マスタータブで景品を登録してください。',
-                    '景品マスターが空です',
-                    '📋'
-                );
+                alert('景品マスターが空です。\n\nまず景品マスタータブで景品を登録してください。');
                 return;
             }
 
@@ -5934,464 +5816,342 @@
             const packPrice = parseInt(document.getElementById('autoPackPrice').value) || 0;
             const totalPacks = parseInt(document.getElementById('autoTotalPacks').value) || 0;
             const targetReturnRate = parseFloat(document.getElementById('autoReturnRate').value) || 0;
-            const actualReturnRateLimit = parseFloat(document.getElementById('autoActualReturnRateLimit').value) || 0;
-            const prizeFilter = document.getElementById('autoPrizeFilter').value;
-            const lossTypes = parseInt(document.getElementById('autoLossTypes').value) || 1;
-            const minGuarantee = lossTypes === 1 ? 0 : (parseInt(document.getElementById('autoMinGuarantee').value) || 100);
+            const returnRateMax = parseFloat(document.getElementById('autoReturnRateMax').value) || 0;
+            const minGuarantee = parseInt(document.getElementById('autoMinGuarantee').value) || 1;
+            const lossTypes = parseInt(document.getElementById('autoLossTypes').value) || 3;
 
-            // 各等級の枚数を取得
-            const rankCounts = {
-                1: parseInt(document.getElementById('autoRank1Count').value) || 0,
-                2: parseInt(document.getElementById('autoRank2Count').value) || 0,
-                3: parseInt(document.getElementById('autoRank3Count').value) || 0,
-                4: parseInt(document.getElementById('autoRank4Count').value) || 0,
-                5: parseInt(document.getElementById('autoRank5Count').value) || 0
-            };
+            // 当選確率条件（必須）
+            const probabilityX = parseInt(document.getElementById('autoProbabilityX').value) || 0;
+            const probabilityRank = parseInt(document.getElementById('autoProbabilityRank').value) || 0;
 
-            // バリデーション
-            if (packPrice <= 0 || totalPacks <= 0 || targetReturnRate <= 0) {
-                showCustomAlert(
-                    'パック単価、総口数、目標還元率を正しく入力してください',
-                    '入力エラー',
-                    '⚠️'
-                );
+            // 各等級の枚数と条件を取得
+            const rankConfigs = [
+                {
+                    rank: 1,
+                    count: parseInt(document.getElementById('autoRank1Count').value) || 0,
+                    condition: document.getElementById('autoRank1Condition').value
+                },
+                {
+                    rank: 2,
+                    count: parseInt(document.getElementById('autoRank2Count').value) || 0,
+                    condition: document.getElementById('autoRank2Condition').value
+                },
+                {
+                    rank: 3,
+                    count: parseInt(document.getElementById('autoRank3Count').value) || 0,
+                    condition: document.getElementById('autoRank3Condition').value
+                },
+                {
+                    rank: 4,
+                    count: parseInt(document.getElementById('autoRank4Count').value) || 0,
+                    condition: document.getElementById('autoRank4Condition').value
+                },
+                {
+                    rank: 5,
+                    count: parseInt(document.getElementById('autoRank5Count').value) || 0,
+                    condition: document.getElementById('autoRank5Condition').value
+                }
+            ];
+
+            if (packPrice <= 0 || totalPacks <= 0 || returnRateMin <= 0 || returnRateMax <= 0) {
+                alert('パック単価、総口数、目標還元率を正しく入力してください');
                 return;
             }
 
-            // 景品マスターから選択対象の景品をフィルタリング
-            let availablePrizes = [...prizeMaster];
-
-            if (prizeFilter === 'inStock') {
-                availablePrizes = availablePrizes.filter(p => p.count > 0);
-            } else if (prizeFilter === 'inStockAndWanted') {
-                availablePrizes = availablePrizes.filter(p => p.count > 0 || p.isWanted === true);
-            }
-
-            if (availablePrizes.length === 0) {
-                showCustomAlert(
-                    'フィルター条件を変更するか、景品マスターに景品を追加してください。',
-                    '選択条件に一致する景品がありません',
-                    '🔍'
-                );
+            if (returnRateMin > returnRateMax) {
+                alert('還元率の範囲が正しくありません。最小値は最大値以下である必要があります。');
                 return;
             }
 
-            // 当たり景品の総数を計算
-            const totalPrizeCount = Object.values(rankCounts).reduce((sum, count) => sum + count, 0);
-
-            if (totalPrizeCount > totalPacks) {
-                showCustomAlert(
-                    `総口数: ${totalPacks}枚\n当たり総数: ${totalPrizeCount}枚`,
-                    '当たり景品の総数が総口数を超えています',
-                    '⚠️'
-                );
+            // 当選確率条件のバリデーション（必須）
+            if (probabilityX <= 0 || probabilityRank <= 0) {
+                alert('当選確率条件を設定してください。\n\n例: 10分の1で3等以上');
                 return;
             }
+
+            // 目標還元率（範囲の中央値を使用）
+            const targetReturnRate = (returnRateMin + returnRateMax) / 2;
 
             // 目標還元総額を計算
             const totalValue = packPrice * totalPacks;
             const targetReturnValue = totalValue * (targetReturnRate / 100);
-            const maxPrizeReturnValue = totalValue * (actualReturnRateLimit / 100);
 
-            // 等級ごとの目標還元額を計算（等級が高いほど価値が高くなるように重み付け）
-            const rankWeights = {
-                1: 0.50,  // 1等: 50%
-                2: 0.25,  // 2等: 25%
-                3: 0.15,  // 3等: 15%
-                4: 0.07,  // 4等: 7%
-                5: 0.03   // 5等: 3%
-            };
+            // 確率条件から必要な最低枚数を計算
+            const requiredMinCount = Math.ceil(totalPacks / probabilityX);
 
-            // 各等級の景品を選択
+            // 各等級の実際の枚数を決定（条件に基づいて調整）
+            const actualRankCounts = [];
+            let totalPrizeCount = 0;
+
+            for (const config of rankConfigs) {
+                let actualCount = config.count;
+
+                // 条件に応じて枚数を調整
+                if (config.condition === 'exact') {
+                    actualCount = config.count;
+                } else if (config.condition === 'less') {
+                    // 以下の場合は指定枚数をそのまま使用（または減らす）
+                    actualCount = config.count;
+                } else if (config.condition === 'more') {
+                    // 以上の場合は指定枚数をそのまま使用（または増やす）
+                    actualCount = config.count;
+                }
+
+                actualRankCounts.push({
+                    rank: config.rank,
+                    count: actualCount,
+                    condition: config.condition
+                });
+                totalPrizeCount += actualCount;
+            }
+
+            // 確率条件を満たすかチェック
+            let targetRankOrAboveCount = 0;
+            for (let i = 0; i < probabilityRank; i++) {
+                targetRankOrAboveCount += actualRankCounts[i].count;
+            }
+
+            if (targetRankOrAboveCount < requiredMinCount) {
+                alert(`確率条件を満たしていません。\n\n` +
+                    `条件: ${probabilityX}分の1で${probabilityRank}等以上\n` +
+                    `必要枚数: ${requiredMinCount}枚以上\n` +
+                    `現在の${probabilityRank}等以上: ${targetRankOrAboveCount}枚\n\n` +
+                    `${probabilityRank}等以上の景品を${requiredMinCount - targetRankOrAboveCount}枚以上追加してください。`);
+                return;
+            }
+
+            // 当たり景品の総口数チェック
+            if (totalPrizeCount > totalPacks) {
+                alert(`当たり景品の総数が総口数を超えています。\n\n` +
+                    `総口数: ${totalPacks}枚\n` +
+                    `当たり総数: ${totalPrizeCount}枚\n\n` +
+                    `当たりの枚数を減らしてください。`);
+                return;
+            }
+
+            // ハズレ枚数を自動計算
+            const lossCount = totalPacks - totalPrizeCount;
+
+            // 各等級の景品を景品マスターから選択
             autoCreatedPrizes = [];
             let currentReturnValue = 0;
+            let success = true;
+            let errors = [];
 
-            // 価値でソート（高い順）
-            availablePrizes.sort((a, b) => b.value - a.value);
+            actualRankCounts.forEach(({ rank, count, condition }) => {
+                if (count === 0) return;
 
-            for (let rank = 1; rank <= 5; rank++) {
-                const count = rankCounts[rank];
-                if (count === 0) continue;
+                // 景品マスター全体から選択（等級はオリパ作成時に割り当てる）
+                if (prizeMaster.length === 0) {
+                    errors.push(`景品マスターが空です`);
+                    success = false;
+                    return;
+                }
 
-                const rankTargetValue = targetReturnValue * rankWeights[rank];
+                // 等級ごとの目標還元額を計算（等級が高いほど価値が高くなるように重み付け）
+                const rankWeight = [0.5, 0.25, 0.15, 0.07, 0.03]; // 1等50%, 2等25%, 3等15%, 4等7%, 5等3%
+                const rankTargetValue = targetReturnValue * rankWeight[rank - 1];
                 const perPrizeTargetValue = rankTargetValue / count;
 
-                // 1等は必ず指定枚数、2-5等は±20%の範囲で調整可能
-                const minCount = (rank === 1) ? count : Math.floor(count * 0.8);
-                const maxCount = (rank === 1) ? count : Math.ceil(count * 1.2);
-
-                let addedCount = 0;
-
-                // まず指定枚数まで景品を追加
+                // 目標価値に最も近い景品を景品マスター全体から選択
                 for (let i = 0; i < count; i++) {
-                    // 残り追加可能な還元額を計算
-                    const remainingValue = maxPrizeReturnValue - currentReturnValue;
+                    // 価値の差が最も小さい景品を選ぶ
+                    const selectedPrize = prizeMaster.reduce((best, current) => {
+                        const currentDiff = Math.abs(current.value - perPrizeTargetValue);
+                        const bestDiff = Math.abs(best.value - perPrizeTargetValue);
+                        return currentDiff < bestDiff ? current : best;
+                    });
 
-                    // 実質還元率上限を超える場合は追加できる最大価値で制限
-                    let targetValue = perPrizeTargetValue;
-                    if (remainingValue < perPrizeTargetValue) {
-                        targetValue = remainingValue;
-                    }
-
-                    // 追加可能な還元額がほぼゼロの場合
-                    if (remainingValue <= 0) {
-                        // 1等の場合は必ず枚数を守る必要があるため警告
-                        if (rank === 1 && addedCount < count) {
-                            console.warn(`実質還元率上限に達したため、1等の指定枚数を満たせませんでした`);
-                        }
-                        break;
-                    }
-
-                    // 目標価値に最も近く、かつ残り予算内の景品を選ぶ
-                    let selectedPrize = null;
-                    let minDiff = Infinity;
-
-                    for (const prize of availablePrizes) {
-                        // 予算を超える景品は除外
-                        if (prize.value > remainingValue) continue;
-
-                        const diff = Math.abs(prize.value - targetValue);
-                        if (diff < minDiff) {
-                            minDiff = diff;
-                            selectedPrize = prize;
-                        }
-                    }
-
-                    // 選択可能な景品がない場合
-                    if (!selectedPrize) {
-                        // 1等の場合は必ず枚数を守る必要があるため警告
-                        if (rank === 1 && addedCount < count) {
-                            console.warn(`実質還元率上限内で選択できる景品がないため、1等の指定枚数を満たせませんでした`);
-                        }
-                        break;
-                    }
-
-                    // 景品を追加
+                    // 景品を追加（等級はここで割り当てる）
                     autoCreatedPrizes.push({
                         id: Date.now() + Math.random(),
                         name: selectedPrize.name,
-                        rank: rank,
+                        rank: rank,  // オリパ作成時に等級を割り当て
                         purchasePrice: selectedPrize.purchasePrice,
                         value: selectedPrize.value,
-                        count: 1,
-                        image: selectedPrize.image || null,
-                        masterPrizeId: selectedPrize.id
+                        count: 1
                     });
 
                     currentReturnValue += selectedPrize.value;
-                    addedCount++;
                 }
+            });
 
-                // 2-5等は、指定枚数を満たした後、最大枚数まで追加の景品を追加可能
-                if (rank !== 1 && addedCount >= count && addedCount < maxCount) {
-                    while (addedCount < maxCount) {
-                        const remainingValue = maxPrizeReturnValue - currentReturnValue;
-                        if (remainingValue <= 0) break;
-
-                        // 残り予算内で目標価値に近い景品を選ぶ
-                        let selectedPrize = null;
-                        let minDiff = Infinity;
-
-                        for (const prize of availablePrizes) {
-                            if (prize.value > remainingValue) continue;
-
-                            const diff = Math.abs(prize.value - perPrizeTargetValue);
-                            if (diff < minDiff) {
-                                minDiff = diff;
-                                selectedPrize = prize;
-                            }
-                        }
-
-                        if (!selectedPrize) break;
-
-                        // 景品を追加
-                        autoCreatedPrizes.push({
-                            id: Date.now() + Math.random(),
-                            name: selectedPrize.name,
-                            rank: rank,
-                            purchasePrice: selectedPrize.purchasePrice,
-                            value: selectedPrize.value,
-                            count: 1,
-                            image: selectedPrize.image || null,
-                            masterPrizeId: selectedPrize.id
-                        });
-
-                        currentReturnValue += selectedPrize.value;
-                        addedCount++;
-                    }
-                }
+            if (!success) {
+                alert('オリパの自動作成に失敗しました:\n' + errors.join('\n'));
+                return;
             }
 
-            // 実際の景品総数を計算（枚数増減許可の場合、実際の枚数が変わる可能性がある）
-            const actualPrizeCount = autoCreatedPrizes.length;
-
-            // ハズレ枚数を計算
-            const lossCount = totalPacks - actualPrizeCount;
-
-            // ハズレの還元額を計算
+            // ハズレ1種類の場合は最低保証を自動計算
             let calculatedMinGuarantee = minGuarantee;
             if (lossTypes === 1) {
-                // ハズレが1種類の場合は、最低保証を自動計算
-                // 目標還元率から景品の還元額を引いた残りをハズレ枚数で割る
-                const targetLossReturnValue = (totalValue * targetReturnRate / 100) - currentReturnValue;
-                calculatedMinGuarantee = lossCount > 0 ? Math.floor(targetLossReturnValue / lossCount) : 0;
-                if (calculatedMinGuarantee < 0) calculatedMinGuarantee = 0;
+                // 目標還元額から当たり還元額を引いた残りをハズレ枚数で割る
+                const remainingValue = targetReturnValue - currentReturnValue;
+                calculatedMinGuarantee = Math.floor(remainingValue / lossCount);
+
+                // 最低1円は保証
+                if (calculatedMinGuarantee < 1) {
+                    calculatedMinGuarantee = 1;
+                }
             }
 
+            // ハズレ分の還元額を計算
             const lossReturnValue = lossCount * calculatedMinGuarantee;
-            const totalReturnValue = currentReturnValue + lossReturnValue;
+            currentReturnValue += lossReturnValue;
 
-            // 全体還元率を計算（景品＋ハズレ）
-            const actualReturnRate = (totalReturnValue / totalValue) * 100;
+            // 実質還元率を計算
+            const actualReturnRate = (currentReturnValue / totalValue) * 100;
 
-            // 実質還元率を計算（カード景品のみ）
-            const actualPrizeReturnRate = (currentReturnValue / totalValue) * 100;
+            // 還元率が範囲内かチェック
+            let returnRateStatus = 'success';
+            let returnRateMessage = '';
+            if (actualReturnRate < returnRateMin) {
+                returnRateStatus = 'warning';
+                returnRateMessage = `⚠️ 還元率が目標範囲を下回っています（${returnRateMin}%未満）`;
+            } else if (actualReturnRate > returnRateMax) {
+                returnRateStatus = 'warning';
+                returnRateMessage = `⚠️ 還元率が目標範囲を上回っています（${returnRateMax}%超過）`;
+            } else {
+                returnRateMessage = `✅ 還元率が目標範囲内です（${returnRateMin}% 〜 ${returnRateMax}%）`;
+            }
 
-            // 設定を保存
-            autoCreatedSettings = {
-                packPrice,
-                totalPacks,
-                targetReturnRate,
-                actualReturnRateLimit,
-                minGuarantee: calculatedMinGuarantee,
-                lossTypes,
-                actualReturnRate,
-                actualPrizeReturnRate,
-                lossCount
-            };
-
-            // プレビュー表示に切り替え
-            updatePreviewDisplay();
+            // 結果を表示
+            displayAutoCreateResult(packPrice, totalPacks, targetReturnValue, currentReturnValue, actualReturnRate, lossCount, calculatedMinGuarantee, returnRateMin, returnRateMax, returnRateStatus, returnRateMessage, probabilityX, probabilityRank, lossTypes);
         }
 
-        // プレビュー表示を更新
-        function updatePreviewDisplay() {
-            const settings = autoCreatedSettings;
+        // 自動作成結果を表示
+        function displayAutoCreateResult(packPrice, totalPacks, targetReturnValue, actualReturnValue, actualReturnRate, lossCount, minGuarantee, returnRateMin, returnRateMax, returnRateStatus, returnRateMessage, probabilityX, probabilityRank, lossTypes) {
+            const resultDiv = document.getElementById('autoCreateResult');
+            const contentDiv = document.getElementById('autoCreateResultContent');
 
-            // 設定画面を非表示、プレビューを表示
-            document.getElementById('autoCreateSettings').style.display = 'none';
-            document.getElementById('autoCreatePreview').style.display = 'block';
+            // 等級ごとに景品をまとめる
+            const rankGroups = {1: [], 2: [], 3: [], 4: [], 5: []};
+            autoCreatedPrizes.forEach(prize => {
+                rankGroups[prize.rank].push(prize);
+            });
 
-            // サマリーを作成
-            const totalValue = settings.packPrice * settings.totalPacks;
-            const prizeReturnValue = autoCreatedPrizes.reduce((sum, p) => sum + (p.value * p.count), 0);
-            const lossReturnValue = settings.lossCount * settings.minGuarantee;
-            const totalReturnValue = prizeReturnValue + lossReturnValue;
+            // 還元率ステータスの色を決定
+            const statusColor = returnRateStatus === 'success' ? 'var(--sf-green)' : 'var(--sf-orange)';
+            const statusBgColor = returnRateStatus === 'success' ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 149, 0, 0.1)';
+            const statusBorderColor = returnRateStatus === 'success' ? 'rgba(52, 199, 89, 0.3)' : 'rgba(255, 149, 0, 0.3)';
 
-            const summaryHtml = `
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">目標還元率（全体）</div>
-                        <div style="font-size: 20px; font-weight: 700; color: var(--sf-blue);">${settings.targetReturnRate.toFixed(1)}%</div>
+            let html = `
+                <div style="background: ${statusBgColor}; padding: 20px; border-radius: var(--radius-lg); border: 2px solid ${statusBorderColor}; margin-bottom: 16px;">
+                    <div style="font-size: 14px; font-weight: 600; color: ${statusColor}; margin-bottom: 12px;">
+                        ${returnRateMessage}
                     </div>
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">実際の還元率（全体）</div>
-                        <div style="font-size: 20px; font-weight: 700; color: var(--sf-green);">${settings.actualReturnRate.toFixed(1)}%</div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                        <div>
+                            <div style="font-size: 12px; color: var(--sf-gray); margin-bottom: 4px;">目標還元率</div>
+                            <div style="font-size: 20px; font-weight: 700; color: var(--sf-green);">${returnRateMin}% 〜 ${returnRateMax}%</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--sf-gray); margin-bottom: 4px;">実際の還元率</div>
+                            <div style="font-size: 20px; font-weight: 700; color: ${statusColor};">${actualReturnRate.toFixed(2)}%</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--sf-gray); margin-bottom: 4px;">目標還元額（中央値）</div>
+                            <div style="font-size: 18px; font-weight: 700; color: rgba(0, 0, 0, 0.9);">¥${targetReturnValue.toLocaleString()}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--sf-gray); margin-bottom: 4px;">実際の還元額</div>
+                            <div style="font-size: 18px; font-weight: 700; color: rgba(0, 0, 0, 0.9);">¥${actualReturnValue.toLocaleString()}</div>
+                        </div>
                     </div>
-                    <div style="grid-column: 1 / -1; padding: 16px; background: rgba(255, 149, 0, 0.1); border-radius: var(--radius-md); border: 2px solid rgba(255, 149, 0, 0.3);">
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                            <div>
-                                <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">実質還元率上限</div>
-                                <div style="font-size: 18px; font-weight: 700; color: var(--sf-orange);">${settings.actualReturnRateLimit.toFixed(1)}%</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">実際の実質還元率</div>
-                                <div style="font-size: 18px; font-weight: 700; color: ${settings.actualPrizeReturnRate <= settings.actualReturnRateLimit ? 'var(--sf-green)' : 'var(--sf-red)'};">${settings.actualPrizeReturnRate.toFixed(1)}%</div>
+                </div>`;
+
+            // 確率条件の表示
+            if (probabilityX > 0 && probabilityRank > 0) {
+                // y等以上の景品の総数を計算
+                let targetRankOrAboveCount = 0;
+                for (let r = 1; r <= probabilityRank; r++) {
+                    targetRankOrAboveCount += rankGroups[r].length;
+                }
+
+                const actualProbability = (targetRankOrAboveCount / totalPacks * 100).toFixed(2);
+                const targetProbability = (100 / probabilityX).toFixed(2);
+
+                html += `
+                    <div style="background: rgba(0, 122, 255, 0.1); padding: 16px; border-radius: var(--radius-md); border: 1px solid rgba(0, 122, 255, 0.3); margin-bottom: 16px;">
+                        <div style="font-weight: 600; color: var(--sf-blue); margin-bottom: 8px;">📊 当選確率条件</div>
+                        <div style="font-size: 14px; color: rgba(0, 0, 0, 0.9);">
+                            <div style="margin-bottom: 4px;">条件: ${probabilityX}分の1で${probabilityRank}等以上</div>
+                            <div style="margin-bottom: 4px;">目標確率: ${targetProbability}%</div>
+                            <div style="margin-bottom: 4px;">実際の確率: ${actualProbability}% (${targetRankOrAboveCount}枚 / ${totalPacks}枚)</div>
+                            <div style="margin-top: 8px; padding: 8px; background: rgba(255, 255, 255, 0.5); border-radius: var(--radius-sm);">
+                                約${Math.round(totalPacks / targetRankOrAboveCount)}回に1回、${probabilityRank}等以上が当たります
                             </div>
                         </div>
-                        <div style="font-size: 12px; color: var(--sf-gray); margin-top: 8px; font-style: italic;">
-                            💡 実質還元率 = カード景品のみの還元率（ハズレを除く）
-                        </div>
                     </div>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">総売上</div>
-                        <div style="font-size: 18px; font-weight: 600;">¥${totalValue.toLocaleString()}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">総還元額</div>
-                        <div style="font-size: 18px; font-weight: 600;">¥${totalReturnValue.toLocaleString()}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">景品還元額</div>
-                        <div style="font-size: 18px; font-weight: 600;">¥${prizeReturnValue.toLocaleString()}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">ハズレ還元額</div>
-                        <div style="font-size: 18px; font-weight: 600;">¥${lossReturnValue.toLocaleString()}</div>
-                    </div>
-                </div>
+                `;
+            }
+
+            html += `<h4 style="margin-bottom: 12px; color: rgba(0, 0, 0, 0.9);">選択された景品</h4>
             `;
-            document.getElementById('autoPreviewSummary').innerHTML = summaryHtml;
 
-            // 景品リストを作成
-            let prizesHtml = `<h4 style="margin-bottom: 12px;">当たり景品 (${autoCreatedPrizes.length}枚)</h4>`;
+            // 等級ごとに表示
+            [1, 2, 3, 4, 5].forEach(rank => {
+                if (rankGroups[rank].length > 0) {
+                    const rankNames = ['1等', '2等', '3等', '4等', '5等'];
+                    html += `<div style="margin-bottom: 16px;">`;
+                    html += `<div style="font-weight: 600; color: var(--sf-blue); margin-bottom: 8px;">${rankNames[rank - 1]} (${rankGroups[rank].length}枚)</div>`;
 
-            for (let rank = 1; rank <= 5; rank++) {
-                const rankPrizes = autoCreatedPrizes.filter(p => p.rank === rank);
-                if (rankPrizes.length === 0) continue;
-
-                prizesHtml += `<div style="margin-bottom: 16px;">`;
-                prizesHtml += `<div style="font-weight: 600; color: var(--sf-blue); margin-bottom: 8px;">${rank}等 (${rankPrizes.length}枚)</div>`;
-
-                rankPrizes.forEach((prize, index) => {
-                    const imageHtml = prize.image
-                        ? `<img src="${prize.image}" style="width: 50px; height: 75px; object-fit: cover; border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.1); margin-right: 12px;">`
-                        : `<div style="width: 50px; height: 75px; background: rgba(0, 0, 0, 0.05); border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 12px;">📦</div>`;
-
-                    prizesHtml += `
-                        <div style="background: white; padding: 12px; border-radius: var(--radius-md); margin-bottom: 8px; border: 1px solid rgba(0, 0, 0, 0.08); display: flex; align-items: center;">
-                            ${imageHtml}
-                            <div style="flex: 1;">
+                    rankGroups[rank].forEach(prize => {
+                        html += `
+                            <div style="background: rgba(255, 255, 255, 0.8); padding: 12px; border-radius: var(--radius-md); margin-bottom: 8px; border: 1px solid rgba(0, 0, 0, 0.08);">
                                 <div style="font-weight: 600; margin-bottom: 4px;">${prize.name}</div>
                                 <div style="font-size: 13px; color: var(--sf-gray);">
                                     仕入れ: ¥${prize.purchasePrice.toLocaleString()} / 還元価値: ¥${prize.value.toLocaleString()}
                                 </div>
                             </div>
-                            <button onclick="replacePrizeInPreview(${autoCreatedPrizes.indexOf(prize)})" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px; white-space: nowrap;">
-                                🔄 変更
-                            </button>
-                        </div>
-                    `;
-                });
-                prizesHtml += `</div>`;
-            }
+                        `;
+                    });
+                    html += `</div>`;
+                }
+            });
 
-            // ハズレ情報を追加
-            const lossTypesText = settings.lossTypes === 1 ? '1種類（最低保証は自動計算）' : `${settings.lossTypes}種類`;
-            prizesHtml += `
-                <div style="background: rgba(142, 142, 147, 0.1); padding: 16px; border-radius: var(--radius-md); border: 1px solid rgba(142, 142, 147, 0.3); margin-top: 16px;">
-                    <div style="font-weight: 600; color: var(--sf-gray); margin-bottom: 8px;">ハズレ（${lossTypesText}）</div>
-                    <div style="font-size: 13px; color: var(--sf-gray);">
-                        <div>総枚数: ${settings.lossCount}枚</div>
-                        <div>種類数: ${settings.lossTypes}種類</div>
-                        <div>最低保証: ¥${settings.minGuarantee.toLocaleString()} ${settings.lossTypes === 1 ? '<span style="color: var(--sf-orange);">(自動計算)</span>' : ''}</div>
+            // ハズレ情報
+            html += `
+                <div style="background: rgba(142, 142, 147, 0.1); padding: 16px; border-radius: var(--radius-md); border: 1px solid rgba(142, 142, 147, 0.3);">
+                    <div style="font-weight: 600; color: var(--sf-gray); margin-bottom: 8px;">ハズレ（自動計算）</div>
+                    <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 8px;">
+                        <div style="margin-bottom: 4px;">総枚数: ${lossCount}枚</div>
+                        <div style="margin-bottom: 4px;">種類数: ${lossTypes}種類${lossTypes === 1 ? '（均等配分）' : ''}</div>
+                        <div style="margin-bottom: 4px;">最低保証: ¥${minGuarantee.toLocaleString()}${lossTypes === 1 ? ' <span style="color: var(--sf-orange);">(自動計算)</span>' : ''}</div>
                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(142, 142, 147, 0.2);">
-                            合計還元額: ¥${lossReturnValue.toLocaleString()}
+                            合計還元額: ¥${(lossCount * minGuarantee).toLocaleString()}
                         </div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--sf-gray); font-style: italic;">
+                        ※ ハズレは総口数（${totalPacks}枚）から当たり枚数を引いて自動計算されます${lossTypes === 1 ? '<br>※ ハズレ1種類の場合、最低保証は目標還元率から自動計算されます' : ''}
                     </div>
                 </div>
             `;
 
-            document.getElementById('autoPreviewPrizes').innerHTML = prizesHtml;
+            contentDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
         }
 
-        // 設定画面に戻る
-        function backToSettings() {
-            document.getElementById('autoCreatePreview').style.display = 'none';
-            document.getElementById('autoCreateSettings').style.display = 'block';
-        }
-
-        // プレビュー内の景品を変更
-        function replacePrizeInPreview(index) {
-            const prize = autoCreatedPrizes[index];
-            if (!prize) return;
-
-            // 置き換えモードを設定
-            isReplacingAutoCreateMode = true;
-            autoCreateReplaceIndex = index;
-            targetPrizeValue = prize.value; // 元の景品の還元価値を記憶
-
-            // 景品マスターモーダルを開く
-            const modal = document.getElementById('selectPrizeMasterModal');
-            modal.style.display = 'flex';
-
-            // 検索条件をリセット
-            const searchInput = document.getElementById('modalSearchText');
-            if (searchInput) searchInput.value = '';
-
-            // ソート条件を還元価値順に設定
-            const sortBySelect = document.getElementById('modalSortBy');
-            if (sortBySelect) sortBySelect.value = 'price';
-
-            // モーダルの景品リストを更新
-            updatePrizeMasterSelectList();
-        }
-
-        // 景品マスターから選択した景品で置き換え
-        function selectPrizeForReplacement(prizeId, previewIndex) {
-            const selectedPrize = prizeMaster.find(p => p.id === prizeId);
-            if (!selectedPrize) return;
-
-            const oldPrize = autoCreatedPrizes[previewIndex];
-
-            // 景品を置き換え
-            autoCreatedPrizes[previewIndex] = {
-                id: Date.now() + Math.random(),
-                name: selectedPrize.name,
-                rank: oldPrize.rank, // 等級は維持
-                purchasePrice: selectedPrize.purchasePrice,
-                value: selectedPrize.value,
-                count: 1,
-                image: selectedPrize.image || null,
-                masterPrizeId: selectedPrize.id
-            };
-
-            // プレビューを更新
-            updatePreviewDisplay();
-
-            // 置き換えモードをリセット
-            isReplacingAutoCreateMode = false;
-            autoCreateReplaceIndex = -1;
-            targetPrizeValue = null;
-
-            // モーダルを閉じる
-            const modal = document.getElementById('selectPrizeMasterModal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        // オリパ登録確認
-        function confirmRegisterOripa() {
+        // 自動作成されたオリパをメインタブに適用
+        function applyAutoCreatedOripa() {
             if (autoCreatedPrizes.length === 0) {
-                alert('登録できるオリパがありません');
+                alert('適用できるオリパがありません');
                 return;
             }
 
-            if (!confirm('このオリパをメインタブに登録しますか？')) {
+            if (!confirm('現在のメインタブの景品を、自動作成されたオリパで上書きしますか？')) {
                 return;
             }
 
             // メインタブの設定を更新
-            const settings = autoCreatedSettings;
-            document.getElementById('packPrice').value = settings.packPrice;
-            document.getElementById('totalPacks').value = settings.totalPacks;
-            document.getElementById('minGuaranteeValue').value = settings.minGuarantee;
+            document.getElementById('packPrice').value = document.getElementById('autoPackPrice').value;
+            document.getElementById('totalPacks').value = document.getElementById('autoTotalPacks').value;
+            document.getElementById('minGuaranteeValue').value = document.getElementById('autoMinGuarantee').value;
 
             // 景品を適用
             prizes = [...autoCreatedPrizes];
 
-            // ハズレを生成
+            // ハズレをクリア（自動計算モードにする）
             losses = [];
-            const lossTypes = settings.lossTypes || 1;
-            const totalLossCount = settings.lossCount;
-            const minGuarantee = settings.minGuarantee;
-
-            if (lossTypes === 1) {
-                // 1種類の場合
-                losses.push({
-                    id: Date.now(),
-                    name: 'ハズレ',
-                    value: minGuarantee,
-                    count: totalLossCount
-                });
-            } else {
-                // 2種類以上の場合は均等に分配
-                const countPerType = Math.floor(totalLossCount / lossTypes);
-                const remainder = totalLossCount % lossTypes;
-
-                for (let i = 0; i < lossTypes; i++) {
-                    const count = i === 0 ? countPerType + remainder : countPerType;
-                    if (count > 0) {
-                        losses.push({
-                            id: Date.now() + i,
-                            name: `ハズレ${i + 1}`,
-                            value: minGuarantee,
-                            count: count
-                        });
-                    }
-                }
-            }
 
             // データを保存
             saveData();
@@ -6406,11 +6166,7 @@
             document.querySelector('.tab-button:nth-child(1)').classList.add('active');
             document.querySelector('.tab-button:nth-child(3)').classList.remove('active');
 
-            alert('オリパをメインタブに登録しました！');
-
-            // プレビューを閉じて設定画面に戻す
-            document.getElementById('autoCreatePreview').style.display = 'none';
-            document.getElementById('autoCreateSettings').style.display = 'block';
+            alert('オリパをメインタブに適用しました！');
         }
 
         // ページ読み込み時に景品マスターをlocalStorageから読み込む
