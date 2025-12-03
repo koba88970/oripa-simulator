@@ -2069,6 +2069,36 @@
                     <input type="text" id="prizeMasterSearchText" oninput="updatePrizeMasterList()" placeholder="景品名で検索..." style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 0, 0, 0.1); background: white; font-size: 14px; min-width: 200px; height: 38px;">
                 </div>
 
+                <!-- 金額範囲フィルター -->
+                <div style="margin-bottom: 16px; padding: 16px; background: rgba(0, 122, 255, 0.03); border-radius: var(--radius-lg); border: 1px solid rgba(0, 122, 255, 0.15);">
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+                        <!-- 仕入れ価格範囲 -->
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <label style="font-weight: 600; font-size: 14px; color: var(--sf-blue); flex-shrink: 0;">仕入れ価格:</label>
+                            <input type="number" id="prizeMasterMinPurchasePrice" oninput="updatePrizeMasterList()" placeholder="最小" style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 122, 255, 0.3); background: white; font-size: 14px; width: 120px; height: 38px;">
+                            <span style="color: var(--sf-gray);">〜</span>
+                            <input type="number" id="prizeMasterMaxPurchasePrice" oninput="updatePrizeMasterList()" placeholder="最大" style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 122, 255, 0.3); background: white; font-size: 14px; width: 120px; height: 38px;">
+                            <span style="font-size: 14px; color: var(--sf-gray);">円</span>
+                        </div>
+
+                        <div style="width: 1px; height: 24px; background: rgba(0, 122, 255, 0.2); flex-shrink: 0;"></div>
+
+                        <!-- ポイント還元価値範囲 -->
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <label style="font-weight: 600; font-size: 14px; color: var(--sf-blue); flex-shrink: 0;">還元価値:</label>
+                            <input type="number" id="prizeMasterMinRewardValue" oninput="updatePrizeMasterList()" placeholder="最小" style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 122, 255, 0.3); background: white; font-size: 14px; width: 120px; height: 38px;">
+                            <span style="color: var(--sf-gray);">〜</span>
+                            <input type="number" id="prizeMasterMaxRewardValue" oninput="updatePrizeMasterList()" placeholder="最大" style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 122, 255, 0.3); background: white; font-size: 14px; width: 120px; height: 38px;">
+                            <span style="font-size: 14px; color: var(--sf-gray);">円</span>
+                        </div>
+
+                        <!-- クリアボタン -->
+                        <button class="btn btn-primary" onclick="clearPriceRangeFilters('master')" style="padding: 8px 16px; font-size: 13px; height: 38px;">
+                            🔄 範囲クリア
+                        </button>
+                    </div>
+                </div>
+
                 <div id="prizeMasterList" class="prize-master-list">
                     <!-- 景品一覧がここに表示されます -->
                 </div>
@@ -2320,6 +2350,36 @@
                     </div>
                     <div style="margin-top: 12px;">
                         <input type="text" id="modalSearchText" oninput="updatePrizeMasterSelectList()" placeholder="景品名で検索..." style="width: 100%; padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 0, 0, 0.1); background: white; font-size: 14px;">
+                    </div>
+
+                    <!-- 金額範囲フィルター -->
+                    <div style="margin-top: 12px; padding: 12px; background: rgba(0, 122, 255, 0.05); border-radius: var(--radius-md); border: 1px solid rgba(0, 122, 255, 0.2);">
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                            <!-- 仕入れ価格範囲 -->
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <label style="font-weight: 600; font-size: 13px; color: var(--sf-blue); flex-shrink: 0;">仕入れ価格:</label>
+                                <input type="number" id="modalMinPurchasePrice" oninput="updatePrizeMasterSelectList()" placeholder="最小" style="padding: 6px 10px; border-radius: var(--radius-md); border: 1px solid rgba(0, 122, 255, 0.3); background: white; font-size: 13px; width: 100px;">
+                                <span style="color: var(--sf-gray); font-size: 13px;">〜</span>
+                                <input type="number" id="modalMaxPurchasePrice" oninput="updatePrizeMasterSelectList()" placeholder="最大" style="padding: 6px 10px; border-radius: var(--radius-md); border: 1px solid rgba(0, 122, 255, 0.3); background: white; font-size: 13px; width: 100px;">
+                                <span style="font-size: 13px; color: var(--sf-gray);">円</span>
+                            </div>
+
+                            <div style="width: 1px; height: 20px; background: rgba(0, 122, 255, 0.2); flex-shrink: 0;"></div>
+
+                            <!-- ポイント還元価値範囲 -->
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <label style="font-weight: 600; font-size: 13px; color: var(--sf-blue); flex-shrink: 0;">還元価値:</label>
+                                <input type="number" id="modalMinRewardValue" oninput="updatePrizeMasterSelectList()" placeholder="最小" style="padding: 6px 10px; border-radius: var(--radius-md); border: 1px solid rgba(0, 122, 255, 0.3); background: white; font-size: 13px; width: 100px;">
+                                <span style="color: var(--sf-gray); font-size: 13px;">〜</span>
+                                <input type="number" id="modalMaxRewardValue" oninput="updatePrizeMasterSelectList()" placeholder="最大" style="padding: 6px 10px; border-radius: var(--radius-md); border: 1px solid rgba(0, 122, 255, 0.3); background: white; font-size: 13px; width: 100px;">
+                                <span style="font-size: 13px; color: var(--sf-gray);">円</span>
+                            </div>
+
+                            <!-- クリアボタン -->
+                            <button class="btn btn-primary" onclick="clearPriceRangeFilters('modal')" style="padding: 6px 12px; font-size: 12px;">
+                                🔄 範囲クリア
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <!-- 景品リスト -->
@@ -2933,6 +2993,10 @@
             document.getElementById('modalTypeFilter').value = 'all';
             document.getElementById('modalWantedFilter').checked = false;
             document.getElementById('modalSearchText').value = '';
+            document.getElementById('modalMinPurchasePrice').value = '';
+            document.getElementById('modalMaxPurchasePrice').value = '';
+            document.getElementById('modalMinRewardValue').value = '';
+            document.getElementById('modalMaxRewardValue').value = '';
 
             // リストを更新
             updatePrizeMasterSelectList();
@@ -2982,6 +3046,25 @@
                 filteredPrizes = filteredPrizes.filter(prize =>
                     prize.name.toLowerCase().includes(searchText)
                 );
+            }
+
+            // 金額範囲フィルター
+            const minPurchasePrice = parseFloat(document.getElementById('modalMinPurchasePrice')?.value) || null;
+            const maxPurchasePrice = parseFloat(document.getElementById('modalMaxPurchasePrice')?.value) || null;
+            const minRewardValue = parseFloat(document.getElementById('modalMinRewardValue')?.value) || null;
+            const maxRewardValue = parseFloat(document.getElementById('modalMaxRewardValue')?.value) || null;
+
+            if (minPurchasePrice !== null) {
+                filteredPrizes = filteredPrizes.filter(prize => (prize.purchasePrice || 0) >= minPurchasePrice);
+            }
+            if (maxPurchasePrice !== null) {
+                filteredPrizes = filteredPrizes.filter(prize => (prize.purchasePrice || 0) <= maxPurchasePrice);
+            }
+            if (minRewardValue !== null) {
+                filteredPrizes = filteredPrizes.filter(prize => (prize.value || 0) >= minRewardValue);
+            }
+            if (maxRewardValue !== null) {
+                filteredPrizes = filteredPrizes.filter(prize => (prize.value || 0) <= maxRewardValue);
             }
 
             // フィルター後の件数チェック
@@ -5294,6 +5377,25 @@
                 );
             }
 
+            // 金額範囲フィルター
+            const minPurchasePrice = parseFloat(document.getElementById('prizeMasterMinPurchasePrice')?.value) || null;
+            const maxPurchasePrice = parseFloat(document.getElementById('prizeMasterMaxPurchasePrice')?.value) || null;
+            const minRewardValue = parseFloat(document.getElementById('prizeMasterMinRewardValue')?.value) || null;
+            const maxRewardValue = parseFloat(document.getElementById('prizeMasterMaxRewardValue')?.value) || null;
+
+            if (minPurchasePrice !== null) {
+                filteredPrizes = filteredPrizes.filter(prize => (prize.purchasePrice || 0) >= minPurchasePrice);
+            }
+            if (maxPurchasePrice !== null) {
+                filteredPrizes = filteredPrizes.filter(prize => (prize.purchasePrice || 0) <= maxPurchasePrice);
+            }
+            if (minRewardValue !== null) {
+                filteredPrizes = filteredPrizes.filter(prize => (prize.value || 0) >= minRewardValue);
+            }
+            if (maxRewardValue !== null) {
+                filteredPrizes = filteredPrizes.filter(prize => (prize.value || 0) <= maxRewardValue);
+            }
+
             // フィルター後の件数チェック
             if (filteredPrizes.length === 0) {
                 const filterLabels = [];
@@ -5301,6 +5403,12 @@
                 if (typeFilter !== 'all') filterLabels.push(`種類: ${typeFilter}`);
                 if (wantedFilter) filterLabels.push('欲しいものリスト');
                 if (searchText) filterLabels.push(`検索: "${searchText}"`);
+                if (minPurchasePrice !== null || maxPurchasePrice !== null) {
+                    filterLabels.push(`仕入れ価格: ${minPurchasePrice || '最小'}〜${maxPurchasePrice || '最大'}`);
+                }
+                if (minRewardValue !== null || maxRewardValue !== null) {
+                    filterLabels.push(`還元価値: ${minRewardValue || '最小'}〜${maxRewardValue || '最大'}`);
+                }
 
                 listContainer.innerHTML = `
                     <div class="empty-state">
@@ -5404,6 +5512,25 @@
                 prizeMaster[prizeIndex].isWanted = !prizeMaster[prizeIndex].isWanted;
                 savePrizeMaster();
                 updatePrizeMasterList();
+            }
+        }
+
+        // 金額範囲フィルターをクリア
+        function clearPriceRangeFilters(context) {
+            if (context === 'master') {
+                // 景品マスター画面のフィルターをクリア
+                document.getElementById('prizeMasterMinPurchasePrice').value = '';
+                document.getElementById('prizeMasterMaxPurchasePrice').value = '';
+                document.getElementById('prizeMasterMinRewardValue').value = '';
+                document.getElementById('prizeMasterMaxRewardValue').value = '';
+                updatePrizeMasterList();
+            } else if (context === 'modal') {
+                // モーダルのフィルターをクリア
+                document.getElementById('modalMinPurchasePrice').value = '';
+                document.getElementById('modalMaxPurchasePrice').value = '';
+                document.getElementById('modalMinRewardValue').value = '';
+                document.getElementById('modalMaxRewardValue').value = '';
+                updatePrizeMasterSelectList();
             }
         }
 
