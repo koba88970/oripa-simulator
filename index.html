@@ -2932,13 +2932,18 @@
         // オリパをlocalStorageに保存
         function saveOripasToStorage() {
             try {
+                console.log('=== saveOripasToStorage 開始 ===');
+                console.log('保存するオリパの数:', oripas.length);
+
                 // localStorageに保存（バックアップ）
                 localStorage.setItem(ORIPA_STORAGE_KEY, JSON.stringify(oripas));
+                console.log('✅ localStorageに保存しました');
 
                 // Firebaseに保存（クラウド共有）
+                console.log('🔄 saveOripasToCloud() を呼び出します...');
                 saveOripasToCloud();
             } catch (e) {
-                console.error('オリパの保存に失敗:', e);
+                console.error('❌ オリパの保存に失敗:', e);
             }
         }
 
@@ -2976,7 +2981,14 @@
                 database.ref('oripas').set(data).then(() => {
                     console.log('✅ オリパデータをクラウドに保存しました');
                     console.log('保存完了時刻:', new Date().toLocaleString('ja-JP'));
+                    console.log('保存されたオリパ数:', oripas.length);
                     showNotification(`✅ クラウドに保存しました (${oripas.length}件)`, 'success');
+
+                    // オリパ管理タブが表示されている場合はリストを更新
+                    if (currentTab === 'oripa-management') {
+                        console.log('🔄 オリパ管理リストを更新します...');
+                        updateOripaManagementLists();
+                    }
                 }).catch((error) => {
                     console.error('❌ オリパのFirebaseへの保存に失敗しました:', error);
                     console.error('エラー詳細:', error.code, error.message);
@@ -3153,19 +3165,21 @@
             const releaseDate = oripa.releaseDate ? new Date(oripa.releaseDate) : null;
             const endDate = oripa.endDate ? new Date(oripa.endDate) : null;
 
+            let status;
+
             if (!releaseDate) {
-                return 'scheduled'; // 公開日時未設定は開催前扱い
+                status = 'scheduled'; // 公開日時未設定は開催前扱い
+            } else if (now < releaseDate) {
+                status = 'scheduled'; // 開催前
+            } else if (endDate && now > endDate) {
+                status = 'ended'; // 終了
+            } else {
+                status = 'active'; // 開催中
             }
 
-            if (now < releaseDate) {
-                return 'scheduled'; // 開催前
-            }
+            console.log(`オリパ「${oripa.name}」のステータス: ${status} (公開日: ${oripa.releaseDate || 'なし'}, 終了日: ${oripa.endDate || 'なし'})`);
 
-            if (endDate && now > endDate) {
-                return 'ended'; // 終了
-            }
-
-            return 'active'; // 開催中
+            return status;
         }
 
         // オリパの在庫不足をチェック
@@ -3321,12 +3335,15 @@
                 const index = oripas.findIndex(o => o.id === editingOripaId);
                 if (index !== -1) {
                     oripas[index] = oripaData;
+                    console.log('📝 オリパを更新しました:', oripaData.name, '(ID:', oripaData.id, ')');
                 }
             } else {
                 // 新規追加
                 oripas.push(oripaData);
+                console.log('➕ 新規オリパを追加しました:', oripaData.name, '(ID:', oripaData.id, ')');
             }
 
+            console.log('💾 オリパを保存します... (合計:', oripas.length, '件)');
             saveOripasToStorage();
 
             // フォームとグローバル変数をリセット
@@ -3348,13 +3365,27 @@
 
         // オリパ管理画面を更新
         function updateOripaManagementLists() {
+            console.log('=== updateOripaManagementLists 実行 ===');
+            console.log('oripas 配列の長さ:', oripas.length);
+            console.log('oripas 配列の内容:', oripas);
+
             const activeList = document.getElementById('activeOripaList');
             const scheduledList = document.getElementById('scheduledOripaList');
             const endedList = document.getElementById('endedOripaList');
 
+            // DOM要素が存在しない場合（タブが表示されていない場合）は処理をスキップ
+            if (!activeList || !scheduledList || !endedList) {
+                console.log('⚠️ オリパ管理のDOM要素が見つかりません。タブが表示されていない可能性があります。');
+                return;
+            }
+
             let activeOripas = oripas.filter(o => getOripaStatus(o) === 'active');
             let scheduledOripas = oripas.filter(o => getOripaStatus(o) === 'scheduled');
             let endedOripas = oripas.filter(o => getOripaStatus(o) === 'ended');
+
+            console.log('開催中:', activeOripas.length, '件');
+            console.log('開催前:', scheduledOripas.length, '件');
+            console.log('終了:', endedOripas.length, '件');
 
             // 開催中のオリパ：終了日が近い順にソート
             activeOripas.sort((a, b) => {
