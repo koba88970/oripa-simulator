@@ -2345,6 +2345,13 @@
                         <span style="font-weight: 600; font-size: 14px; color: #ff1493;">❤️ 欲しいものリスト</span>
                     </label>
                     <div style="width: 1px; height: 24px; background: rgba(0, 0, 0, 0.1); flex-shrink: 0;"></div>
+                    <label style="font-weight: 600; font-size: 14px; color: var(--sf-label); flex-shrink: 0;">販売状況:</label>
+                    <select id="prizeMasterSalesFilter" onchange="updatePrizeMasterList()" style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 0, 0, 0.1); background: white; font-size: 14px; height: 38px; cursor: pointer;">
+                        <option value="all">すべて</option>
+                        <option value="inSale">オリパで販売中</option>
+                        <option value="notInSale">未販売</option>
+                    </select>
+                    <div style="width: 1px; height: 24px; background: rgba(0, 0, 0, 0.1); flex-shrink: 0;"></div>
                     <label style="font-weight: 600; font-size: 14px; color: var(--sf-label); flex-shrink: 0;">検索:</label>
                     <input type="text" id="prizeMasterSearchText" oninput="updatePrizeMasterList()" placeholder="景品名で検索..." style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 0, 0, 0.1); background: white; font-size: 14px; min-width: 200px; height: 38px;">
                 </div>
@@ -3752,15 +3759,31 @@
                         const shortage = isLowStock ? prize.count - masterStock : 0;
                         const imageUrl = masterPrize?.imageUrl || '';
 
+                        // デバッグログ
+                        console.log('在庫編集 - 景品:', prize.name);
+                        console.log('  - masterPrizeId:', prize.masterPrizeId);
+                        console.log('  - masterPrize found:', masterPrize ? 'はい' : 'いいえ');
+                        console.log('  - 画像URL:', imageUrl || '(なし)');
+
                         return `
                             <div style="background: white; border: 2px solid ${isLowStock ? 'rgba(255, 59, 48, 0.3)' : 'rgba(0, 0, 0, 0.1)'}; border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; ${isLowStock ? 'box-shadow: 0 2px 8px rgba(255, 59, 48, 0.1);' : ''}">
                                 <div style="display: flex; gap: 16px; margin-bottom: 12px;">
-                                    ${imageUrl ? `
-                                        <div style="flex-shrink: 0;">
-                                            <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(prize.name)}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1);" onerror="this.style.display='none'">
-                                        </div>
-                                    ` : ''}
-                                    <div style="flex: 1;">
+                                    <div style="flex-shrink: 0; position: relative;">
+                                        ${imageUrl ? `
+                                            <img
+                                                src="${imageUrl}"
+                                                alt="${escapeHtml(prize.name)}"
+                                                style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1); display: block;"
+                                                onerror="console.error('画像読み込みエラー:', '${imageUrl}'); this.parentElement.innerHTML='<div style=\\'width: 80px; height: 80px; background: rgba(255, 59, 48, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: rgba(255, 59, 48, 0.6);\\'>❌</div>';"
+                                                onload="console.log('画像読み込み成功:', '${prize.name}')">
+                                        ` : `
+                                            <div style="width: 80px; height: 80px; background: rgba(0, 0, 0, 0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: rgba(0, 0, 0, 0.2); border: 1px dashed rgba(0, 0, 0, 0.2);">
+                                                🖼️
+                                            </div>
+                                            <div style="position: absolute; bottom: -18px; left: 0; font-size: 10px; color: var(--sf-gray);">画像なし</div>
+                                        `}
+                                    </div>
+                                    <div style="flex: 1; ${imageUrl ? '' : 'padding-top: 0;'}">
                                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                                             <div style="font-weight: 700; font-size: 16px;">${escapeHtml(prize.name)}</div>
                                             ${isLowStock ? '<span style="display: inline-block; padding: 4px 10px; background: rgba(255, 59, 48, 0.1); color: var(--sf-red); border-radius: 12px; font-size: 12px; font-weight: 600;">⚠️ 在庫不足</span>' : ''}
@@ -6905,6 +6928,7 @@
             const filterBy = document.getElementById('prizeMasterFilter')?.value || 'all';
             const typeFilter = document.getElementById('prizeMasterTypeFilter')?.value || 'all';
             const wantedFilter = document.getElementById('prizeMasterWantedFilter')?.checked || false;
+            const salesFilter = document.getElementById('prizeMasterSalesFilter')?.value || 'all';
             const searchText = document.getElementById('prizeMasterSearchText')?.value.trim().toLowerCase() || '';
 
             // 設定をlocalStorageに保存
@@ -6914,6 +6938,7 @@
                 localStorage.setItem('prizeMasterFilter', filterBy);
                 localStorage.setItem('prizeMasterTypeFilter', typeFilter);
                 localStorage.setItem('prizeMasterWantedFilter', wantedFilter);
+                localStorage.setItem('prizeMasterSalesFilter', salesFilter);
                 localStorage.setItem('prizeMasterSearchText', searchText);
             } catch (e) {
                 console.error('設定の保存に失敗:', e);
@@ -6937,6 +6962,23 @@
             // 欲しいものリストフィルター
             if (wantedFilter) {
                 filteredPrizes = filteredPrizes.filter(prize => prize.isWanted === true);
+            }
+
+            // 販売状況フィルター
+            if (salesFilter === 'inSale') {
+                // オリパで販売中の景品のみ
+                filteredPrizes = filteredPrizes.filter(prize => {
+                    return oripas.some(oripa =>
+                        oripa.prizes && oripa.prizes.some(p => p.masterPrizeId === prize.id)
+                    );
+                });
+            } else if (salesFilter === 'notInSale') {
+                // 未販売の景品のみ
+                filteredPrizes = filteredPrizes.filter(prize => {
+                    return !oripas.some(oripa =>
+                        oripa.prizes && oripa.prizes.some(p => p.masterPrizeId === prize.id)
+                    );
+                });
             }
 
             // 名前検索フィルター
@@ -6971,6 +7013,8 @@
                 if (filterBy !== 'all') filterLabels.push(filterBy === 'inStock' ? '在庫あり' : '在庫なし');
                 if (typeFilter !== 'all') filterLabels.push(`種類: ${typeFilter}`);
                 if (wantedFilter) filterLabels.push('欲しいものリスト');
+                if (salesFilter === 'inSale') filterLabels.push('オリパで販売中');
+                if (salesFilter === 'notInSale') filterLabels.push('未販売');
                 if (searchText) filterLabels.push(`検索: "${searchText}"`);
                 if (minPurchasePrice !== null || maxPurchasePrice !== null) {
                     filterLabels.push(`仕入れ価格: ${minPurchasePrice || '最小'}〜${maxPurchasePrice || '最大'}`);
@@ -8129,6 +8173,7 @@
                 const savedFilter = localStorage.getItem('prizeMasterFilter');
                 const savedTypeFilter = localStorage.getItem('prizeMasterTypeFilter');
                 const savedWantedFilter = localStorage.getItem('prizeMasterWantedFilter');
+                const savedSalesFilter = localStorage.getItem('prizeMasterSalesFilter');
                 const savedSearchText = localStorage.getItem('prizeMasterSearchText');
 
                 if (savedSortBy) {
@@ -8154,6 +8199,11 @@
                 if (savedWantedFilter) {
                     const wantedFilterCheckbox = document.getElementById('prizeMasterWantedFilter');
                     if (wantedFilterCheckbox) wantedFilterCheckbox.checked = savedWantedFilter === 'true';
+                }
+
+                if (savedSalesFilter) {
+                    const salesFilterSelect = document.getElementById('prizeMasterSalesFilter');
+                    if (salesFilterSelect) salesFilterSelect.value = savedSalesFilter;
                 }
 
                 if (savedSearchText) {
