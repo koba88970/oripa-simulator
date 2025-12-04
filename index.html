@@ -1857,8 +1857,11 @@
                         </button>
                     </div>
                     <button class="btn btn-accent" onclick="saveOripa()" style="width: 100%; font-size: 16px; padding: 14px; margin-top: 12px;">
-                        💾 オリパを保存
+                        💾 オリパを保存 <span style="font-size: 12px; opacity: 0.8;">(自動クラウド保存)</span>
                     </button>
+                    <div style="margin-top: 8px; padding: 8px; background: rgba(52, 199, 89, 0.1); border-radius: 8px; font-size: 12px; color: var(--sf-green); text-align: center;">
+                        ✅ 保存したオリパは自動的にクラウドに保存され、他のデバイスと共有されます
+                    </div>
                 </div>
 
                 <!-- ハズレ管理 -->
@@ -2884,10 +2887,97 @@
         // オリパをlocalStorageに保存
         function saveOripasToStorage() {
             try {
+                // localStorageに保存（バックアップ）
                 localStorage.setItem(ORIPA_STORAGE_KEY, JSON.stringify(oripas));
+
+                // Firebaseに保存（クラウド共有）
+                saveOripasToCloud();
             } catch (e) {
                 console.error('オリパの保存に失敗:', e);
             }
+        }
+
+        // オリパをFirebaseに保存
+        function saveOripasToCloud() {
+            if (typeof database === 'undefined') {
+                console.warn('Firebaseが初期化されていません');
+                return;
+            }
+
+            // 認証完了を待つ
+            if (!isAuthReady) {
+                waitForAuth(() => saveOripasToCloud());
+                return;
+            }
+
+            try {
+                const data = {
+                    oripas: oripas,
+                    updatedAt: Date.now(),
+                    version: '1.0'
+                };
+
+                database.ref('oripas').set(data).then(() => {
+                    console.log('オリパデータをクラウドに保存しました');
+                }).catch((error) => {
+                    console.error('オリパのFirebaseへの保存に失敗しました:', error);
+                    console.error('エラー詳細:', error.code, error.message);
+
+                    if (error.code === 'PERMISSION_DENIED') {
+                        console.error('⚠️ Firebase Consoleでデータベースルールを確認してください');
+                        console.error('ルール例: { "rules": { "oripas": { ".read": "auth != null", ".write": "auth != null" } } }');
+                    }
+                });
+            } catch (e) {
+                console.error('オリパのクラウド保存エラー:', e);
+            }
+        }
+
+        // オリパをFirebaseから読み込み
+        function loadOripasFromCloud() {
+            if (typeof database === 'undefined') {
+                console.warn('Firebaseが初期化されていません');
+                loadOripas(); // localStorageから読み込み
+                return;
+            }
+
+            // 認証完了を待つ
+            if (!isAuthReady) {
+                waitForAuth(() => loadOripasFromCloud());
+                return;
+            }
+
+            database.ref('oripas').once('value').then((snapshot) => {
+                const data = snapshot.val();
+
+                if (data && data.oripas) {
+                    oripas = data.oripas;
+
+                    // localStorageにも保存（バックアップ）
+                    try {
+                        localStorage.setItem(ORIPA_STORAGE_KEY, JSON.stringify(oripas));
+                    } catch (e) {
+                        console.error('localStorageへの保存に失敗:', e);
+                    }
+
+                    updateOripaManagementLists();
+
+                    const updateDate = new Date(data.updatedAt);
+                    console.log(`クラウドからオリパデータを読み込みました (${oripas.length}件, 更新日時: ${updateDate.toLocaleString('ja-JP')})`);
+                } else {
+                    console.log('クラウドにオリパデータが見つかりませんでした');
+                    loadOripas(); // localStorageから読み込み
+                }
+            }).catch((error) => {
+                console.error('オリパのFirebaseからの読み込みに失敗しました:', error);
+
+                if (error.code === 'PERMISSION_DENIED') {
+                    console.error('⚠️ 読み込み権限がありません');
+                }
+
+                // エラー時はlocalStorageから読み込み
+                loadOripas();
+            });
         }
 
         // オリパのステータスを判定
@@ -5712,7 +5802,7 @@
 
             // オリパ管理タブが表示された時
             if (tabName === 'oripa-management') {
-                updateOripaManagementLists();
+                loadOripasFromCloud(); // クラウドから最新データを読み込み
                 refreshActiveOripaStats(); // 集計を自動的に更新
             }
 
@@ -7909,8 +7999,8 @@
 
             // 画像URLモードに変更したため、ドラッグ&ドロップは不要
 
-            // 初期化時にオリパを読み込む
-            loadOripas();
+            // 初期化時にオリパを読み込む（クラウドから）
+            loadOripasFromCloud();
         });
     </script>
 
