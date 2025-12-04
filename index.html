@@ -1784,6 +1784,29 @@
                 transform: translateY(0) scale(1);
             }
         }
+
+        /* 通知のアニメーション */
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
     </style>
 </head>
 <body>
@@ -2114,9 +2137,24 @@
         <div id="tab-oripa-management" class="tab-content">
             <div class="panel">
                 <h2>📊 オリパ管理</h2>
-                <p style="color: var(--sf-gray); font-size: 14px; margin-bottom: 24px;">
+                <p style="color: var(--sf-gray); font-size: 14px; margin-bottom: 16px;">
                     作成したオリパの開催状況を管理します。開催前、開催中、終了したオリパを確認できます。
                 </p>
+
+                <!-- Firebase接続状態 -->
+                <div id="firebaseStatusIndicator" style="background: rgba(142, 142, 147, 0.1); border: 1px solid var(--sf-gray-5); padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; font-size: 13px;">
+                    <div id="firebaseStatusIcon" style="font-size: 16px;">⏳</div>
+                    <div style="flex: 1;">
+                        <div id="firebaseStatusText" style="font-weight: 600; color: var(--sf-gray);">Firebase接続確認中...</div>
+                        <div id="firebaseStatusDetail" style="font-size: 11px; color: var(--sf-gray); margin-top: 2px;"></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadOripasFromCloud()" style="padding: 6px 12px; font-size: 11px;">
+                        🔄 クラウドから再読み込み
+                    </button>
+                    <button class="btn btn-secondary" onclick="debugFirebase()" style="padding: 6px 12px; font-size: 11px;">
+                        🔍 詳細確認
+                    </button>
+                </div>
 
                 <!-- オリパ管理セクション -->
                 <div style="display: flex; flex-direction: column; gap: 32px;">
@@ -2899,13 +2937,21 @@
 
         // オリパをFirebaseに保存
         function saveOripasToCloud() {
+            console.log('=== クラウド保存開始 ===');
+            console.log('database:', typeof database);
+            console.log('isAuthReady:', isAuthReady);
+            console.log('auth.currentUser:', auth.currentUser ? 'あり' : 'なし');
+
             if (typeof database === 'undefined') {
-                console.warn('Firebaseが初期化されていません');
+                console.warn('❌ Firebaseが初期化されていません');
+                showNotification('⚠️ Firebaseが初期化されていません', 'warning');
                 return;
             }
 
             // 認証完了を待つ
             if (!isAuthReady) {
+                console.log('⏳ 認証完了を待っています...');
+                showNotification('⏳ 認証完了を待っています...', 'info');
                 waitForAuth(() => saveOripasToCloud());
                 return;
             }
@@ -2917,66 +2963,180 @@
                     version: '1.0'
                 };
 
+                console.log(`📤 オリパデータをクラウドに保存中... (${oripas.length}件)`);
+                console.log('保存するデータサイズ:', JSON.stringify(data).length, 'バイト');
+
                 database.ref('oripas').set(data).then(() => {
-                    console.log('オリパデータをクラウドに保存しました');
+                    console.log('✅ オリパデータをクラウドに保存しました');
+                    console.log('保存完了時刻:', new Date().toLocaleString('ja-JP'));
+                    showNotification(`✅ クラウドに保存しました (${oripas.length}件)`, 'success');
                 }).catch((error) => {
-                    console.error('オリパのFirebaseへの保存に失敗しました:', error);
+                    console.error('❌ オリパのFirebaseへの保存に失敗しました:', error);
                     console.error('エラー詳細:', error.code, error.message);
 
                     if (error.code === 'PERMISSION_DENIED') {
                         console.error('⚠️ Firebase Consoleでデータベースルールを確認してください');
                         console.error('ルール例: { "rules": { "oripas": { ".read": "auth != null", ".write": "auth != null" } } }');
+                        showNotification('❌ クラウド保存に失敗（権限エラー）\nFirebase Consoleでデータベースルールを確認してください', 'error');
+                    } else {
+                        showNotification(`❌ クラウド保存に失敗: ${error.message}`, 'error');
                     }
                 });
             } catch (e) {
-                console.error('オリパのクラウド保存エラー:', e);
+                console.error('❌ オリパのクラウド保存エラー:', e);
+                showNotification('❌ クラウド保存エラーが発生しました', 'error');
+            }
+        }
+
+        // 通知を表示する関数
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 16px 24px;
+                background: ${type === 'success' ? 'rgba(52, 199, 89, 0.95)' : type === 'error' ? 'rgba(255, 59, 48, 0.95)' : 'rgba(255, 149, 0, 0.95)'};
+                color: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                z-index: 10000;
+                font-size: 14px;
+                font-weight: 600;
+                max-width: 400px;
+                white-space: pre-line;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 4000);
+        }
+
+        // Firebase接続状態インジケーターを更新
+        function updateFirebaseStatusIndicator() {
+            const indicator = document.getElementById('firebaseStatusIndicator');
+            const icon = document.getElementById('firebaseStatusIcon');
+            const text = document.getElementById('firebaseStatusText');
+            const detail = document.getElementById('firebaseStatusDetail');
+
+            if (!indicator) return;
+
+            if (typeof database === 'undefined' || typeof auth === 'undefined') {
+                // Firebase未初期化
+                indicator.style.background = 'rgba(255, 59, 48, 0.1)';
+                indicator.style.borderColor = 'var(--sf-red)';
+                icon.textContent = '❌';
+                text.style.color = 'var(--sf-red)';
+                text.textContent = 'Firebase未初期化';
+                detail.textContent = 'Firebase SDKの読み込みに失敗しています';
+            } else if (!isAuthReady) {
+                // 認証中
+                indicator.style.background = 'rgba(255, 149, 0, 0.1)';
+                indicator.style.borderColor = 'var(--sf-orange)';
+                icon.textContent = '⏳';
+                text.style.color = 'var(--sf-orange)';
+                text.textContent = '認証処理中...';
+                detail.textContent = 'Firebase匿名認証を実行中です';
+            } else if (isAuthReady && auth.currentUser) {
+                // 接続成功
+                indicator.style.background = 'rgba(52, 199, 89, 0.1)';
+                indicator.style.borderColor = 'var(--sf-green)';
+                icon.textContent = '✅';
+                text.style.color = 'var(--sf-green)';
+                text.textContent = 'クラウド接続済み';
+                detail.textContent = 'オリパは自動的にクラウドに保存されます';
+            } else {
+                // その他のエラー
+                indicator.style.background = 'rgba(255, 59, 48, 0.1)';
+                indicator.style.borderColor = 'var(--sf-red)';
+                icon.textContent = '⚠️';
+                text.style.color = 'var(--sf-red)';
+                text.textContent = '認証エラー';
+                detail.textContent = 'Firebase Consoleで匿名認証を有効にしてください';
             }
         }
 
         // オリパをFirebaseから読み込み
         function loadOripasFromCloud() {
+            console.log('=== クラウド読み込み開始 ===');
+            console.log('database:', typeof database);
+            console.log('isAuthReady:', isAuthReady);
+
             if (typeof database === 'undefined') {
-                console.warn('Firebaseが初期化されていません');
+                console.warn('❌ Firebaseが初期化されていません');
                 loadOripas(); // localStorageから読み込み
+                updateOripaManagementLists();
                 return;
             }
 
             // 認証完了を待つ
             if (!isAuthReady) {
+                console.log('⏳ 認証完了を待っています...');
                 waitForAuth(() => loadOripasFromCloud());
                 return;
             }
 
+            console.log('📥 クラウドからデータを取得中...');
+
             database.ref('oripas').once('value').then((snapshot) => {
                 const data = snapshot.val();
+                console.log('取得したデータ:', data ? 'あり' : 'なし');
 
-                if (data && data.oripas) {
+                if (data && data.oripas && data.oripas.length > 0) {
+                    // クラウドにデータがある場合
                     oripas = data.oripas;
 
                     // localStorageにも保存（バックアップ）
                     try {
                         localStorage.setItem(ORIPA_STORAGE_KEY, JSON.stringify(oripas));
+                        console.log('✅ localStorageにバックアップしました');
                     } catch (e) {
-                        console.error('localStorageへの保存に失敗:', e);
+                        console.error('❌ localStorageへの保存に失敗:', e);
                     }
 
                     updateOripaManagementLists();
 
                     const updateDate = new Date(data.updatedAt);
-                    console.log(`クラウドからオリパデータを読み込みました (${oripas.length}件, 更新日時: ${updateDate.toLocaleString('ja-JP')})`);
+                    console.log(`✅ クラウドからオリパデータを読み込みました (${oripas.length}件)`);
+                    console.log('最終更新日時:', updateDate.toLocaleString('ja-JP'));
+                    showNotification(`✅ クラウドから読み込みました (${oripas.length}件)`, 'success');
                 } else {
-                    console.log('クラウドにオリパデータが見つかりませんでした');
+                    // クラウドにデータがない場合、localStorageから読み込んでクラウドに保存
+                    console.log('⚠️ クラウドにオリパデータが見つかりませんでした');
+                    console.log('📂 localStorageから読み込みます...');
+
                     loadOripas(); // localStorageから読み込み
+                    updateOripaManagementLists();
+
+                    if (oripas.length > 0) {
+                        // localStorageにデータがあれば、クラウドに同期
+                        console.log(`📤 localStorageのデータをクラウドに同期します (${oripas.length}件)`);
+                        saveOripasToCloud();
+                    } else {
+                        console.log('⚠️ localStorageにもデータがありませんでした');
+                    }
                 }
             }).catch((error) => {
-                console.error('オリパのFirebaseからの読み込みに失敗しました:', error);
+                console.error('❌ オリパのFirebaseからの読み込みに失敗しました:', error);
+                console.error('エラー詳細:', error.code, error.message);
 
                 if (error.code === 'PERMISSION_DENIED') {
                     console.error('⚠️ 読み込み権限がありません');
+                    console.error('Firebase Consoleでデータベースルールを確認してください');
+                    showNotification('❌ クラウド読み込み失敗（権限エラー）', 'error');
+                } else {
+                    showNotification(`❌ クラウド読み込み失敗: ${error.message}`, 'error');
                 }
 
                 // エラー時はlocalStorageから読み込み
                 loadOripas();
+                updateOripaManagementLists();
             });
         }
 
@@ -3161,7 +3321,6 @@
             }
 
             saveOripasToStorage();
-            alert(`オリパ「${name}」を保存しました`);
 
             // フォームとグローバル変数をリセット
             editingOripaId = null;
@@ -5802,7 +5961,8 @@
 
             // オリパ管理タブが表示された時
             if (tabName === 'oripa-management') {
-                loadOripasFromCloud(); // クラウドから最新データを読み込み
+                updateOripaManagementLists(); // オリパリストを更新
+                updateFirebaseStatusIndicator(); // Firebase接続状態を更新
                 refreshActiveOripaStats(); // 集計を自動的に更新
             }
 
@@ -7999,9 +8159,48 @@
 
             // 画像URLモードに変更したため、ドラッグ&ドロップは不要
 
+            // Firebase接続状態をチェック
+            setTimeout(() => {
+                console.log('=== Firebase接続状態 ===');
+                console.log('database:', typeof database);
+                console.log('auth:', typeof auth);
+                console.log('isAuthReady:', isAuthReady);
+                console.log('auth.currentUser:', auth.currentUser ? '認証済み' : '未認証');
+                console.log('========================');
+            }, 2000);
+
             // 初期化時にオリパを読み込む（クラウドから）
             loadOripasFromCloud();
         });
+
+        // デバッグ用：Firebaseの状態を確認
+        window.debugFirebase = function() {
+            console.log('=== Firebase デバッグ情報 ===');
+            console.log('Firebase初期化:', typeof firebase !== 'undefined' ? 'OK' : 'NG');
+            console.log('Database:', typeof database !== 'undefined' ? 'OK' : 'NG');
+            console.log('Auth:', typeof auth !== 'undefined' ? 'OK' : 'NG');
+            console.log('認証状態:', isAuthReady ? '認証済み' : '未認証');
+            console.log('現在のユーザー:', auth.currentUser ? auth.currentUser.uid : 'なし');
+            console.log('オリパ数:', oripas.length);
+
+            // クラウドからデータを確認
+            if (typeof database !== 'undefined' && isAuthReady) {
+                database.ref('oripas').once('value').then((snapshot) => {
+                    const data = snapshot.val();
+                    console.log('クラウドのデータ:', data ? `あり (${data.oripas?.length || 0}件)` : 'なし');
+                    if (data && data.updatedAt) {
+                        console.log('クラウド最終更新:', new Date(data.updatedAt).toLocaleString('ja-JP'));
+                    }
+                }).catch((error) => {
+                    console.error('クラウドデータの確認に失敗:', error);
+                });
+            }
+            console.log('===========================');
+        };
+
+        // ページにFirebase状態を表示（開発用）
+        console.log('%c💡 デバッグTIP', 'color: #34C759; font-weight: bold; font-size: 14px;');
+        console.log('コンソールで debugFirebase() を実行すると、Firebaseの接続状態を確認できます');
     </script>
 
 <!-- Firebase SDK -->
@@ -8060,6 +8259,7 @@ function initializeAuth() {
             console.log('✅ Firebase匿名認証に成功しました');
             isAuthReady = true;
             updateSyncStatus('🔄 初期化中... (50%)');
+            updateFirebaseStatusIndicator(); // ステータス更新
 
             // すべてのコールバックを実行
             authCallbacks.forEach(item => {
@@ -8084,6 +8284,7 @@ function initializeAuth() {
                 console.error('手順: Authentication > Sign-in method > 匿名 を有効化');
             }
             updateSyncStatus(userMessage);
+            updateFirebaseStatusIndicator(); // ステータス更新
 
             // すべてのコールバックをクリア
             authCallbacks.forEach(item => {
