@@ -3757,13 +3757,20 @@
                         const masterStock = item.masterStock;
                         const isLowStock = masterStock < prize.count;
                         const shortage = isLowStock ? prize.count - masterStock : 0;
-                        const imageUrl = masterPrize?.imageUrl || '';
+                        const imageUrl = masterPrize?.imageUrl ? masterPrize.imageUrl.trim() : '';
 
                         // デバッグログ
-                        console.log('在庫編集 - 景品:', prize.name);
-                        console.log('  - masterPrizeId:', prize.masterPrizeId);
-                        console.log('  - masterPrize found:', masterPrize ? 'はい' : 'いいえ');
-                        console.log('  - 画像URL:', imageUrl || '(なし)');
+                        console.log('========== 在庫編集 - 景品情報 ==========');
+                        console.log('景品名:', prize.name);
+                        console.log('masterPrizeId:', prize.masterPrizeId);
+                        console.log('masterPrize found:', masterPrize ? 'はい' : 'いいえ');
+                        if (masterPrize) {
+                            console.log('masterPrize.id:', masterPrize.id);
+                            console.log('masterPrize.name:', masterPrize.name);
+                            console.log('masterPrize.imageUrl:', masterPrize.imageUrl || '(undefined)');
+                        }
+                        console.log('最終的な画像URL:', imageUrl || '(なし)');
+                        console.log('========================================');
 
                         return `
                             <div style="background: white; border: 2px solid ${isLowStock ? 'rgba(255, 59, 48, 0.3)' : 'rgba(0, 0, 0, 0.1)'}; border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; ${isLowStock ? 'box-shadow: 0 2px 8px rgba(255, 59, 48, 0.1);' : ''}">
@@ -3772,18 +3779,22 @@
                                         ${imageUrl ? `
                                             <img
                                                 src="${imageUrl}"
-                                                alt="${escapeHtml(prize.name)}"
-                                                style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1); display: block;"
-                                                onerror="console.error('画像読み込みエラー:', '${imageUrl}'); this.parentElement.innerHTML='<div style=\\'width: 80px; height: 80px; background: rgba(255, 59, 48, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: rgba(255, 59, 48, 0.6);\\'>❌</div>';"
-                                                onload="console.log('画像読み込み成功:', '${prize.name}')">
-                                        ` : `
-                                            <div style="width: 80px; height: 80px; background: rgba(0, 0, 0, 0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: rgba(0, 0, 0, 0.2); border: 1px dashed rgba(0, 0, 0, 0.2);">
-                                                🖼️
+                                                alt=""
+                                                style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1); display: block; background: rgba(0, 0, 0, 0.02);"
+                                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                                onload="console.log('✅ 画像読み込み成功:', this.src);">
+                                            <div style="width: 80px; height: 80px; background: rgba(255, 59, 48, 0.1); border-radius: 8px; display: none; align-items: center; justify-content: center; font-size: 24px; color: rgba(255, 59, 48, 0.6); border: 1px dashed rgba(255, 59, 48, 0.4); flex-direction: column;">
+                                                <div>❌</div>
+                                                <div style="font-size: 9px; margin-top: 4px;">読込失敗</div>
                                             </div>
-                                            <div style="position: absolute; bottom: -18px; left: 0; font-size: 10px; color: var(--sf-gray);">画像なし</div>
+                                        ` : `
+                                            <div style="width: 80px; height: 80px; background: rgba(0, 0, 0, 0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: rgba(0, 0, 0, 0.2); border: 1px dashed rgba(0, 0, 0, 0.2); flex-direction: column;">
+                                                <div>🖼️</div>
+                                                <div style="font-size: 9px; margin-top: 4px;">画像なし</div>
+                                            </div>
                                         `}
                                     </div>
-                                    <div style="flex: 1; ${imageUrl ? '' : 'padding-top: 0;'}">
+                                    <div style="flex: 1;">
                                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                                             <div style="font-weight: 700; font-size: 16px;">${escapeHtml(prize.name)}</div>
                                             ${isLowStock ? '<span style="display: inline-block; padding: 4px 10px; background: rgba(255, 59, 48, 0.1); color: var(--sf-red); border-radius: 12px; font-size: 12px; font-weight: 600;">⚠️ 在庫不足</span>' : ''}
