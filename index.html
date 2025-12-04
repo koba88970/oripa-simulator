@@ -3526,13 +3526,13 @@
             document.getElementById('endDate').value = oripa.endDate;
 
             // 景品とハズレを復元
-            prizes = oripa.prizes.map(p => ({...p}));
-            losses = oripa.losses.map(l => ({...l}));
+            prizes = oripa.prizes ? oripa.prizes.map(p => ({...p})) : [];
+            losses = oripa.losses ? oripa.losses.map(l => ({...l})) : [];
 
             updatePrizeList();
             updateLossList();
 
-            alert(`オリパ「${oripa.name}」を編集モードで読み込みました`);
+            showNotification(`✏️ オリパ「${oripa.name}」を編集モードで読み込みました`, 'success');
         }
 
         // 在庫調整モーダルを開く
@@ -4201,6 +4201,9 @@
 
             updatePrizeList();
             saveData();
+
+            // 成功通知
+            showNotification(`✅ 景品「${name}」を追加しました（${count}個）`, 'success');
         }
 
         // メイン専用：フォームから景品を更新
@@ -4244,6 +4247,9 @@
 
             updatePrizeList();
             saveData();
+
+            // 成功通知
+            showNotification(`✅ 景品「${name}」を更新しました`, 'success');
         }
 
         // メイン専用：編集キャンセル
@@ -4270,9 +4276,15 @@
 
         // 景品削除
         function removePrize(id) {
+            const prize = prizes.find(p => p.id === id);
+            const prizeName = prize ? prize.name : '景品';
+
             prizes = prizes.filter(p => p.id !== id);
             updatePrizeList();
             saveData();
+
+            // 成功通知
+            showNotification(`🗑️ 景品「${prizeName}」を削除しました`, 'success');
         }
 
         // 景品編集
@@ -4374,7 +4386,7 @@
                             updatedAt: Date.now()
                         };
                         savePrizeMaster();
-                        alert('✅ 景品マスターを更新しました。');
+                        showNotification('✅ 景品マスターも更新しました', 'success');
                     }
                 } else if (choice === '2') {
                     // 新しく景品マスターに追加
@@ -4388,7 +4400,7 @@
                         addedAt: Date.now()
                     });
                     savePrizeMaster();
-                    alert('✅ 景品マスターに新しく登録しました。');
+                    showNotification('✅ 景品マスターに新しく登録しました', 'success');
                 }
                 // choice === '3' の場合は何もしない
             }
@@ -4398,6 +4410,9 @@
 
             updatePrizeList();
             saveData();
+
+            // 成功通知
+            showNotification(`✅ 景品「${name}」を更新しました`, 'success');
         }
 
         // 編集キャンセル
@@ -7378,7 +7393,7 @@
             updatePrizeMasterList();
 
             console.log('削除完了');
-            alert(`✅ 「${prizeName}」を削除しました`);
+            showNotification(`🗑️ 景品「${prizeName}」を景品マスターから削除しました`, 'success');
         }
 
         // 景品を削除（景品マスターから）
@@ -7650,7 +7665,8 @@
             clearAddPrizeForm();
             document.getElementById('addPrizeFormContainer').style.display = 'none';
 
-            alert(`✅ 「${name}」を景品マスターに追加しました！\n\nクラウドに自動同期されます。`);
+            // 成功通知
+            showNotification(`✅ 景品「${name}」を景品マスターに追加しました（在庫${count}個）`, 'success');
         }
 
         // 新規景品登録をキャンセル
@@ -8928,6 +8944,13 @@ loadConfigFromURL = function() {
 // 過去7日間の集計を更新
 function refreshWeeklyStats() {
   const container = document.getElementById('weeklyStatsContainer');
+
+  // コンテナが存在しない場合は何もしない
+  if (!container) {
+    console.warn('weeklyStatsContainer が見つかりません');
+    return;
+  }
+
   container.innerHTML = '<p style="color: var(--sf-gray); text-align: center;">集計中...</p>';
 
   // 7日前のタイムスタンプを取得
