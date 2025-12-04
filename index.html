@@ -3757,7 +3757,8 @@
                         const masterStock = item.masterStock;
                         const isLowStock = masterStock < prize.count;
                         const shortage = isLowStock ? prize.count - masterStock : 0;
-                        const imageUrl = masterPrize?.imageUrl ? masterPrize.imageUrl.trim() : '';
+                        const imageUrl = masterPrize?.imageUrl || masterPrize?.image || '';
+                        const finalImageUrl = typeof imageUrl === 'string' ? imageUrl.trim() : '';
 
                         // デバッグログ
                         console.log('========== 在庫編集 - 景品情報 ==========');
@@ -3773,16 +3774,17 @@
                             console.log('masterPrize.image:', masterPrize.image || '(undefined)');
                             console.log('masterPrize.url:', masterPrize.url || '(undefined)');
                         }
-                        console.log('最終的な画像URL:', imageUrl || '(なし)');
+                        console.log('取得した画像URL:', imageUrl || '(なし)');
+                        console.log('最終的な画像URL:', finalImageUrl || '(なし)');
                         console.log('========================================');
 
                         return `
                             <div style="background: white; border: 2px solid ${isLowStock ? 'rgba(255, 59, 48, 0.3)' : 'rgba(0, 0, 0, 0.1)'}; border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; ${isLowStock ? 'box-shadow: 0 2px 8px rgba(255, 59, 48, 0.1);' : ''}">
                                 <div style="display: flex; gap: 16px; margin-bottom: 12px;">
                                     <div style="flex-shrink: 0; position: relative;">
-                                        ${imageUrl ? `
+                                        ${finalImageUrl ? `
                                             <img
-                                                src="${imageUrl}"
+                                                src="${finalImageUrl}"
                                                 alt=""
                                                 style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1); display: block; background: rgba(0, 0, 0, 0.02);"
                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
