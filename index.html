@@ -558,11 +558,38 @@
         .btn-danger:hover {
             background: rgba(230, 52, 42, 0.85);
             transform: translateY(-2px) scale(1.02);
+        }
+
+        .btn-warning {
+            background: rgba(255, 149, 0, 0.8);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
+            color: var(--sf-white);
+            border: 0.5px solid rgba(255, 255, 255, 0.75);
             box-shadow:
-                0 10px 30px rgba(255, 59, 48, 0.45),
-                0 4px 15px rgba(255, 59, 48, 0.35),
+                0 6px 20px rgba(255, 149, 0, 0.35),
+                0 2px 10px rgba(255, 149, 0, 0.25),
+                0 0 0 0.5px rgba(255, 255, 255, 0.6) inset,
+                0 1px 4px rgba(255, 255, 255, 0.5) inset;
+        }
+
+        .btn-warning:hover {
+            background: rgba(245, 139, 0, 0.85);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow:
+                0 10px 30px rgba(255, 149, 0, 0.45),
+                0 4px 15px rgba(255, 149, 0, 0.35),
                 0 0 0 0.5px rgba(255, 255, 255, 0.5) inset,
                 0 2px 6px rgba(255, 255, 255, 0.4) inset;
+        }
+
+        .btn-warning:active {
+            transform: translateY(0) scale(0.98);
+            background: rgba(235, 129, 0, 0.8);
+            box-shadow:
+                0 3px 12px rgba(255, 149, 0, 0.35),
+                0 1px 6px rgba(255, 149, 0, 0.25),
+                0 0 0 0.5px rgba(255, 255, 255, 0.4) inset;
         }
 
         .btn-danger:active {
@@ -579,10 +606,6 @@
             backdrop-filter: blur(20px) saturate(150%);
             -webkit-backdrop-filter: blur(20px) saturate(150%);
             color: var(--sf-white);
-            width: 100%;
-            padding: 16px;
-            font-size: 15px;
-            margin-top: 16px;
             border: 0.5px solid rgba(255, 255, 255, 0.75);
             box-shadow:
                 0 6px 20px rgba(52, 199, 89, 0.35),
@@ -1493,6 +1516,158 @@
             font-size: 18px;
         }
 
+        /* ラベル付きボタンのスタイル */
+        .btn-with-label {
+            position: relative;
+            width: auto;
+            min-width: 36px;
+            padding: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .btn-with-label .btn-icon-emoji {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .btn-with-label .btn-label {
+            display: inline-block;
+            max-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            opacity: 0;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 0;
+            transition: all 0.3s ease;
+        }
+
+        .btn-with-label:hover {
+            width: auto;
+            padding-right: 12px;
+        }
+
+        .btn-with-label:hover .btn-label {
+            max-width: 100px;
+            opacity: 1;
+            padding-left: 4px;
+        }
+
+        /* オリパ一覧用スタイル */
+        .oripa-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .oripa-item {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1.5px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            position: relative;
+            transition: all 0.3s var(--transition-smooth);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .oripa-item:hover {
+            border-color: var(--sf-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .oripa-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .oripa-title {
+            flex: 1;
+        }
+
+        .oripa-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.9);
+            margin-bottom: 8px;
+        }
+
+        .oripa-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .oripa-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.4;
+            white-space: nowrap;
+        }
+
+        .oripa-badge.status-active {
+            background: rgba(52, 199, 89, 0.15);
+            color: var(--sf-green);
+            border: 1px solid rgba(52, 199, 89, 0.3);
+        }
+
+        .oripa-badge.status-scheduled {
+            background: rgba(255, 149, 0, 0.15);
+            color: var(--sf-orange);
+            border: 1px solid rgba(255, 149, 0, 0.3);
+        }
+
+        .oripa-badge.status-ended {
+            background: rgba(142, 142, 147, 0.15);
+            color: var(--sf-gray);
+            border: 1px solid rgba(142, 142, 147, 0.3);
+        }
+
+        .oripa-badge.warning {
+            background: rgba(255, 59, 48, 0.15);
+            color: var(--sf-red);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+        }
+
+        .oripa-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .oripa-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .oripa-info-label {
+            font-size: 12px;
+            color: var(--sf-gray);
+        }
+
+        .oripa-info-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.9);
+        }
+
+        .oripa-actions {
+            display: flex;
+            gap: 8px;
+        }
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -1618,6 +1793,7 @@
         <!-- タブナビゲーション -->
         <div class="tab-navigation">
             <button class="tab-button active" onclick="switchTab('main', event)">メイン</button>
+            <button class="tab-button" onclick="switchTab('oripa-management', event)">オリパ管理</button>
             <button class="tab-button" onclick="switchTab('prize-list', event)">景品マスター</button>
             <button class="tab-button" onclick="switchTab('auto-create', event)">オリパ自動作成</button>
         </div>
@@ -1638,8 +1814,18 @@
                         <input type="number" id="totalPacks" value="100">
                     </div>
                     <div class="form-group">
-                        <label>公開日</label>
-                        <input type="date" id="releaseDate" style="width: 100%;">
+                        <label>オリパ名</label>
+                        <input type="text" id="oripaName" placeholder="例: ポケモンカードオリパ第1弾">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>公開日時</label>
+                            <input type="datetime-local" id="releaseDate" style="width: 100%;">
+                        </div>
+                        <div class="form-group">
+                            <label>終了日時</label>
+                            <input type="datetime-local" id="endDate" style="width: 100%;">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>オリパ提供価値</label>
@@ -1670,6 +1856,9 @@
                             ⭐ スコア評価
                         </button>
                     </div>
+                    <button class="btn btn-accent" onclick="saveOripa()" style="width: 100%; font-size: 16px; padding: 14px; margin-top: 12px;">
+                        💾 オリパを保存
+                    </button>
                 </div>
 
                 <!-- ハズレ管理 -->
@@ -1702,8 +1891,8 @@
                                 <input type="number" id="lossCount" min="1" value="1">
                             </div>
                         </div>
-                        <button class="btn btn-success" id="addLossBtn" onclick="addLoss()">ハズレを追加</button>
-                        <button class="btn btn-success" id="updateLossBtn" onclick="updateLoss()" style="display: none;">ハズレを更新</button>
+                        <button class="btn btn-success" id="addLossBtn" onclick="addLoss()" style="width: 100%;">ハズレを追加</button>
+                        <button class="btn btn-success" id="updateLossBtn" onclick="updateLoss()" style="display: none; width: 100%;">ハズレを更新</button>
                         <button class="btn btn-danger" id="cancelEditLossBtn" onclick="cancelEditLoss()" style="display: none; margin-top: 8px;">キャンセル</button>
                     </div>
                 </div>
@@ -1759,8 +1948,8 @@
                             <label>封入数</label>
                             <input type="number" id="prizeCount" min="1" value="1">
                         </div>
-                        <button class="btn btn-success" id="addPrizeBtn" onclick="addPrizeFromForm()">景品を追加</button>
-                        <button class="btn btn-success" id="updatePrizeBtn" onclick="updatePrizeFromForm()" style="display: none;">景品を更新</button>
+                        <button class="btn btn-success" id="addPrizeBtn" onclick="addPrizeFromForm()" style="width: 100%;">景品を追加</button>
+                        <button class="btn btn-success" id="updatePrizeBtn" onclick="updatePrizeFromForm()" style="display: none; width: 100%;">景品を更新</button>
                         <button class="btn btn-primary" id="replacePrizeBtn" onclick="selectFromPrizeMasterForReplace()" style="display: none; margin-top: 8px;">🔄 別の景品に置き換え</button>
                         <button class="btn btn-danger" id="cancelEditBtn" onclick="cancelEditPrize()" style="display: none; margin-top: 8px;">キャンセル</button>
                     </div>
@@ -1818,18 +2007,6 @@
                     <div id="cloudStatus" style="margin-top: 12px; font-size: 12px; color: var(--sf-gray);"></div>
                 </div>
 
-                <!-- 過去7日間の集計 -->
-                <div class="panel" style="background: rgba(175, 82, 222, 0.05); border-color: var(--sf-purple);">
-                    <h2 style="border-bottom-color: var(--sf-purple);">📊 過去7日間の集計</h2>
-
-                    <button class="btn btn-primary" onclick="refreshWeeklyStats()" style="width: 100%; margin-bottom: 16px;">
-                        🔄 集計を更新
-                    </button>
-
-                    <div id="weeklyStatsContainer" style="font-size: 13px;">
-                        <p style="color: var(--sf-gray); text-align: center;">「集計を更新」をクリックしてください</p>
-                    </div>
-                </div>
             </div>
 
             <div class="results-grid">
@@ -1929,6 +2106,68 @@
         <div id="warnings"></div>
         </div>
         <!-- /メインタブコンテンツ -->
+
+        <!-- オリパ管理タブコンテンツ -->
+        <div id="tab-oripa-management" class="tab-content">
+            <div class="panel">
+                <h2>📊 オリパ管理</h2>
+                <p style="color: var(--sf-gray); font-size: 14px; margin-bottom: 24px;">
+                    作成したオリパの開催状況を管理します。開催前、開催中、終了したオリパを確認できます。
+                </p>
+
+                <!-- オリパ管理セクション -->
+                <div style="display: flex; flex-direction: column; gap: 32px;">
+                    <!-- 開催中のオリパの集計 -->
+                    <div>
+                        <div style="background: rgba(175, 82, 222, 0.05); border: 1px solid var(--sf-purple); padding: 24px; border-radius: var(--radius-lg);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                <h3 style="font-size: 1.3em; font-weight: 700; margin: 0; color: var(--sf-purple); display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 24px;">📊</span> 開催中のオリパ集計
+                                </h3>
+                                <button class="btn btn-primary" onclick="refreshActiveOripaStats()" style="padding: 8px 16px; font-size: 13px;">
+                                    🔄 更新
+                                </button>
+                            </div>
+
+                            <div id="activeOripaStatsContainer" style="font-size: 13px;">
+                                <!-- 集計がここに表示されます -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 開催中のオリパ -->
+                    <div>
+                        <h3 style="font-size: 1.3em; font-weight: 700; margin-bottom: 16px; color: var(--sf-green); display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 24px;">🟢</span> 開催中のオリパ
+                        </h3>
+                        <div id="activeOripaList" class="oripa-list">
+                            <!-- 開催中のオリパがここに表示されます -->
+                        </div>
+                    </div>
+
+                    <!-- 開催前のオリパ -->
+                    <div>
+                        <h3 style="font-size: 1.3em; font-weight: 700; margin-bottom: 16px; color: var(--sf-orange); display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 24px;">🟡</span> 開催前のオリパ
+                        </h3>
+                        <div id="scheduledOripaList" class="oripa-list">
+                            <!-- 開催前のオリパがここに表示されます -->
+                        </div>
+                    </div>
+
+                    <!-- 終了したオリパ -->
+                    <div>
+                        <h3 style="font-size: 1.3em; font-weight: 700; margin-bottom: 16px; color: var(--sf-gray); display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 24px;">⚫</span> 終了したオリパ
+                        </h3>
+                        <div id="endedOripaList" class="oripa-list">
+                            <!-- 終了したオリパがここに表示されます -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /オリパ管理タブコンテンツ -->
 
         <!-- 景品一覧タブコンテンツ -->
         <div id="tab-prize-list" class="tab-content">
@@ -2306,6 +2545,53 @@
         </div>
     </div>
 
+    <!-- 在庫調整モーダル -->
+    <div id="stockAdjustmentModal" class="edit-modal">
+        <div class="edit-modal-content" style="max-width: 800px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="edit-modal-header">
+                <h3 class="edit-modal-title">📝 在庫調整</h3>
+                <button class="edit-modal-close" onclick="closeStockAdjustmentModal()">&times;</button>
+            </div>
+            <div class="edit-modal-body" style="overflow-y: auto; max-height: calc(90vh - 140px); flex: 1;">
+                <div style="background: rgba(255, 149, 0, 0.1); padding: 16px; border-radius: var(--radius-md); margin-bottom: 20px; border: 1px solid rgba(255, 149, 0, 0.3);">
+                    <div style="font-size: 14px; font-weight: 600; color: var(--sf-orange); margin-bottom: 8px;">
+                        💡 在庫調整について
+                    </div>
+                    <div style="font-size: 13px; color: var(--sf-gray); line-height: 1.6;">
+                        販売が終了したオリパの在庫を調整します。<br>
+                        各景品について、実際に売れた数を入力してください。<br>
+                        売れ残った分は景品マスターの在庫に戻ります。
+                    </div>
+                </div>
+
+                <div id="stockAdjustmentOripaName" style="font-size: 18px; font-weight: 700; margin-bottom: 20px; color: rgba(0, 0, 0, 0.9);"></div>
+
+                <div id="stockAdjustmentList"></div>
+            </div>
+            <div class="edit-modal-footer">
+                <button class="btn btn-success" onclick="saveStockAdjustment()" style="flex: 1;">✅ 調整を完了</button>
+                <button class="btn btn-danger" onclick="closeStockAdjustmentModal()" style="flex: 1;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- オリパ在庫編集モーダル -->
+    <div id="oripaStockEditModal" class="edit-modal">
+        <div class="edit-modal-content" style="max-width: 800px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="edit-modal-header">
+                <h3 class="edit-modal-title">📦 オリパ在庫編集</h3>
+                <button class="edit-modal-close" onclick="closeOripaStockEditModal()">&times;</button>
+            </div>
+            <div class="edit-modal-body" style="overflow-y: auto; max-height: calc(90vh - 140px);">
+                <div id="oripaStockEditList"></div>
+            </div>
+            <div class="edit-modal-footer">
+                <button class="btn btn-success" onclick="saveOripaStock()" style="flex: 1;">✅ 保存</button>
+                <button class="btn btn-danger" onclick="closeOripaStockEditModal()" style="flex: 1;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 景品マスター選択モーダル -->
     <div id="selectPrizeMasterModal" class="edit-modal">
         <div class="edit-modal-content" style="max-width: 900px;">
@@ -2442,10 +2728,10 @@
                 </div>
             </div>
             <div class="edit-modal-footer" style="display: flex; gap: 12px;">
-                <button class="btn btn-danger" id="modalCancelBtn" onclick="closeSelectPrizeMasterModal()" style="flex: 1;">キャンセル</button>
                 <button class="btn btn-success" id="modalNewPrizeBtn" onclick="showModalNewPrizeForm()" style="flex: 1;">➕ 新規登録</button>
-                <button class="btn btn-danger" id="modalFormCancelBtn" onclick="hideModalNewPrizeForm()" style="flex: 1; display: none;">戻る</button>
+                <button class="btn btn-danger" id="modalCancelBtn" onclick="closeSelectPrizeMasterModal()" style="flex: 1;">キャンセル</button>
                 <button class="btn btn-success" id="modalFormSaveBtn" onclick="saveModalNewPrize()" style="flex: 1; display: none;">景品を登録</button>
+                <button class="btn btn-danger" id="modalFormCancelBtn" onclick="hideModalNewPrizeForm()" style="flex: 1; display: none;">戻る</button>
             </div>
         </div>
     </div>
@@ -2470,8 +2756,8 @@
                 <p id="deleteConfirmMessage" style="font-size: 16px; line-height: 1.6; margin: 20px 0;"></p>
             </div>
             <div class="edit-modal-footer" style="display: flex; gap: 12px;">
-                <button type="button" class="btn btn-secondary" onclick="closeDeleteConfirmModal(false)" style="flex: 1;">キャンセル</button>
                 <button type="button" class="btn btn-danger" onclick="closeDeleteConfirmModal(true)" style="flex: 1;">削除</button>
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteConfirmModal(false)" style="flex: 1;">キャンセル</button>
             </div>
         </div>
     </div>
@@ -2494,8 +2780,8 @@
                 <input type="text" id="clearConfirmInput" placeholder="ここに「クリア」と入力" style="width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ff3b30; border-radius: 8px; margin-top: 12px;">
             </div>
             <div class="edit-modal-footer" style="display: flex; gap: 12px;">
-                <button type="button" class="btn btn-secondary" onclick="closeClearConfirmModal()" style="flex: 1;">キャンセル</button>
                 <button type="button" class="btn btn-danger" onclick="executeClearPrizeMaster()" style="flex: 1;">全削除を実行</button>
+                <button type="button" class="btn btn-secondary" onclick="closeClearConfirmModal()" style="flex: 1;">キャンセル</button>
             </div>
         </div>
     </div>
@@ -2577,6 +2863,887 @@
         let presets = [];
         let editingPresetId = null; // 編集中のプリセットID
 
+        // オリパ管理
+        let oripas = []; // 保存されたオリパ一覧
+        const ORIPA_STORAGE_KEY = 'oripas';
+        let editingOripaId = null; // 編集中のオリパID
+
+        // オリパをlocalStorageから読み込み
+        function loadOripas() {
+            try {
+                const saved = localStorage.getItem(ORIPA_STORAGE_KEY);
+                if (saved) {
+                    oripas = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error('オリパの読み込みに失敗:', e);
+                oripas = [];
+            }
+        }
+
+        // オリパをlocalStorageに保存
+        function saveOripasToStorage() {
+            try {
+                localStorage.setItem(ORIPA_STORAGE_KEY, JSON.stringify(oripas));
+            } catch (e) {
+                console.error('オリパの保存に失敗:', e);
+            }
+        }
+
+        // オリパのステータスを判定
+        function getOripaStatus(oripa) {
+            const now = new Date();
+            const releaseDate = oripa.releaseDate ? new Date(oripa.releaseDate) : null;
+            const endDate = oripa.endDate ? new Date(oripa.endDate) : null;
+
+            if (!releaseDate) {
+                return 'scheduled'; // 公開日時未設定は開催前扱い
+            }
+
+            if (now < releaseDate) {
+                return 'scheduled'; // 開催前
+            }
+
+            if (endDate && now > endDate) {
+                return 'ended'; // 終了
+            }
+
+            return 'active'; // 開催中
+        }
+
+        // オリパの在庫不足をチェック
+        function checkOripaStockShortage(oripa) {
+            const shortages = [];
+
+            for (const prize of oripa.prizes) {
+                const masterPrize = prizeMaster.find(p => p.id === prize.masterPrizeId);
+                if (masterPrize) {
+                    const availableStock = getAvailableStock(prize.masterPrizeId, oripa.id);
+                    if (prize.count > availableStock) {
+                        shortages.push({
+                            name: prize.name,
+                            required: prize.count,
+                            available: availableStock
+                        });
+                    }
+                }
+            }
+
+            return shortages;
+        }
+
+        // 景品マスターから利用可能な在庫数を取得
+        function getAvailableStock(masterPrizeId, excludeOripaId = null) {
+            const masterPrize = prizeMaster.find(p => p.id === masterPrizeId);
+            if (!masterPrize) return 0;
+
+            let totalStock = masterPrize.count;
+            let usedStock = 0;
+
+            // 他のオリパで使用されている在庫を計算
+            for (const oripa of oripas) {
+                if (excludeOripaId && oripa.id === excludeOripaId) continue;
+
+                const status = getOripaStatus(oripa);
+                // 開催前または開催中のオリパのみカウント
+                if (status === 'scheduled' || status === 'active') {
+                    for (const prize of oripa.prizes) {
+                        if (prize.masterPrizeId === masterPrizeId) {
+                            usedStock += prize.count;
+                        }
+                    }
+                }
+            }
+
+            return totalStock - usedStock;
+        }
+
+        // オリパを保存
+        function saveOripa() {
+            const name = document.getElementById('oripaName')?.value.trim();
+            const packPrice = parseFloat(document.getElementById('packPrice')?.value) || 0;
+            const totalPacks = parseInt(document.getElementById('totalPacks')?.value) || 0;
+            const releaseDate = document.getElementById('releaseDate')?.value || '';
+            const endDate = document.getElementById('endDate')?.value || '';
+
+            // バリデーション
+            if (!name) {
+                alert('オリパ名を入力してください');
+                return;
+            }
+
+            if (prizes.length === 0) {
+                alert('景品を追加してください');
+                return;
+            }
+
+            if (!releaseDate) {
+                alert('公開日時を設定してください');
+                return;
+            }
+
+            if (!endDate) {
+                alert('終了日時を設定してください');
+                return;
+            }
+
+            if (new Date(endDate) <= new Date(releaseDate)) {
+                alert('終了日時は公開日時より後に設定してください');
+                return;
+            }
+
+            // 景品マスターとの紐付けと在庫チェック
+            const prizesWithMaster = [];
+            const stockWarnings = [];
+
+            for (const prize of prizes) {
+                let masterPrize;
+
+                // 編集時で既にmasterPrizeIdが設定されている場合はそれを使用
+                if (prize.masterPrizeId) {
+                    masterPrize = prizeMaster.find(p => p.id === prize.masterPrizeId);
+                }
+
+                // masterPrizeIdがないか、見つからない場合は名前で検索
+                if (!masterPrize) {
+                    masterPrize = prizeMaster.find(p => p.name === prize.name);
+                }
+
+                if (masterPrize) {
+                    const availableStock = getAvailableStock(masterPrize.id, editingOripaId);
+
+                    prizesWithMaster.push({
+                        ...prize,
+                        masterPrizeId: masterPrize.id
+                    });
+
+                    if (prize.count > availableStock) {
+                        stockWarnings.push({
+                            name: prize.name,
+                            required: prize.count,
+                            available: availableStock
+                        });
+                    }
+                } else {
+                    prizesWithMaster.push({
+                        ...prize,
+                        masterPrizeId: null
+                    });
+                }
+            }
+
+            // 在庫不足の警告
+            if (stockWarnings.length > 0) {
+                const warningMessage = stockWarnings.map(w =>
+                    `${w.name}: 必要${w.required}個 / 利用可能${w.available}個`
+                ).join('\n');
+
+                const confirmMessage = `以下の景品で在庫が不足しています：\n\n${warningMessage}\n\n在庫が足りなくても販売しますか？`;
+
+                if (!confirm(confirmMessage)) {
+                    return;
+                }
+            }
+
+            const oripaData = {
+                id: editingOripaId || Date.now(),
+                name: name,
+                packPrice: packPrice,
+                totalPacks: totalPacks,
+                releaseDate: releaseDate,
+                endDate: endDate,
+                prizes: prizesWithMaster,
+                losses: [...losses],
+                allowLowStock: stockWarnings.length > 0,
+                stockAdjusted: false,
+                createdAt: editingOripaId ? (oripas.find(o => o.id === editingOripaId)?.createdAt || Date.now()) : Date.now()
+            };
+
+            if (editingOripaId) {
+                // 更新
+                const index = oripas.findIndex(o => o.id === editingOripaId);
+                if (index !== -1) {
+                    oripas[index] = oripaData;
+                }
+            } else {
+                // 新規追加
+                oripas.push(oripaData);
+            }
+
+            saveOripasToStorage();
+            alert(`オリパ「${name}」を保存しました`);
+
+            // フォームとグローバル変数をリセット
+            editingOripaId = null;
+            prizes = [];
+            losses = [];
+            document.getElementById('oripaName').value = '';
+            document.getElementById('packPrice').value = '';
+            document.getElementById('totalPacks').value = '';
+            document.getElementById('releaseDate').value = '';
+            document.getElementById('endDate').value = '';
+            updatePrizeList();
+            updateLossList();
+
+            // オリパ管理タブに切り替え
+            switchTab('oripa-management');
+            updateOripaManagementLists();
+        }
+
+        // オリパ管理画面を更新
+        function updateOripaManagementLists() {
+            const activeList = document.getElementById('activeOripaList');
+            const scheduledList = document.getElementById('scheduledOripaList');
+            const endedList = document.getElementById('endedOripaList');
+
+            let activeOripas = oripas.filter(o => getOripaStatus(o) === 'active');
+            let scheduledOripas = oripas.filter(o => getOripaStatus(o) === 'scheduled');
+            let endedOripas = oripas.filter(o => getOripaStatus(o) === 'ended');
+
+            // 開催中のオリパ：終了日が近い順にソート
+            activeOripas.sort((a, b) => {
+                const dateA = new Date(a.endDate);
+                const dateB = new Date(b.endDate);
+                return dateA - dateB; // 昇順（早い日付が先）
+            });
+
+            // 開催前のオリパ：開催日が近い順にソート
+            scheduledOripas.sort((a, b) => {
+                const dateA = new Date(a.releaseDate);
+                const dateB = new Date(b.releaseDate);
+                return dateA - dateB; // 昇順（早い日付が先）
+            });
+
+            // 終了したオリパ：在庫調整が必要なものを上に、それ以外は最近終了した順
+            endedOripas.sort((a, b) => {
+                const needsAdjustmentA = !a.stockAdjusted;
+                const needsAdjustmentB = !b.stockAdjusted;
+
+                // 在庫調整が必要かどうかで最初にソート
+                if (needsAdjustmentA && !needsAdjustmentB) return -1;
+                if (!needsAdjustmentA && needsAdjustmentB) return 1;
+
+                // 両方とも調整が必要、または両方とも不要な場合は、終了日でソート（最近終了した順）
+                const dateA = new Date(a.endDate);
+                const dateB = new Date(b.endDate);
+                return dateB - dateA; // 降順（新しい日付が先）
+            });
+
+            // 開催中のオリパ
+            if (activeOripas.length === 0) {
+                activeList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎲</div><div class="empty-state-text">開催中のオリパはありません</div></div>';
+            } else {
+                activeList.innerHTML = activeOripas.map(oripa => renderOripaItem(oripa)).join('');
+            }
+
+            // 開催前のオリパ
+            if (scheduledOripas.length === 0) {
+                scheduledList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📅</div><div class="empty-state-text">開催前のオリパはありません</div></div>';
+            } else {
+                scheduledList.innerHTML = scheduledOripas.map(oripa => renderOripaItem(oripa)).join('');
+            }
+
+            // 終了したオリパ
+            if (endedOripas.length === 0) {
+                endedList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-text">終了したオリパはありません</div></div>';
+            } else {
+                endedList.innerHTML = endedOripas.map(oripa => renderOripaItem(oripa)).join('');
+            }
+
+            // 集計も自動的に更新
+            refreshActiveOripaStats();
+        }
+
+        // オリパアイテムをレンダリング
+        function renderOripaItem(oripa) {
+            const status = getOripaStatus(oripa);
+            const needsAdjustment = status === 'ended' && !oripa.stockAdjusted;
+
+            // シンプルな在庫不足チェック（景品マスターの現在の在庫数のみを確認）
+            let hasStockIssue = false;
+            if (status !== 'ended') {
+                for (const prize of oripa.prizes) {
+                    const masterPrize = prizeMaster.find(p => p.id === prize.masterPrizeId);
+                    if (masterPrize && masterPrize.count < prize.count) {
+                        hasStockIssue = true;
+                        break;
+                    }
+                }
+            }
+
+            // 警告バッジのみを表示（ステータスバッジは非表示）
+            const badges = [];
+            if (hasStockIssue) {
+                badges.push('<span class="oripa-badge warning">⚠️ 在庫不足</span>');
+            }
+            if (needsAdjustment) {
+                badges.push('<span class="oripa-badge warning">📝 調整必要</span>');
+            }
+
+            const formatDate = (dateStr) => {
+                if (!dateStr) return '未設定';
+                const date = new Date(dateStr);
+                return `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+            };
+
+            return `
+                <div class="oripa-item">
+                    <div class="oripa-header">
+                        <div class="oripa-title">
+                            <div class="oripa-name">${escapeHtml(oripa.name)}</div>
+                            <div class="oripa-badges">${badges.join('')}</div>
+                        </div>
+                        <div class="oripa-actions">
+                            ${status === 'ended'
+                                ? `<button class="btn btn-warning btn-icon btn-with-label" onclick="openStockAdjustmentModal(${oripa.id})" title="在庫調整 - 売れ残った景品を景品マスターに戻す">
+                                    <span class="btn-icon-emoji">📝</span>
+                                    <span class="btn-label">在庫調整</span>
+                                </button>`
+                                : `<button class="btn btn-warning btn-icon btn-with-label" onclick="openOripaStockEditModal(${oripa.id})" title="在庫編集 - オリパと景品マスターの在庫を編集">
+                                    <span class="btn-icon-emoji">📦</span>
+                                    <span class="btn-label">在庫編集</span>
+                                </button>`
+                            }
+                            <button class="btn btn-primary btn-icon btn-with-label" onclick="editOripa(${oripa.id})" title="編集 - オリパの設定を変更">
+                                <span class="btn-icon-emoji">✏️</span>
+                                <span class="btn-label">編集</span>
+                            </button>
+                            <button class="btn btn-danger btn-icon btn-with-label" onclick="deleteOripa(${oripa.id})" title="削除 - このオリパを完全に削除">
+                                <span class="btn-icon-emoji">🗑️</span>
+                                <span class="btn-label">削除</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="oripa-info">
+                        <div class="oripa-info-item">
+                            <div class="oripa-info-label">パック単価</div>
+                            <div class="oripa-info-value">¥${oripa.packPrice.toLocaleString()}</div>
+                        </div>
+                        <div class="oripa-info-item">
+                            <div class="oripa-info-label">総口数</div>
+                            <div class="oripa-info-value">${oripa.totalPacks}口</div>
+                        </div>
+                        <div class="oripa-info-item">
+                            <div class="oripa-info-label">公開日時</div>
+                            <div class="oripa-info-value" style="font-size: 14px;">${formatDate(oripa.releaseDate)}</div>
+                        </div>
+                        <div class="oripa-info-item">
+                            <div class="oripa-info-label">終了日時</div>
+                            <div class="oripa-info-value" style="font-size: 14px;">${formatDate(oripa.endDate)}</div>
+                        </div>
+                        <div class="oripa-info-item">
+                            <div class="oripa-info-label">景品数</div>
+                            <div class="oripa-info-value">${oripa.prizes.length}種類</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // オリパを編集
+        function editOripa(oripaId) {
+            const oripa = oripas.find(o => o.id === oripaId);
+            if (!oripa) {
+                alert('オリパが見つかりません');
+                return;
+            }
+
+            const status = getOripaStatus(oripa);
+
+            // 終了したオリパの場合は在庫調整モーダルを開く
+            if (status === 'ended') {
+                openStockAdjustmentModal(oripaId);
+                return;
+            }
+
+            // 開催前または開催中のオリパは通常の編集
+            editingOripaId = oripaId;
+
+            // メインタブに切り替え
+            switchTab('main');
+
+            // フォームにデータを設定
+            document.getElementById('oripaName').value = oripa.name;
+            document.getElementById('packPrice').value = oripa.packPrice;
+            document.getElementById('totalPacks').value = oripa.totalPacks;
+            document.getElementById('releaseDate').value = oripa.releaseDate;
+            document.getElementById('endDate').value = oripa.endDate;
+
+            // 景品とハズレを復元
+            prizes = oripa.prizes.map(p => ({...p}));
+            losses = oripa.losses.map(l => ({...l}));
+
+            updatePrizeList();
+            updateLossList();
+
+            alert(`オリパ「${oripa.name}」を編集モードで読み込みました`);
+        }
+
+        // 在庫調整モーダルを開く
+        let adjustingOripaId = null;
+
+        function openStockAdjustmentModal(oripaId) {
+            const oripa = oripas.find(o => o.id === oripaId);
+            if (!oripa) {
+                alert('オリパが見つかりません');
+                return;
+            }
+
+            adjustingOripaId = oripaId;
+
+            // オリパ名を表示
+            document.getElementById('stockAdjustmentOripaName').textContent = `オリパ: ${oripa.name}`;
+
+            // 景品リストを表示
+            const listContainer = document.getElementById('stockAdjustmentList');
+
+            if (oripa.prizes.length === 0) {
+                listContainer.innerHTML = '<p style="color: var(--sf-gray); text-align: center;">景品がありません</p>';
+            } else {
+                listContainer.innerHTML = oripa.prizes.map((prize, index) => {
+                    const soldCount = prize.soldCount || 0;
+                    const remaining = prize.count - soldCount;
+
+                    return `
+                        <div style="background: white; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">${escapeHtml(prize.name)}</div>
+                                    <div style="font-size: 13px; color: var(--sf-gray);">
+                                        封入数: ${prize.count.toLocaleString()}個
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <label style="font-weight: 600; font-size: 14px; color: var(--sf-label);">売れた数:</label>
+                                <input
+                                    type="number"
+                                    id="soldCount_${index}"
+                                    min="0"
+                                    max="${prize.count}"
+                                    value="${soldCount}"
+                                    style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 0, 0, 0.2); font-size: 14px; width: 100px;"
+                                    oninput="updateRemainingCount(${index}, ${prize.count})"
+                                >
+                                <span style="font-size: 14px; color: var(--sf-gray);">個</span>
+                                <span style="margin-left: 16px; font-size: 14px; color: var(--sf-gray);">
+                                    残り: <span id="remaining_${index}" style="font-weight: 700; color: ${remaining > 0 ? 'var(--sf-orange)' : 'var(--sf-gray)'};">${remaining}</span>個
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 背後のページのスクロールを無効化
+            document.body.style.overflow = 'hidden';
+
+            // モーダルを表示
+            document.getElementById('stockAdjustmentModal').style.display = 'flex';
+        }
+
+        // 残り数を更新
+        function updateRemainingCount(index, totalCount) {
+            const soldInput = document.getElementById(`soldCount_${index}`);
+            const remainingSpan = document.getElementById(`remaining_${index}`);
+
+            let soldCount = parseInt(soldInput.value) || 0;
+
+            // 売れた数が封入数を超えないように制限
+            if (soldCount > totalCount) {
+                soldCount = totalCount;
+                soldInput.value = soldCount;
+            }
+
+            const remaining = totalCount - soldCount;
+            remainingSpan.textContent = remaining;
+            remainingSpan.style.color = remaining > 0 ? 'var(--sf-orange)' : 'var(--sf-gray)';
+        }
+
+        // 在庫調整モーダルを閉じる
+        function closeStockAdjustmentModal() {
+            document.getElementById('stockAdjustmentModal').style.display = 'none';
+            adjustingOripaId = null;
+            // 背後のページのスクロールを再度有効化
+            document.body.style.overflow = '';
+        }
+
+        // 在庫調整を保存
+        function saveStockAdjustment() {
+            if (!adjustingOripaId) return;
+
+            const oripa = oripas.find(o => o.id === adjustingOripaId);
+            if (!oripa) {
+                alert('オリパが見つかりません');
+                return;
+            }
+
+            // 各景品の売れた数を取得
+            const updatedPrizes = oripa.prizes.map((prize, index) => {
+                const soldInput = document.getElementById(`soldCount_${index}`);
+                const soldCount = parseInt(soldInput.value) || 0;
+
+                return {
+                    ...prize,
+                    soldCount: soldCount,
+                    remainingCount: prize.count - soldCount
+                };
+            });
+
+            // 景品マスターの在庫を更新（売れ残った分を戻す）
+            for (const prize of updatedPrizes) {
+                if (prize.masterPrizeId && prize.remainingCount > 0) {
+                    const masterPrize = prizeMaster.find(p => p.id === prize.masterPrizeId);
+                    if (masterPrize) {
+                        masterPrize.count += prize.remainingCount;
+                    }
+                }
+            }
+
+            // オリパデータを更新
+            const index = oripas.findIndex(o => o.id === adjustingOripaId);
+            if (index !== -1) {
+                oripas[index] = {
+                    ...oripa,
+                    prizes: updatedPrizes,
+                    stockAdjusted: true,
+                    adjustedAt: Date.now()
+                };
+            }
+
+            // 保存
+            saveOripasToStorage();
+            savePrizeMaster();
+
+            // 表示を更新
+            updateOripaManagementLists();
+            updatePrizeMasterList();
+
+            // モーダルを閉じる
+            closeStockAdjustmentModal();
+
+            alert(`オリパ「${oripa.name}」の在庫調整が完了しました。\n売れ残った景品を景品マスターに戻しました。`);
+        }
+
+        // オリパ在庫編集モーダル
+        let originalStockCounts = {};
+
+        function openOripaStockEditModal(oripaId) {
+            const oripa = oripas.find(o => o.id === oripaId);
+            if (!oripa) {
+                alert('オリパが見つかりません');
+                return;
+            }
+
+            editingOripaId = oripaId;
+            originalStockCounts = {};
+
+            // 景品リストを表示
+            const listContainer = document.getElementById('oripaStockEditList');
+
+            if (!oripa.prizes || oripa.prizes.length === 0) {
+                listContainer.innerHTML = '<p style="color: var(--sf-gray); text-align: center;">景品がありません</p>';
+            } else {
+                // 景品を景品マスターの在庫数でソート（在庫不足を優先）
+                const prizesWithIndex = oripa.prizes.map((prize, index) => {
+                    const masterPrize = prizeMaster.find(p => p.id === prize.masterPrizeId);
+                    const masterStock = masterPrize ? masterPrize.count : 0;
+                    return {
+                        prize,
+                        originalIndex: index,
+                        masterStock
+                    };
+                });
+
+                // 在庫数で昇順ソート（在庫が少ない順）
+                prizesWithIndex.sort((a, b) => a.masterStock - b.masterStock);
+
+                // 元の在庫数を保存（元のインデックスを使用）
+                prizesWithIndex.forEach(item => {
+                    originalStockCounts[item.originalIndex] = item.prize.count;
+                });
+
+                const hasLowStock = prizesWithIndex.some(item => item.masterStock < item.prize.count);
+
+                listContainer.innerHTML = `
+                    <div style="margin-bottom: 20px; padding: 16px; background: rgba(0, 122, 255, 0.05); border-radius: 8px;">
+                        <h4 style="margin: 0 0 8px 0; color: var(--sf-blue);">📝 オリパ: ${escapeHtml(oripa.name)}</h4>
+                        <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--sf-gray);">
+                            各景品の在庫数を編集できます。変更すると景品マスターの在庫も自動的に更新されます。
+                        </p>
+                        ${hasLowStock ? `
+                            <div style="padding: 12px; background: rgba(255, 59, 48, 0.1); border-radius: 8px; border-left: 4px solid var(--sf-red);">
+                                <div style="font-weight: 700; color: var(--sf-red); margin-bottom: 6px;">⚠️ 在庫不足の景品があります</div>
+                                <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 8px;">
+                                    景品マスターに十分な在庫がありません。以下の対応が可能です：<br>
+                                    1️⃣ 景品マスターの在庫を追加する（下記の入力欄で調整）<br>
+                                    2️⃣ オリパの在庫数を減らす（景品マスターの在庫に合わせる）
+                                </div>
+                                <button
+                                    class="btn btn-success"
+                                    onclick="autoAddMasterStock()"
+                                    style="padding: 8px 16px; font-size: 13px; margin-right: 8px;">
+                                    ➕ 不足分を景品マスターに追加
+                                </button>
+                                <button
+                                    class="btn btn-warning"
+                                    onclick="autoAdjustToMasterStock()"
+                                    style="padding: 8px 16px; font-size: 13px;">
+                                    ➖ オリパ在庫を減らす
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                    ${prizesWithIndex.map(item => {
+                        const prize = item.prize;
+                        const index = item.originalIndex;
+                        const masterStock = item.masterStock;
+                        const isLowStock = masterStock < prize.count;
+                        const shortage = isLowStock ? prize.count - masterStock : 0;
+
+                        return `
+                            <div style="background: white; border: 2px solid ${isLowStock ? 'rgba(255, 59, 48, 0.3)' : 'rgba(0, 0, 0, 0.1)'}; border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; ${isLowStock ? 'box-shadow: 0 2px 8px rgba(255, 59, 48, 0.1);' : ''}">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                    <div style="flex: 1;">
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                            <div style="font-weight: 700; font-size: 16px;">${escapeHtml(prize.name)}</div>
+                                            ${isLowStock ? '<span style="display: inline-block; padding: 4px 10px; background: rgba(255, 59, 48, 0.1); color: var(--sf-red); border-radius: 12px; font-size: 12px; font-weight: 600;">⚠️ 在庫不足</span>' : ''}
+                                        </div>
+                                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 6px;">
+                                            ポイント価値: ¥${prize.value.toLocaleString()} | 仕入れ価格: ¥${prize.purchasePrice.toLocaleString()}
+                                        </div>
+                                        ${isLowStock ? `
+                                            <div style="padding: 12px; background: rgba(255, 59, 48, 0.05); border-radius: 6px; margin-bottom: 8px;">
+                                                <div style="font-size: 13px; line-height: 1.8;">
+                                                    <div style="color: var(--sf-gray);">
+                                                        <strong style="color: var(--sf-label);">現在のオリパ設定:</strong> ${prize.count.toLocaleString()}個
+                                                    </div>
+                                                    <div style="color: var(--sf-orange);">
+                                                        <strong style="color: var(--sf-label);">景品マスター在庫:</strong> ${masterStock.toLocaleString()}個
+                                                    </div>
+                                                    <div style="color: var(--sf-red); font-weight: 700;">
+                                                        <strong>不足:</strong> ${shortage.toLocaleString()}個
+                                                    </div>
+                                                    <div style="margin-top: 8px; padding: 8px; background: rgba(52, 199, 89, 0.1); border-radius: 6px; border-left: 3px solid var(--sf-green);">
+                                                        <div style="color: var(--sf-green); font-weight: 700; margin-bottom: 6px;">💡 推奨アクション</div>
+                                                        <div style="font-size: 12px; color: var(--sf-gray);">
+                                                            景品マスターの在庫を ${prize.count.toLocaleString()}個（+${shortage.toLocaleString()}個）に増やしてください
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ` : `
+                                            <div style="font-size: 13px; color: var(--sf-green); margin-top: 4px;">
+                                                ✅ 景品マスター在庫: ${masterStock.toLocaleString()}個（十分な在庫があります）
+                                            </div>
+                                        `}
+                                    </div>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                                        <label style="font-weight: 600; font-size: 14px; color: var(--sf-label); min-width: 120px;">オリパ在庫数:</label>
+                                        <input
+                                            type="number"
+                                            id="stockCount_${index}"
+                                            min="0"
+                                            value="${prize.count}"
+                                            style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 0, 0, 0.2); font-size: 14px; width: 120px;"
+                                        >
+                                        <span style="font-size: 14px; color: var(--sf-gray);">個</span>
+                                    </div>
+                                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; ${isLowStock ? 'background: rgba(255, 149, 0, 0.05); padding: 8px; border-radius: 6px;' : ''}">
+                                        <label style="font-weight: 600; font-size: 14px; color: var(--sf-label); min-width: 120px;">景品マスター在庫:</label>
+                                        <input
+                                            type="number"
+                                            id="masterStock_${index}"
+                                            min="0"
+                                            value="${masterStock}"
+                                            style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid ${isLowStock ? 'var(--sf-orange)' : 'rgba(0, 0, 0, 0.2)'}; font-size: 14px; width: 120px; ${isLowStock ? 'font-weight: 700; background: rgba(255, 149, 0, 0.05);' : ''}"
+                                        >
+                                        <span style="font-size: 14px; color: var(--sf-gray);">個</span>
+                                        ${isLowStock ? `
+                                            <button
+                                                class="btn btn-success"
+                                                onclick="document.getElementById('masterStock_${index}').value = ${prize.count}"
+                                                style="padding: 6px 12px; font-size: 12px; margin-left: auto;">
+                                                ➕ ${prize.count.toLocaleString()}個に増やす
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                `;
+            }
+
+            // 背後のページのスクロールを無効化
+            document.body.style.overflow = 'hidden';
+
+            // モーダルを表示
+            document.getElementById('oripaStockEditModal').style.display = 'flex';
+        }
+
+        function autoAddMasterStock() {
+            if (!editingOripaId) return;
+
+            const oripa = oripas.find(o => o.id === editingOripaId);
+            if (!oripa) return;
+
+            let adjustedCount = 0;
+            oripa.prizes.forEach((prize, index) => {
+                const masterPrize = prizeMaster.find(p => p.id === prize.masterPrizeId);
+                const masterStock = masterPrize ? masterPrize.count : 0;
+
+                if (masterStock < prize.count) {
+                    const masterStockInput = document.getElementById(`masterStock_${index}`);
+                    if (masterStockInput) {
+                        masterStockInput.value = prize.count;
+                        adjustedCount++;
+                    }
+                }
+            });
+
+            if (adjustedCount > 0) {
+                alert(`${adjustedCount}個の景品マスター在庫を必要数に合わせて調整しました。\n「保存」ボタンを押して変更を確定してください。`);
+            } else {
+                alert('調整が必要な景品はありません。');
+            }
+        }
+
+        function autoAdjustToMasterStock() {
+            if (!editingOripaId) return;
+
+            const oripa = oripas.find(o => o.id === editingOripaId);
+            if (!oripa) return;
+
+            let adjustedCount = 0;
+            oripa.prizes.forEach((prize, index) => {
+                const masterPrize = prizeMaster.find(p => p.id === prize.masterPrizeId);
+                const masterStock = masterPrize ? masterPrize.count : 0;
+
+                if (masterStock < prize.count) {
+                    const stockInput = document.getElementById(`stockCount_${index}`);
+                    if (stockInput) {
+                        stockInput.value = masterStock;
+                        adjustedCount++;
+                    }
+                }
+            });
+
+            if (adjustedCount > 0) {
+                alert(`${adjustedCount}個の景品のオリパ在庫を景品マスターの在庫に合わせて調整しました。\n「保存」ボタンを押して変更を確定してください。`);
+            } else {
+                alert('調整が必要な景品はありません。');
+            }
+        }
+
+        function closeOripaStockEditModal() {
+            document.getElementById('oripaStockEditModal').style.display = 'none';
+            editingOripaId = null;
+            originalStockCounts = {};
+            // 背後のページのスクロールを再度有効化
+            document.body.style.overflow = '';
+        }
+
+        function saveOripaStock() {
+            if (!editingOripaId) return;
+
+            const oripa = oripas.find(o => o.id === editingOripaId);
+            if (!oripa) {
+                alert('オリパが見つかりません');
+                return;
+            }
+
+            // 各景品の新しい在庫数とマスター在庫数を取得
+            const updates = [];
+            for (let index = 0; index < oripa.prizes.length; index++) {
+                const stockInput = document.getElementById(`stockCount_${index}`);
+                const masterStockInput = document.getElementById(`masterStock_${index}`);
+
+                const newCount = parseInt(stockInput.value) || 0;
+                const newMasterStock = parseInt(masterStockInput.value) || 0;
+                const oldCount = originalStockCounts[index];
+                const prize = oripa.prizes[index];
+                const masterPrize = prizeMaster.find(p => p.id === prize.masterPrizeId);
+
+                if (!masterPrize) continue;
+
+                const oldMasterStock = masterPrize.count;
+                const countDifference = newCount - oldCount;
+                const masterStockDifference = newMasterStock - oldMasterStock;
+
+                // 在庫整合性チェック
+                // オリパの在庫を増やす場合、景品マスターに十分な在庫があるか確認
+                if (countDifference > 0) {
+                    const availableAfterMasterUpdate = oldMasterStock + masterStockDifference;
+                    if (availableAfterMasterUpdate < countDifference) {
+                        alert(`景品「${prize.name}」の在庫を増やすには、景品マスターの在庫が不足しています。\n必要な追加: ${countDifference.toLocaleString()}個\n景品マスター更新後の在庫: ${availableAfterMasterUpdate.toLocaleString()}個`);
+                        return;
+                    }
+                }
+
+                updates.push({
+                    index,
+                    prize,
+                    newCount,
+                    oldCount,
+                    countDifference,
+                    masterPrize,
+                    newMasterStock,
+                    oldMasterStock,
+                    masterStockDifference
+                });
+            }
+
+            // 全てのチェックが通ったら、在庫を更新
+            for (const update of updates) {
+                // オリパの景品在庫を更新
+                oripa.prizes[update.index].count = update.newCount;
+
+                // 景品マスターの在庫を更新
+                // 1. まず景品マスターの在庫を直接更新
+                update.masterPrize.count = update.newMasterStock;
+
+                // 2. オリパの在庫変更による調整
+                // オリパの在庫を増やした場合はマスターから引く、減らした場合はマスターに戻す
+                update.masterPrize.count -= update.countDifference;
+            }
+
+            // 保存
+            const index = oripas.findIndex(o => o.id === editingOripaId);
+            if (index !== -1) {
+                oripas[index] = oripa;
+            }
+
+            saveOripasToStorage();
+            savePrizeMaster();
+
+            // 表示を更新
+            updateOripaManagementLists();
+            updatePrizeMasterList();
+
+            // モーダルを閉じる
+            closeOripaStockEditModal();
+
+            alert(`オリパ「${oripa.name}」の在庫編集が完了しました。`);
+        }
+
+        // オリパを削除
+        function deleteOripa(oripaId) {
+            const oripa = oripas.find(o => o.id === oripaId);
+            if (!oripa) return;
+
+            if (!confirm(`オリパ「${oripa.name}」を削除してもよろしいですか？`)) {
+                return;
+            }
+
+            oripas = oripas.filter(o => o.id !== oripaId);
+            saveOripasToStorage();
+            updateOripaManagementLists();
+            alert(`オリパ「${oripa.name}」を削除しました`);
+        }
+
         // 初期プリセット（初回のみ使用）
         const INITIAL_PRESETS = [
             {
@@ -2606,10 +3773,44 @@
         const STORAGE_KEY = 'oripa_simulator_v2';
         const PRESETS_STORAGE_KEY = 'oripa_presets_v1';
 
+        // オリパの開催日時と終了日時のデフォルト値を設定
+        function setDefaultOripaDates() {
+            const releaseDateInput = document.getElementById('releaseDate');
+            const endDateInput = document.getElementById('endDate');
+
+            // 既に値が入力されている場合はスキップ
+            if (releaseDateInput.value || endDateInput.value) {
+                return;
+            }
+
+            // 開催日時: 本日の20時00分
+            const today = new Date();
+            today.setHours(20, 0, 0, 0);
+
+            // 終了日時: 7日後の19時59分
+            const endDate = new Date(today);
+            endDate.setDate(endDate.getDate() + 7);
+            endDate.setHours(19, 59, 0, 0);
+
+            // datetime-local形式に変換 (YYYY-MM-DDThh:mm)
+            const formatDateTime = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            };
+
+            releaseDateInput.value = formatDateTime(today);
+            endDateInput.value = formatDateTime(endDate);
+        }
+
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
             loadPresetsFromStorage(); // プリセットを読み込み
+            setDefaultOripaDates(); // デフォルト日時を設定
             attachEventListeners();
             updateTotalValue();
         });
@@ -3116,38 +4317,120 @@
                 const typeLabel = prize.type || 'PSA10';
                 const isWanted = prize.isWanted || false;
                 const stockBadge = prize.count > 0
-                    ? `<span style="display: inline-block; padding: 2px 8px; background: rgba(52, 199, 89, 0.1); color: #34C759; border-radius: 8px; font-size: 11px; font-weight: 600;">${prize.count}個</span>`
-                    : `<span style="display: inline-block; padding: 2px 8px; background: rgba(255, 59, 48, 0.1); color: #ff3b30; border-radius: 8px; font-size: 11px; font-weight: 600;">売り切れ</span>`;
+                    ? `<span style="display: inline-block; padding: 6px 14px; background: rgba(52, 199, 89, 0.1); color: #34C759; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">${prize.count.toLocaleString()}個</span>`
+                    : `<span style="display: inline-block; padding: 6px 14px; background: rgba(255, 59, 48, 0.1); color: #ff3b30; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">売り切れ</span>`;
 
                 return `
-                    <div class="prize-master-item" style="cursor: pointer; transition: all 0.2s; display: flex; align-items: center;" onclick="selectPrizeFromMasterForMain(${prize.id})">
-                        ${imageHtml}
-                        <div style="flex: 1;">
-                            <div class="prize-master-header">
-                                <div class="prize-master-title">
-                                    <div class="prize-master-name">${prize.name}</div>
-                                    <div style="display: flex; gap: 6px; margin-top: 6px; align-items: center;">
-                                        <span style="display: inline-block; padding: 2px 8px; background: rgba(0, 122, 255, 0.1); color: #007AFF; border-radius: 8px; font-size: 11px; font-weight: 600;">${typeLabel}</span>
-                                        ${stockBadge}
-                                        ${isWanted ? '<span style="font-size: 14px; filter: none;" title="欲しいものリスト">❤️</span>' : ''}
+                    <div class="prize-master-item" style="transition: all 0.2s; display: flex; align-items: center; position: relative;">
+                        <div style="flex: 1; cursor: pointer;" onclick="selectPrizeFromMasterForMain(${prize.id})">
+                            <div style="display: flex; align-items: center;">
+                                ${imageHtml}
+                                <div style="flex: 1;">
+                                    <div class="prize-master-header">
+                                        <div class="prize-master-title">
+                                            <div class="prize-master-name">${prize.name}</div>
+                                            <div style="display: flex; gap: 6px; margin-top: 6px; align-items: center;">
+                                                <span style="display: inline-block; padding: 6px 14px; background: rgba(0, 122, 255, 0.1); color: #007AFF; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">${typeLabel}</span>
+                                                <span id="stockBadge_${prize.id}" style="display: inline-block; padding: 6px 14px; background: ${prize.count > 0 ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)'}; color: ${prize.count > 0 ? '#34C759' : '#ff3b30'}; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">${prize.count > 0 ? prize.count + '個' : '売り切れ'}</span>
+                                                ${isWanted ? '<span style="font-size: 14px; filter: none;" title="欲しいものリスト">❤️</span>' : ''}
+                                            </div>
+                                        </div>
+                                        <div style="color: var(--sf-blue); font-weight: 600;">選択 →</div>
+                                    </div>
+                                    <div class="prize-master-info">
+                                        <div class="prize-master-info-item">
+                                            <div class="prize-master-info-label">仕入れ価格</div>
+                                            <div class="prize-master-info-value">¥${prize.purchasePrice.toLocaleString()}</div>
+                                        </div>
+                                        <div class="prize-master-info-item">
+                                            <div class="prize-master-info-label">ポイント還元価値</div>
+                                            <div class="prize-master-info-value">¥${prize.value.toLocaleString()}</div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div style="color: var(--sf-blue); font-weight: 600;">選択 →</div>
                             </div>
-                            <div class="prize-master-info">
-                                <div class="prize-master-info-item">
-                                    <div class="prize-master-info-label">仕入れ価格</div>
-                                    <div class="prize-master-info-value">¥${prize.purchasePrice.toLocaleString()}</div>
-                                </div>
-                                <div class="prize-master-info-item">
-                                    <div class="prize-master-info-label">ポイント還元価値</div>
-                                    <div class="prize-master-info-value">¥${prize.value.toLocaleString()}</div>
-                                </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-left: 12px;">
+                            <div id="stockEditArea_${prize.id}" style="display: none; align-items: center; gap: 8px;">
+                                <input type="number" id="stockInput_${prize.id}" min="0" value="${prize.count}"
+                                    style="width: 80px; padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 0, 0, 0.2); font-size: 14px;"
+                                    onclick="event.stopPropagation()">
+                                <button class="btn btn-success" onclick="saveModalStock(${prize.id}); event.stopPropagation();" title="保存" style="padding: 8px 16px; font-size: 13px; white-space: nowrap;">✓ 保存</button>
+                                <button class="btn btn-danger" onclick="cancelModalStockEdit(${prize.id}); event.stopPropagation();" title="キャンセル" style="padding: 8px 16px; font-size: 13px; white-space: nowrap;">✕ 中止</button>
                             </div>
+                            <button id="stockEditBtn_${prize.id}" class="btn btn-primary" onclick="startModalStockEdit(${prize.id}); event.stopPropagation();" title="在庫編集" style="padding: 8px 16px; font-size: 13px; white-space: nowrap;">
+                                📝 在庫編集
+                            </button>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        // モーダル内の在庫編集を開始
+        function startModalStockEdit(prizeId) {
+            // 編集エリアを表示、編集ボタンを非表示
+            document.getElementById('stockEditArea_' + prizeId).style.display = 'flex';
+            document.getElementById('stockEditBtn_' + prizeId).style.display = 'none';
+
+            // 入力欄にフォーカス
+            document.getElementById('stockInput_' + prizeId).focus();
+        }
+
+        // モーダル内の在庫編集をキャンセル
+        function cancelModalStockEdit(prizeId) {
+            const prize = prizeMaster.find(p => p.id === prizeId);
+            if (prize) {
+                // 元の値に戻す
+                document.getElementById('stockInput_' + prizeId).value = prize.count;
+            }
+
+            // 編集エリアを非表示、編集ボタンを表示
+            document.getElementById('stockEditArea_' + prizeId).style.display = 'none';
+            document.getElementById('stockEditBtn_' + prizeId).style.display = 'inline-block';
+        }
+
+        // モーダル内の在庫編集を保存
+        function saveModalStock(prizeId) {
+            const prize = prizeMaster.find(p => p.id === prizeId);
+            if (!prize) {
+                alert('景品が見つかりません');
+                return;
+            }
+
+            const newStock = parseInt(document.getElementById('stockInput_' + prizeId).value) || 0;
+
+            if (newStock < 0) {
+                alert('在庫数は0以上で入力してください');
+                return;
+            }
+
+            // 在庫数を更新
+            prize.count = newStock;
+
+            // 保存
+            savePrizeMaster();
+
+            // バッジを更新
+            const badge = document.getElementById('stockBadge_' + prizeId);
+            if (badge) {
+                badge.textContent = newStock > 0 ? newStock + '個' : '売り切れ';
+                badge.style.padding = '6px 14px';
+                badge.style.background = newStock > 0 ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)';
+                badge.style.color = newStock > 0 ? '#34C759' : '#ff3b30';
+                badge.style.borderRadius = '16px';
+                badge.style.fontSize = '13px';
+                badge.style.fontWeight = '600';
+                badge.style.lineHeight = '1.4';
+                badge.style.whiteSpace = 'nowrap';
+            }
+
+            // 編集エリアを非表示、編集ボタンを表示
+            document.getElementById('stockEditArea_' + prizeId).style.display = 'none';
+            document.getElementById('stockEditBtn_' + prizeId).style.display = 'inline-block';
+
+            // 景品マスターの表示も更新（モーダルを閉じた後に反映されるように）
+            updatePrizeMasterList();
         }
 
         // 置き換えモードフラグ
@@ -3395,7 +4678,7 @@
                             <div class="prize-name">${prize.name}</div>
                             <div class="prize-purchase">仕入¥${prize.purchasePrice.toLocaleString()}</div>
                             <div class="prize-value">還元¥${prize.value.toLocaleString()}</div>
-                            <div class="prize-count">${prize.count}枚</div>
+                            <div class="prize-count">${prize.count.toLocaleString()}枚</div>
                             <div style="display: flex; gap: 8px;">
                                 <button class="btn btn-primary" onclick="editPrize(${prize.id})">編集</button>
                                 <button class="btn btn-danger" onclick="removePrize(${prize.id})">削除</button>
@@ -3414,29 +4697,29 @@
 
             if (errorData.type === 'count_overflow') {
                 message = `⚠️ 枚数が合いません\n\n` +
-                    `景品枚数：${errorData.prizesTotalCount}枚\n` +
-                    `ハズレ枚数：${errorData.manualLossTotalCount}枚\n` +
-                    `合計：${errorData.prizesTotalCount + errorData.manualLossTotalCount}枚\n\n` +
-                    `総口数：${errorData.totalPacks}口\n` +
-                    `超過枚数：${errorData.excess}枚\n\n`;
+                    `景品枚数：${errorData.prizesTotalCount.toLocaleString()}枚\n` +
+                    `ハズレ枚数：${errorData.manualLossTotalCount.toLocaleString()}枚\n` +
+                    `合計：${(errorData.prizesTotalCount + errorData.manualLossTotalCount).toLocaleString()}枚\n\n` +
+                    `総口数：${errorData.totalPacks.toLocaleString()}口\n` +
+                    `超過枚数：${errorData.excess.toLocaleString()}枚\n\n`;
 
                 suggestions = `📋 代替案：\n\n` +
-                    `1️⃣ 総口数を${errorData.prizesTotalCount + errorData.manualLossTotalCount}口に増やす\n\n` +
-                    `2️⃣ ハズレ枚数を${errorData.excess}枚減らす\n\n` +
-                    `3️⃣ 景品枚数を${errorData.excess}枚減らす`;
+                    `1️⃣ 総口数を${(errorData.prizesTotalCount + errorData.manualLossTotalCount).toLocaleString()}口に増やす\n\n` +
+                    `2️⃣ ハズレ枚数を${errorData.excess.toLocaleString()}枚減らす\n\n` +
+                    `3️⃣ 景品枚数を${errorData.excess.toLocaleString()}枚減らす`;
 
             } else if (errorData.type === 'count_shortage') {
                 message = `⚠️ 枚数が不足しています\n\n` +
-                    `景品枚数：${errorData.prizesTotalCount}枚\n` +
-                    `ハズレ枚数：${errorData.manualLossTotalCount}枚\n` +
-                    `合計：${errorData.prizesTotalCount + errorData.manualLossTotalCount}枚\n\n` +
-                    `総口数：${errorData.totalPacks}口\n` +
-                    `不足枚数：${errorData.shortage}枚\n\n`;
+                    `景品枚数：${errorData.prizesTotalCount.toLocaleString()}枚\n` +
+                    `ハズレ枚数：${errorData.manualLossTotalCount.toLocaleString()}枚\n` +
+                    `合計：${(errorData.prizesTotalCount + errorData.manualLossTotalCount).toLocaleString()}枚\n\n` +
+                    `総口数：${errorData.totalPacks.toLocaleString()}口\n` +
+                    `不足枚数：${errorData.shortage.toLocaleString()}枚\n\n`;
 
                 suggestions = `📋 代替案：\n\n` +
-                    `1️⃣ 総口数を${errorData.prizesTotalCount + errorData.manualLossTotalCount}口に減らす\n\n` +
-                    `2️⃣ ハズレ枚数を${errorData.shortage}枚増やす\n\n` +
-                    `3️⃣ 景品枚数を${errorData.shortage}枚増やす\n\n` +
+                    `1️⃣ 総口数を${(errorData.prizesTotalCount + errorData.manualLossTotalCount).toLocaleString()}口に減らす\n\n` +
+                    `2️⃣ ハズレ枚数を${errorData.shortage.toLocaleString()}枚増やす\n\n` +
+                    `3️⃣ 景品枚数を${errorData.shortage.toLocaleString()}枚増やす\n\n` +
                     `4️⃣ ハズレをすべて削除して自動計算に切り替える`;
             }
 
@@ -3726,7 +5009,7 @@
                     <div class="prize-content" style="grid-template-columns: 2fr 1fr 1fr auto; margin-top: 8px;">
                         <div class="prize-name">${loss.name}</div>
                         <div class="prize-value">¥${loss.value.toLocaleString()}</div>
-                        <div class="prize-count">${loss.count}枚</div>
+                        <div class="prize-count">${loss.count.toLocaleString()}枚</div>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn btn-primary" onclick="editLoss(${loss.id})">編集</button>
                             <button class="btn btn-danger" onclick="removeLoss(${loss.id})">削除</button>
@@ -3792,7 +5075,7 @@
 
             // 確認メッセージを表示
             const lossCount = totalPacks - prizesTotalCount;
-            alert(`プリセット「${preset.name}」を適用しました\n\n総口数: ${totalPacks}口\nパック単価: ¥${preset.packPrice.toLocaleString()}\n景品枚数: ${prizesTotalCount}枚\nハズレ枚数: ${lossCount}枚\n\n値を編集して再計算することもできます。`);
+            alert(`プリセット「${preset.name}」を適用しました\n\n総口数: ${totalPacks.toLocaleString()}口\nパック単価: ¥${preset.packPrice.toLocaleString()}\n景品枚数: ${prizesTotalCount.toLocaleString()}枚\nハズレ枚数: ${lossCount.toLocaleString()}枚\n\n値を編集して再計算することもできます。`);
         }
 
         // ガチャ難易度設定を取得
@@ -4027,7 +5310,7 @@
                         ${imageHtml}
                         <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
                             <span class="result-label">${prize.rank}等 ${prize.name}</span>
-                            <span class="result-value">${prize.count}枚 / ${probability}% (仕入¥${prize.purchasePrice.toLocaleString()} / 還元¥${prize.value.toLocaleString()})</span>
+                            <span class="result-value">${prize.count.toLocaleString()}枚 / ${probability}% (仕入¥${prize.purchasePrice.toLocaleString()} / 還元¥${prize.value.toLocaleString()})</span>
                         </div>
                     </div>
                 `;
@@ -4049,12 +5332,12 @@
                 return `
                     <div class="result-row">
                         <span class="result-label">${loss.name}</span>
-                        <span class="result-value">¥${loss.value.toLocaleString()} × ${loss.count}枚 (${probability}%)</span>
+                        <span class="result-value">¥${loss.value.toLocaleString()} × ${loss.count.toLocaleString()}枚 (${probability}%)</span>
                     </div>
                 `;
             }).join('');
 
-            document.getElementById('totalLossCount').textContent = `${lossCount}枚`;
+            document.getElementById('totalLossCount').textContent = `${lossCount.toLocaleString()}枚`;
         }
 
 
@@ -4136,7 +5419,7 @@
             if (prizesTotalCount > totalPacks) {
                 document.getElementById('totalPacks').classList.add('error');
                 hasError = true;
-                errorMessages.push(`景品の総枚数（${prizesTotalCount}枚）が総口数（${totalPacks}口）を超えています。`);
+                errorMessages.push(`景品の総枚数（${prizesTotalCount.toLocaleString()}枚）が総口数（${totalPacks.toLocaleString()}口）を超えています。`);
             }
 
             if (hasError) {
@@ -4318,7 +5601,7 @@
             }
             
             if (gachaPool.length < count) {
-                alert(`残り${gachaPool.length}枚しかありません`);
+                alert(`残り${gachaPool.length.toLocaleString()}枚しかありません`);
                 count = gachaPool.length;
             }
             
@@ -4416,8 +5699,22 @@
             // 選択されたタブのボタンとコンテンツに active クラスを追加
             if (event && event.target) {
                 event.target.classList.add('active');
+            } else {
+                // eventがない場合（プログラムから呼ばれた場合）、対応するボタンを探してactiveにする
+                const buttons = document.querySelectorAll('.tab-button');
+                const tabNames = ['main', 'oripa-management', 'prize-list', 'auto-create'];
+                const index = tabNames.indexOf(tabName);
+                if (index >= 0 && buttons[index]) {
+                    buttons[index].classList.add('active');
+                }
             }
             document.getElementById('tab-' + tabName).classList.add('active');
+
+            // オリパ管理タブが表示された時
+            if (tabName === 'oripa-management') {
+                updateOripaManagementLists();
+                refreshActiveOripaStats(); // 集計を自動的に更新
+            }
 
             // 景品一覧タブが表示された時は景品一覧を更新
             if (tabName === 'prize-list') {
@@ -5005,11 +6302,11 @@
                     `【既存の景品】\n` +
                     `  仕入れ価格: ¥${existingPrize.purchasePrice.toLocaleString()}\n` +
                     `  還元価値: ¥${existingPrize.value.toLocaleString()}\n` +
-                    `  在庫数: ${existingPrize.count}個\n\n` +
+                    `  在庫数: ${existingPrize.count.toLocaleString()}個\n\n` +
                     `【新しい景品】\n` +
                     `  仕入れ価格: ¥${newPrize.purchasePrice.toLocaleString()}\n` +
                     `  還元価値: ¥${newPrize.value.toLocaleString()}\n` +
-                    `  在庫数: ${newPrize.count || 1}個\n\n` +
+                    `  在庫数: ${(newPrize.count || 1).toLocaleString()}個\n\n` +
                     `どのように処理しますか？\n\n` +
                     `[1] 上書きする（既存の情報を新しい情報で置き換える）\n` +
                     `[2] 別々に保存する（両方とも保持する）\n` +
@@ -5280,6 +6577,21 @@
         }
 
         // 実際のクリア処理を実行
+        // 景品がどのオリパで使用されているか調べる
+        function getOripasUsingPrize(prizeId) {
+            const usingOripas = [];
+
+            for (const oripa of oripas) {
+                // このオリパの景品リストに、指定された景品IDが含まれているか確認
+                const hasPrize = oripa.prizes && oripa.prizes.some(p => p.masterPrizeId === prizeId);
+                if (hasPrize) {
+                    usingOripas.push(oripa);
+                }
+            }
+
+            return usingOripas;
+        }
+
         function executeClearPrizeMaster() {
             const input = document.getElementById('clearConfirmInput').value;
 
@@ -5462,6 +6774,12 @@
                 const typeLabel = prize.type || 'PSA10';
                 const isWanted = prize.isWanted || false;
 
+                // この景品が使われているオリパを調べる
+                const usingOripas = getOripasUsingPrize(prize.id);
+                const oripasBadges = usingOripas.length > 0
+                    ? usingOripas.map(o => `<span style="display: inline-block; padding: 6px 14px; background: rgba(255, 149, 0, 0.1); color: var(--sf-orange); border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;" title="オリパ「${o.name}」で使用中">🎲 ${o.name}</span>`).join('')
+                    : '';
+
                 return `
                     <div class="prize-master-item">
                         <div class="prize-master-header">
@@ -5469,9 +6787,10 @@
                                 ${imageHtml}
                                 <div class="prize-master-title" style="flex: 1;">
                                     <div class="prize-master-name">${prize.name}</div>
-                                    <div style="display: flex; gap: 8px; margin-top: 6px; align-items: center;">
-                                        <span style="display: inline-block; padding: 3px 10px; background: rgba(0, 122, 255, 0.1); color: #007AFF; border-radius: 12px; font-size: 12px; font-weight: 600;">${typeLabel}</span>
-                                        <button onclick="event.stopPropagation(); togglePrizeWanted(${prize.id})" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: ${isWanted ? 'rgba(255, 192, 203, 0.3)' : 'rgba(0, 0, 0, 0.05)'}; border: 1.5px solid ${isWanted ? 'rgba(255, 105, 180, 0.6)' : 'rgba(0, 0, 0, 0.1)'}; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: ${isWanted ? '#ff1493' : '#999'}; filter: ${isWanted ? 'none' : 'grayscale(100%)'};" title="欲しいものリストに${isWanted ? '追加済み' : '追加'}">❤️${isWanted ? ' 欲しい' : ''}</button>
+                                    <div style="display: flex; gap: 8px; margin-top: 6px; align-items: center; flex-wrap: wrap;">
+                                        <span style="display: inline-block; padding: 6px 14px; background: rgba(0, 122, 255, 0.1); color: #007AFF; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">${typeLabel}</span>
+                                        <button onclick="event.stopPropagation(); togglePrizeWanted(${prize.id})" style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px; background: ${isWanted ? 'rgba(255, 192, 203, 0.3)' : 'rgba(0, 0, 0, 0.05)'}; border: 1.5px solid ${isWanted ? 'rgba(255, 105, 180, 0.6)' : 'rgba(0, 0, 0, 0.1)'}; border-radius: 16px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: ${isWanted ? '#ff1493' : '#999'}; filter: ${isWanted ? 'none' : 'grayscale(100%)'}; line-height: 1.4; white-space: nowrap;" title="欲しいものリストに${isWanted ? '追加済み' : '追加'}">❤️${isWanted ? ' 欲しい' : ''}</button>
+                                        ${oripasBadges}
                                     </div>
                                 </div>
                             </div>
@@ -5496,7 +6815,7 @@
                             <div class="prize-master-info-item">
                                 <div class="prize-master-info-label">在庫数</div>
                                 <div class="prize-master-info-value" style="color: ${prize.count === 0 ? 'var(--sf-red)' : 'inherit'}; font-weight: ${prize.count === 0 ? '600' : 'inherit'};">
-                                    ${prize.count}個${prize.count === 0 ? ' (売り切れ)' : ''}
+                                    ${prize.count.toLocaleString()}個${prize.count === 0 ? ' (売り切れ)' : ''}
                                 </div>
                             </div>
                         </div>
@@ -6108,7 +7427,7 @@
 
             if (totalPrizeCount > totalPacks) {
                 showCustomAlert(
-                    `総口数: ${totalPacks}枚\n当たり総数: ${totalPrizeCount}枚`,
+                    `総口数: ${totalPacks.toLocaleString()}枚\n当たり総数: ${totalPrizeCount.toLocaleString()}枚`,
                     '当たり景品の総数が総口数を超えています',
                     '⚠️'
                 );
@@ -6353,14 +7672,14 @@
             document.getElementById('autoPreviewSummary').innerHTML = summaryHtml;
 
             // 景品リストを作成
-            let prizesHtml = `<h4 style="margin-bottom: 12px;">当たり景品 (${autoCreatedPrizes.length}枚)</h4>`;
+            let prizesHtml = `<h4 style="margin-bottom: 12px;">当たり景品 (${autoCreatedPrizes.length.toLocaleString()}枚)</h4>`;
 
             for (let rank = 1; rank <= 5; rank++) {
                 const rankPrizes = autoCreatedPrizes.filter(p => p.rank === rank);
                 if (rankPrizes.length === 0) continue;
 
                 prizesHtml += `<div style="margin-bottom: 16px;">`;
-                prizesHtml += `<div style="font-weight: 600; color: var(--sf-blue); margin-bottom: 8px;">${rank}等 (${rankPrizes.length}枚)</div>`;
+                prizesHtml += `<div style="font-weight: 600; color: var(--sf-blue); margin-bottom: 8px;">${rank}等 (${rankPrizes.length.toLocaleString()}枚)</div>`;
 
                 rankPrizes.forEach((prize, index) => {
                     const imageHtml = prize.image
@@ -6391,7 +7710,7 @@
                 <div style="background: rgba(142, 142, 147, 0.1); padding: 16px; border-radius: var(--radius-md); border: 1px solid rgba(142, 142, 147, 0.3); margin-top: 16px;">
                     <div style="font-weight: 600; color: var(--sf-gray); margin-bottom: 8px;">ハズレ（${lossTypesText}）</div>
                     <div style="font-size: 13px; color: var(--sf-gray);">
-                        <div>総枚数: ${settings.lossCount}枚</div>
+                        <div>総枚数: ${settings.lossCount.toLocaleString()}枚</div>
                         <div>種類数: ${settings.lossTypes}種類</div>
                         <div>最低保証: ¥${settings.minGuarantee.toLocaleString()} ${settings.lossTypes === 1 ? '<span style="color: var(--sf-orange);">(自動計算)</span>' : ''}</div>
                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(142, 142, 147, 0.2);">
@@ -6589,6 +7908,9 @@
             }
 
             // 画像URLモードに変更したため、ドラッグ&ドロップは不要
+
+            // 初期化時にオリパを読み込む
+            loadOripas();
         });
     </script>
 
@@ -6687,9 +8009,11 @@ function initializeAuth() {
 // 現在の設定を取得する関数
 function getCurrentConfig() {
   return {
+    oripaName: document.getElementById('oripaName').value,
     packPrice: document.getElementById('packPrice').value,
     totalPacks: document.getElementById('totalPacks').value,
     releaseDate: document.getElementById('releaseDate').value,
+    endDate: document.getElementById('endDate').value,
     minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
     prizes: [...prizes],
     losses: [...losses]
@@ -6698,9 +8022,11 @@ function getCurrentConfig() {
 
 // 設定を読み込む関数
 function loadConfig(config) {
+  document.getElementById('oripaName').value = config.oripaName || '';
   document.getElementById('packPrice').value = config.packPrice || '40000';
   document.getElementById('totalPacks').value = config.totalPacks || '100';
   document.getElementById('releaseDate').value = config.releaseDate || '';
+  document.getElementById('endDate').value = config.endDate || '';
   document.getElementById('minGuaranteeValue').value = config.minGuaranteeValue || '1';
 
   if (config.prizes) {
@@ -7377,6 +8703,148 @@ function displayWeeklyStats(stats) {
   `;
 }
 
+// ========== 開催中のオリパの集計機能 ==========
+
+// 開催中のオリパの集計を更新
+function refreshActiveOripaStats() {
+  const container = document.getElementById('activeOripaStatsContainer');
+  container.innerHTML = '<p style="color: var(--sf-gray); text-align: center;">集計中...</p>';
+
+  // 開催中のオリパを取得
+  const activeOripas = oripas.filter(o => getOripaStatus(o) === 'active');
+
+  if (activeOripas.length === 0) {
+    container.innerHTML = '<p style="color: var(--sf-gray); text-align: center;">開催中のオリパがありません</p>';
+    return;
+  }
+
+  // 集計処理
+  const stats = calculateActiveOripaStats(activeOripas);
+
+  // 結果を表示
+  displayActiveOripaStats(stats, activeOripas);
+}
+
+// 開催中のオリパのデータから統計を計算
+function calculateActiveOripaStats(activeOripas) {
+  let totalOripaCount = activeOripas.length;
+  let totalValue = 0;
+  let totalPurchase = 0;
+  let totalPacks = 0;
+  let totalWinners = 0;
+  let totalPrizeCount = 0;
+  let totalLossCount = 0;
+  let totalReturnRates = [];
+  let totalRealReturnRates = [];
+
+  activeOripas.forEach(oripa => {
+    const packPrice = parseFloat(oripa.packPrice) || 0;
+    const packs = parseInt(oripa.totalPacks) || 0;
+    const prizes = oripa.prizes || [];
+    const losses = oripa.losses || [];
+
+    // 総口数を加算
+    totalPacks += packs;
+
+    // 景品の合計価値と仕入れ価格を計算
+    let oripaValue = 0;
+    let oripaPurchase = 0;
+    let prizeCount = 0;
+
+    prizes.forEach(prize => {
+      const value = parseFloat(prize.value) || 0;
+      const purchasePrice = parseFloat(prize.purchasePrice) || 0;
+      const count = parseInt(prize.count) || 0;
+
+      oripaValue += value * count;
+      oripaPurchase += purchasePrice * count;
+      prizeCount += count;
+      totalWinners += count;
+    });
+
+    totalValue += oripaValue;
+    totalPurchase += oripaPurchase;
+    totalPrizeCount += prizeCount;
+
+    // ハズレ枚数をカウント
+    losses.forEach(loss => {
+      const count = parseInt(loss.count) || 0;
+      totalLossCount += count;
+    });
+
+    // オリパごとの還元率を計算
+    const totalRevenue = packPrice * packs;
+    if (totalRevenue > 0) {
+      const returnRate = (oripaValue / totalRevenue) * 100;
+      const realReturnRate = (oripaPurchase / totalRevenue) * 100;
+      totalReturnRates.push(returnRate);
+      totalRealReturnRates.push(realReturnRate);
+    }
+  });
+
+  // 平均還元率を計算
+  const avgReturnRate = totalReturnRates.length > 0
+    ? totalReturnRates.reduce((a, b) => a + b, 0) / totalReturnRates.length
+    : 0;
+
+  const avgRealReturnRate = totalRealReturnRates.length > 0
+    ? totalRealReturnRates.reduce((a, b) => a + b, 0) / totalRealReturnRates.length
+    : 0;
+
+  return {
+    totalOripaCount,
+    totalValue,
+    totalPurchase,
+    totalPacks,
+    totalWinners,
+    totalPrizeCount,
+    totalLossCount,
+    avgReturnRate,
+    avgRealReturnRate
+  };
+}
+
+// 開催中のオリパの集計結果を表示
+function displayActiveOripaStats(stats, activeOripas) {
+  const container = document.getElementById('activeOripaStatsContainer');
+
+  // オリパ名リスト
+  const oripaNames = activeOripas.map(o => o.name || '名前なし').join('、');
+
+  container.innerHTML = `
+    <div style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px;">
+      <div style="font-size: 12px; color: var(--sf-gray); margin-bottom: 8px;">📋 対象オリパ</div>
+      <div style="font-size: 13px; font-weight: 600; color: var(--sf-black); line-height: 1.6;">${oripaNames}</div>
+    </div>
+
+    <div style="background: white; padding: 16px; border-radius: 8px;">
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">オリパ数</span>
+        <span style="font-weight: 600;">${stats.totalOripaCount}件</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">平均還元率（ポイント価値）</span>
+        <span style="font-weight: 600; color: var(--sf-green);">${stats.avgReturnRate.toFixed(1)}%</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
+        <span style="color: var(--sf-gray);">平均還元率（仕入れ価格）</span>
+        <span style="font-weight: 600; color: var(--sf-orange);">${stats.avgRealReturnRate.toFixed(1)}%</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+        <span style="color: var(--sf-gray);">総仕入れ価格</span>
+        <span style="font-weight: 600;">¥${stats.totalPurchase.toLocaleString()}</span>
+      </div>
+    </div>
+
+    <div style="margin-top: 12px; padding: 8px; background: rgba(0, 122, 255, 0.05); border-radius: 6px; font-size: 11px; color: var(--sf-gray); text-align: center;">
+      開催中のオリパのみを集計しています
+    </div>
+  `;
+}
+
 // 初期化時にクラウド設定一覧を読み込み
 document.addEventListener('DOMContentLoaded', function() {
   // 既存の初期化処理の後に追加
@@ -7386,8 +8854,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadConfigFromURL();
     // 共有ボタンの初期状態を設定
     updateShareButtonState();
-    // 過去7日間の集計を自動読み込み
-    refreshWeeklyStats();
   }, 1000); // Firebaseの初期化を待つ
 });
 
