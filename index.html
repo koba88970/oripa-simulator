@@ -1818,7 +1818,6 @@
             <button class="tab-button active" onclick="switchTab('main', event)">メイン</button>
             <button class="tab-button" onclick="switchTab('oripa-management', event)">オリパ管理</button>
             <button class="tab-button" onclick="switchTab('prize-list', event)">景品マスター</button>
-            <button class="tab-button" onclick="switchTab('auto-create', event)">オリパ自動作成</button>
         </div>
 
         <!-- メインタブコンテンツ -->
@@ -2215,7 +2214,7 @@
             <div class="panel">
                 <h2>景品マスター</h2>
                 <p style="color: var(--sf-gray); font-size: 14px; margin-bottom: 24px;">
-                    オリパ自動作成で使用する景品を管理します。メインタブで作成した景品をJSONでエクスポートし、ここでインポートしてください。
+                    オリパで使用する景品を管理します。メインタブで作成した景品をJSONでエクスポートし、ここでインポートしてください。
                 </p>
 
                 <div style="margin-bottom: 24px;">
@@ -2392,135 +2391,6 @@
             </div>
         </div>
         <!-- /景品一覧タブコンテンツ -->
-
-        <!-- オリパ自動作成タブコンテンツ -->
-        <div id="tab-auto-create" class="tab-content">
-            <div class="panel">
-                <h2>🎯 オリパ自動作成</h2>
-                <p style="color: var(--sf-gray); font-size: 14px; margin-bottom: 24px;">
-                    景品マスターから最適な景品を自動的に選択してオリパを作成します
-                </p>
-
-                <!-- 設定セクション -->
-                <div id="autoCreateSettings" style="display: block;">
-                    <div class="form-group">
-                        <label>パック単価 (円)</label>
-                        <input type="number" id="autoPackPrice" value="500" min="1">
-                    </div>
-
-                    <div class="form-group">
-                        <label>総口数</label>
-                        <input type="number" id="autoTotalPacks" value="100" min="1">
-                    </div>
-
-                    <div class="form-group">
-                        <label>目標還元率 (%)</label>
-                        <input type="number" id="autoReturnRate" value="95" min="50" max="100" step="0.1">
-                        <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">
-                            全体の還元率（景品＋ハズレ）の目標値
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>実質還元率の上限 (%)</label>
-                        <input type="number" id="autoActualReturnRateLimit" value="50" min="10" max="100" step="0.1">
-                        <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">
-                            カード景品のみの還元率上限（この値を超えないように調整します）
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>景品選択条件</label>
-                        <select id="autoPrizeFilter" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
-                            <option value="inStock">在庫数があるものだけ</option>
-                            <option value="all">在庫数関係なく全て</option>
-                            <option value="inStockAndWanted">在庫数あり + 欲しいものリスト</option>
-                        </select>
-                        <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">
-                            景品マスターからどの景品を選択するかを指定
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>各等級の構成</label>
-                        <div style="display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; align-items: center; font-size: 14px;">
-                            <div style="font-weight: 600;">1等</div>
-                            <input type="number" id="autoRank1Count" value="1" min="0" style="padding: 8px;">
-                            <span style="color: var(--sf-gray); font-size: 12px;">枚</span>
-
-                            <div style="font-weight: 600;">2等</div>
-                            <input type="number" id="autoRank2Count" value="3" min="0" style="padding: 8px;">
-                            <span style="color: var(--sf-gray); font-size: 12px;">枚</span>
-
-                            <div style="font-weight: 600;">3等</div>
-                            <input type="number" id="autoRank3Count" value="5" min="0" style="padding: 8px;">
-                            <span style="color: var(--sf-gray); font-size: 12px;">枚</span>
-
-                            <div style="font-weight: 600;">4等</div>
-                            <input type="number" id="autoRank4Count" value="10" min="0" style="padding: 8px;">
-                            <span style="color: var(--sf-gray); font-size: 12px;">枚</span>
-
-                            <div style="font-weight: 600;">5等</div>
-                            <input type="number" id="autoRank5Count" value="15" min="0" style="padding: 8px;">
-                            <span style="color: var(--sf-gray); font-size: 12px;">枚</span>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>ハズレの種類数</label>
-                        <select id="autoLossTypes" onchange="toggleAutoMinGuarantee()" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
-                            <option value="1">1種類（最低保証は自動計算）</option>
-                            <option value="2">2種類</option>
-                            <option value="3">3種類</option>
-                        </select>
-                        <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">
-                            ハズレの種類数を選択（1種類の場合は最低保証が自動計算されます）
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="autoMinGuaranteeGroup" style="display: none;">
-                        <label>最低保証価値（ハズレ1枚あたり）</label>
-                        <input type="number" id="autoMinGuarantee" value="100" min="1">
-                        <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">
-                            ハズレが2種類以上の場合の最低保証価値
-                        </div>
-                    </div>
-
-                    <button class="btn btn-primary" onclick="createAutoOripa()" style="width: 100%; font-size: 16px; padding: 16px; margin-top: 8px;">
-                        🎯 オリパを作成
-                    </button>
-                </div>
-
-                <!-- プレビューセクション -->
-                <div id="autoCreatePreview" style="display: none; margin-top: 32px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <h3 style="color: rgba(0, 0, 0, 0.9); margin: 0;">📋 作成されたオリパ</h3>
-                        <button class="btn btn-secondary" onclick="backToSettings()" style="padding: 8px 16px;">
-                            ⬅️ 設定に戻る
-                        </button>
-                    </div>
-
-                    <!-- 結果サマリー -->
-                    <div id="autoPreviewSummary" style="background: rgba(0, 122, 255, 0.05); padding: 20px; border-radius: var(--radius-lg); border: 2px solid rgba(0, 122, 255, 0.3); margin-bottom: 16px;">
-                    </div>
-
-                    <!-- 景品リスト -->
-                    <div id="autoPreviewPrizes" style="margin-bottom: 16px;">
-                    </div>
-
-                    <!-- アクションボタン -->
-                    <div style="display: flex; gap: 12px;">
-                        <button class="btn btn-success" onclick="confirmRegisterOripa()" style="flex: 1; font-size: 16px; padding: 16px;">
-                            ✅ このオリパを登録する
-                        </button>
-                        <button class="btn btn-danger" onclick="backToSettings()" style="flex: 1; font-size: 16px; padding: 16px;">
-                            ❌ キャンセル
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- /オリパ自動作成タブコンテンツ -->
     </div>
 
     <!-- カスタムアラートモーダル -->
@@ -2916,6 +2786,12 @@
         const ORIPA_STORAGE_KEY = 'oripas';
         let editingOripaId = null; // 編集中のオリパID
 
+        // 数字を3桁カンマ区切りでフォーマット
+        function formatNumber(num) {
+            if (num === null || num === undefined || num === '') return '0';
+            return Number(num).toLocaleString('ja-JP');
+        }
+
         // オリパをlocalStorageから読み込み
         function loadOripas() {
             try {
@@ -2929,82 +2805,65 @@
             }
         }
 
-        // オリパをlocalStorageに保存
-        function saveOripasToStorage() {
-            try {
-                console.log('=== saveOripasToStorage 開始 ===');
-                console.log('保存するオリパの数:', oripas.length);
-
-                // localStorageに保存（バックアップ）
-                localStorage.setItem(ORIPA_STORAGE_KEY, JSON.stringify(oripas));
-                console.log('✅ localStorageに保存しました');
-
-                // Firebaseに保存（クラウド共有）
-                console.log('🔄 saveOripasToCloud() を呼び出します...');
-                saveOripasToCloud();
-            } catch (e) {
-                console.error('❌ オリパの保存に失敗:', e);
-            }
-        }
-
-        // オリパをFirebaseに保存
+        // オリパをFirebaseとlocalStorageに保存（統一された保存関数）
+        // Promiseを返すように変更
         function saveOripasToCloud() {
-            console.log('=== クラウド保存開始 ===');
-            console.log('database:', typeof database);
-            console.log('isAuthReady:', isAuthReady);
-            console.log('auth.currentUser:', auth.currentUser ? 'あり' : 'なし');
+            console.log('=== オリパ保存開始 ===');
+            console.log('保存するオリパの数:', oripas.length);
 
+            // localStorageに保存（バックアップ）
+            try {
+                localStorage.setItem(ORIPA_STORAGE_KEY, JSON.stringify(oripas));
+                console.log('✅ localStorageにバックアップしました');
+            } catch (e) {
+                console.error('❌ localStorageへの保存に失敗:', e);
+            }
+
+            // Firebaseチェック
             if (typeof database === 'undefined') {
-                console.warn('❌ Firebaseが初期化されていません');
-                showNotification('⚠️ Firebaseが初期化されていません', 'warning');
-                return;
+                console.warn('❌ Firebaseが初期化されていません（localStorageには保存済み）');
+                showNotification('⚠️ クラウド保存できません（ローカルには保存済み）', 'warning');
+                return Promise.resolve(); // Promiseを返す
             }
 
             // 認証完了を待つ
             if (!isAuthReady) {
                 console.log('⏳ 認証完了を待っています...');
                 showNotification('⏳ 認証完了を待っています...', 'info');
-                waitForAuth(() => saveOripasToCloud());
-                return;
-            }
-
-            try {
-                const data = {
-                    oripas: oripas,
-                    updatedAt: Date.now(),
-                    version: '1.0'
-                };
-
-                console.log(`📤 オリパデータをクラウドに保存中... (${oripas.length}件)`);
-                console.log('保存するデータサイズ:', JSON.stringify(data).length, 'バイト');
-
-                database.ref('oripas').set(data).then(() => {
-                    console.log('✅ オリパデータをクラウドに保存しました');
-                    console.log('保存完了時刻:', new Date().toLocaleString('ja-JP'));
-                    console.log('保存されたオリパ数:', oripas.length);
-                    showNotification(`✅ クラウドに保存しました (${oripas.length}件)`, 'success');
-
-                    // オリパ管理タブが表示されている場合はリストを更新
-                    if (currentTab === 'oripa-management') {
-                        console.log('🔄 オリパ管理リストを更新します...');
-                        updateOripaManagementLists();
-                    }
-                }).catch((error) => {
-                    console.error('❌ オリパのFirebaseへの保存に失敗しました:', error);
-                    console.error('エラー詳細:', error.code, error.message);
-
-                    if (error.code === 'PERMISSION_DENIED') {
-                        console.error('⚠️ Firebase Consoleでデータベースルールを確認してください');
-                        console.error('ルール例: { "rules": { "oripas": { ".read": "auth != null", ".write": "auth != null" } } }');
-                        showNotification('❌ クラウド保存に失敗（権限エラー）\nFirebase Consoleでデータベースルールを確認してください', 'error');
-                    } else {
-                        showNotification(`❌ クラウド保存に失敗: ${error.message}`, 'error');
-                    }
+                return new Promise((resolve) => {
+                    waitForAuth(() => {
+                        saveOripasToCloud().then(resolve);
+                    });
                 });
-            } catch (e) {
-                console.error('❌ オリパのクラウド保存エラー:', e);
-                showNotification('❌ クラウド保存エラーが発生しました', 'error');
             }
+
+            // Firebaseに保存
+            const data = {
+                oripas: oripas,
+                updatedAt: Date.now(),
+                version: '1.0'
+            };
+
+            console.log(`📤 オリパデータをクラウドに保存中... (${oripas.length}件)`);
+            console.log('保存するデータサイズ:', JSON.stringify(data).length, 'バイト');
+
+            return database.ref('oripas').set(data).then(() => {
+                console.log('✅ オリパデータをクラウドに保存しました');
+                console.log('保存完了時刻:', new Date().toLocaleString('ja-JP'));
+                showNotification(`✅ クラウドに保存しました (${oripas.length}件)`, 'success');
+                return true;
+            }).catch((error) => {
+                console.error('❌ オリパのFirebaseへの保存に失敗しました:', error);
+                console.error('エラー詳細:', error.code, error.message);
+
+                if (error.code === 'PERMISSION_DENIED') {
+                    console.error('⚠️ Firebase Consoleでデータベースルールを確認してください');
+                    showNotification('❌ クラウド保存に失敗（権限エラー）', 'error');
+                } else {
+                    showNotification(`❌ クラウド保存に失敗: ${error.message}`, 'error');
+                }
+                throw error; // エラーを再スロー
+            });
         }
 
         // 通知を表示する関数
@@ -3107,9 +2966,16 @@
                 const data = snapshot.val();
                 console.log('取得したデータ:', data ? 'あり' : 'なし');
 
+                if (data) {
+                    console.log('データの構造:', Object.keys(data));
+                    console.log('data.oripas:', data.oripas ? `配列(${data.oripas.length}件)` : 'なし');
+                }
+
                 if (data && data.oripas && data.oripas.length > 0) {
                     // クラウドにデータがある場合
+                    console.log('✅ クラウドにオリパデータが見つかりました');
                     oripas = data.oripas;
+                    console.log('oripas配列に代入しました。長さ:', oripas.length);
 
                     // localStorageにも保存（バックアップ）
                     try {
@@ -3119,7 +2985,13 @@
                         console.error('❌ localStorageへの保存に失敗:', e);
                     }
 
-                    updateOripaManagementLists();
+                    // オリパ管理タブが表示されている場合のみリストを更新
+                    if (currentTab === 'oripa-management') {
+                        console.log('📋 オリパ管理タブが表示されているため、リストを更新します');
+                        updateOripaManagementLists();
+                    } else {
+                        console.log('📋 オリパ管理タブは現在表示されていません（タブ切り替え時に更新されます）');
+                    }
 
                     const updateDate = new Date(data.updatedAt);
                     console.log(`✅ クラウドからオリパデータを読み込みました (${oripas.length}件)`);
@@ -3131,7 +3003,6 @@
                     console.log('📂 localStorageから読み込みます...');
 
                     loadOripas(); // localStorageから読み込み
-                    updateOripaManagementLists();
 
                     if (oripas.length > 0) {
                         // localStorageにデータがあれば、クラウドに同期
@@ -3155,7 +3026,6 @@
 
                 // エラー時はlocalStorageから読み込み
                 loadOripas();
-                updateOripaManagementLists();
             });
         }
 
@@ -3231,6 +3101,10 @@
 
         // オリパを保存
         function saveOripa() {
+            console.log('=== saveOripa 実行開始 ===');
+            console.log('editingOripaId:', editingOripaId);
+            console.log('編集モード:', editingOripaId ? 'はい（更新）' : 'いいえ（新規）');
+
             const name = document.getElementById('oripaName')?.value.trim();
             const packPrice = parseFloat(document.getElementById('packPrice')?.value) || 0;
             const totalPacks = parseInt(document.getElementById('totalPacks')?.value) || 0;
@@ -3253,12 +3127,8 @@
                 return;
             }
 
-            if (!endDate) {
-                alert('終了日時を設定してください');
-                return;
-            }
-
-            if (new Date(endDate) <= new Date(releaseDate)) {
+            // 終了日時は任意。設定されている場合のみ、公開日時より後かチェック
+            if (endDate && new Date(endDate) <= new Date(releaseDate)) {
                 alert('終了日時は公開日時より後に設定してください');
                 return;
             }
@@ -3316,6 +3186,9 @@
                 }
             }
 
+            // 既存のオリパを探す（編集時用）
+            const existingOripa = editingOripaId ? oripas.find(o => o.id === editingOripaId) : null;
+
             const oripaData = {
                 id: editingOripaId || Date.now(),
                 name: name,
@@ -3326,16 +3199,25 @@
                 prizes: prizesWithMaster,
                 losses: [...losses],
                 allowLowStock: stockWarnings.length > 0,
-                stockAdjusted: false,
-                createdAt: editingOripaId ? (oripas.find(o => o.id === editingOripaId)?.createdAt || Date.now()) : Date.now()
+                stockAdjusted: existingOripa ? existingOripa.stockAdjusted : false, // 編集時は既存の値を保持
+                createdAt: existingOripa ? existingOripa.createdAt : Date.now()
             };
 
             if (editingOripaId) {
                 // 更新
+                console.log('🔍 更新対象のオリパを検索中... ID:', editingOripaId);
                 const index = oripas.findIndex(o => o.id === editingOripaId);
+                console.log('検索結果 index:', index);
+
                 if (index !== -1) {
+                    console.log('✅ オリパが見つかりました。更新前:', oripas[index].name);
                     oripas[index] = oripaData;
                     console.log('📝 オリパを更新しました:', oripaData.name, '(ID:', oripaData.id, ')');
+                } else {
+                    console.error('❌ オリパが見つかりませんでした。ID:', editingOripaId);
+                    console.log('現在のoripas配列:', oripas.map(o => ({id: o.id, name: o.name})));
+                    alert('エラー: 編集対象のオリパが見つかりませんでした');
+                    return;
                 }
             } else {
                 // 新規追加
@@ -3344,34 +3226,60 @@
             }
 
             console.log('💾 オリパを保存します... (合計:', oripas.length, '件)');
-            saveOripasToStorage();
 
-            // フォームとグローバル変数をリセット
-            editingOripaId = null;
-            prizes = [];
-            losses = [];
-            document.getElementById('oripaName').value = '';
-            document.getElementById('packPrice').value = '';
-            document.getElementById('totalPacks').value = '';
-            document.getElementById('releaseDate').value = '';
-            document.getElementById('endDate').value = '';
-            updatePrizeList();
-            updateLossList();
+            // 保存完了を待ってからタブを切り替え
+            saveOripasToCloud().then(() => {
+                console.log('✅ 保存完了。フォームをリセットしてタブを切り替えます');
 
-            // オリパ管理タブに切り替え
-            switchTab('oripa-management');
-            updateOripaManagementLists();
+                // フォームとグローバル変数をリセット
+                editingOripaId = null;
+                prizes = [];
+                losses = [];
+                document.getElementById('oripaName').value = '';
+                document.getElementById('packPrice').value = '';
+                document.getElementById('totalPacks').value = '';
+                document.getElementById('releaseDate').value = '';
+                document.getElementById('endDate').value = '';
+                updatePrizeList();
+                updateLossList();
+
+                // デフォルト日時を設定（強制的に設定）
+                setDefaultOripaDates(true);
+
+                // オリパ管理タブに切り替え
+                console.log('📋 オリパ管理タブに切り替えます');
+                switchTab('oripa-management');
+                // switchTab内でupdateOripaManagementLists()が呼ばれる
+            }).catch((error) => {
+                console.error('❌ 保存に失敗しました。タブ切り替えをスキップします:', error);
+                // エラー時はタブを切り替えない
+            });
         }
 
         // オリパ管理画面を更新
         function updateOripaManagementLists() {
             console.log('=== updateOripaManagementLists 実行 ===');
+            console.log('現在のタブ:', currentTab);
             console.log('oripas 配列の長さ:', oripas.length);
-            console.log('oripas 配列の内容:', oripas);
+
+            // oripas配列の各要素の名前を表示
+            if (oripas.length > 0) {
+                console.log('oripas 配列の内容:');
+                oripas.forEach((o, i) => {
+                    console.log(`  [${i}] ${o.name} - ID: ${o.id}`);
+                });
+            } else {
+                console.log('⚠️ oripas配列が空です');
+            }
 
             const activeList = document.getElementById('activeOripaList');
             const scheduledList = document.getElementById('scheduledOripaList');
             const endedList = document.getElementById('endedOripaList');
+
+            console.log('DOM要素の確認:');
+            console.log('  activeList:', activeList ? '存在' : '不在');
+            console.log('  scheduledList:', scheduledList ? '存在' : '不在');
+            console.log('  endedList:', endedList ? '存在' : '不在');
 
             // DOM要素が存在しない場合（タブが表示されていない場合）は処理をスキップ
             if (!activeList || !scheduledList || !endedList) {
@@ -3379,13 +3287,16 @@
                 return;
             }
 
+            console.log('✅ DOM要素が存在します。フィルタリングを開始...');
+
             let activeOripas = oripas.filter(o => getOripaStatus(o) === 'active');
             let scheduledOripas = oripas.filter(o => getOripaStatus(o) === 'scheduled');
             let endedOripas = oripas.filter(o => getOripaStatus(o) === 'ended');
 
-            console.log('開催中:', activeOripas.length, '件');
-            console.log('開催前:', scheduledOripas.length, '件');
-            console.log('終了:', endedOripas.length, '件');
+            console.log('フィルタリング結果:');
+            console.log('  開催中:', activeOripas.length, '件');
+            console.log('  開催前:', scheduledOripas.length, '件');
+            console.log('  終了:', endedOripas.length, '件');
 
             // 開催中のオリパ：終了日が近い順にソート
             activeOripas.sort((a, b) => {
@@ -3504,11 +3415,11 @@
                     <div class="oripa-info">
                         <div class="oripa-info-item">
                             <div class="oripa-info-label">パック単価</div>
-                            <div class="oripa-info-value">¥${oripa.packPrice.toLocaleString()}</div>
+                            <div class="oripa-info-value">¥${formatNumber(oripa.packPrice)}</div>
                         </div>
                         <div class="oripa-info-item">
                             <div class="oripa-info-label">総口数</div>
-                            <div class="oripa-info-value">${oripa.totalPacks}口</div>
+                            <div class="oripa-info-value">${formatNumber(oripa.totalPacks)}口</div>
                         </div>
                         <div class="oripa-info-item">
                             <div class="oripa-info-label">公開日時</div>
@@ -3520,7 +3431,7 @@
                         </div>
                         <div class="oripa-info-item">
                             <div class="oripa-info-label">景品数</div>
-                            <div class="oripa-info-value">${oripa.prizes.length}種類</div>
+                            <div class="oripa-info-value">${formatNumber(oripa.prizes.length)}種類</div>
                         </div>
                     </div>
                 </div>
@@ -3529,22 +3440,33 @@
 
         // オリパを編集
         function editOripa(oripaId) {
+            console.log('=== editOripa 実行開始 ===');
+            console.log('編集対象ID:', oripaId);
+            console.log('IDの型:', typeof oripaId);
+
             const oripa = oripas.find(o => o.id === oripaId);
+            console.log('オリパ検索結果:', oripa ? `見つかりました (${oripa.name})` : '見つかりません');
+
             if (!oripa) {
+                console.error('❌ オリパが見つかりませんでした');
+                console.log('現在のoripas配列:', oripas.map(o => ({id: o.id, type: typeof o.id, name: o.name})));
                 alert('オリパが見つかりません');
                 return;
             }
 
             const status = getOripaStatus(oripa);
+            console.log('オリパのステータス:', status);
 
             // 終了したオリパの場合は在庫調整モーダルを開く
             if (status === 'ended') {
+                console.log('終了したオリパなので在庫調整モーダルを開きます');
                 openStockAdjustmentModal(oripaId);
                 return;
             }
 
             // 開催前または開催中のオリパは通常の編集
             editingOripaId = oripaId;
+            console.log('✅ editingOripaIdを設定しました:', editingOripaId);
 
             // メインタブに切り替え
             switchTab('main');
@@ -3597,7 +3519,7 @@
                                 <div style="flex: 1;">
                                     <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">${escapeHtml(prize.name)}</div>
                                     <div style="font-size: 13px; color: var(--sf-gray);">
-                                        封入数: ${prize.count.toLocaleString()}個
+                                        封入数: ${formatNumber(prize.count)}個
                                     </div>
                                 </div>
                             </div>
@@ -3699,7 +3621,7 @@
             }
 
             // 保存
-            saveOripasToStorage();
+            saveOripasToCloud();
             savePrizeMaster();
 
             // 表示を更新
@@ -3837,31 +3759,31 @@
                                             ${isLowStock ? '<span style="display: inline-block; padding: 4px 10px; background: rgba(255, 59, 48, 0.1); color: var(--sf-red); border-radius: 12px; font-size: 12px; font-weight: 600;">⚠️ 在庫不足</span>' : ''}
                                         </div>
                                         <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 6px;">
-                                            ポイント価値: ¥${prize.value.toLocaleString()} | 仕入れ価格: ¥${prize.purchasePrice.toLocaleString()}
+                                            ポイント価値: ¥${formatNumber(prize.value)} | 仕入れ価格: ¥${formatNumber(prize.purchasePrice)}
                                         </div>
                                         ${isLowStock ? `
                                             <div style="padding: 12px; background: rgba(255, 59, 48, 0.05); border-radius: 6px; margin-bottom: 8px;">
                                                 <div style="font-size: 13px; line-height: 1.8;">
                                                     <div style="color: var(--sf-gray);">
-                                                        <strong style="color: var(--sf-label);">現在のオリパ設定:</strong> ${prize.count.toLocaleString()}個
+                                                        <strong style="color: var(--sf-label);">現在のオリパ設定:</strong> ${formatNumber(prize.count)}個
                                                     </div>
                                                     <div style="color: var(--sf-orange);">
-                                                        <strong style="color: var(--sf-label);">景品マスター在庫:</strong> ${masterStock.toLocaleString()}個
+                                                        <strong style="color: var(--sf-label);">景品マスター在庫:</strong> ${formatNumber(masterStock)}個
                                                     </div>
                                                     <div style="color: var(--sf-red); font-weight: 700;">
-                                                        <strong>不足:</strong> ${shortage.toLocaleString()}個
+                                                        <strong>不足:</strong> ${formatNumber(shortage)}個
                                                     </div>
                                                     <div style="margin-top: 8px; padding: 8px; background: rgba(52, 199, 89, 0.1); border-radius: 6px; border-left: 3px solid var(--sf-green);">
                                                         <div style="color: var(--sf-green); font-weight: 700; margin-bottom: 6px;">💡 推奨アクション</div>
                                                         <div style="font-size: 12px; color: var(--sf-gray);">
-                                                            景品マスターの在庫を ${prize.count.toLocaleString()}個（+${shortage.toLocaleString()}個）に増やしてください
+                                                            景品マスターの在庫を ${formatNumber(prize.count)}個（+${formatNumber(shortage)}個）に増やしてください
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         ` : `
                                             <div style="font-size: 13px; color: var(--sf-green); margin-top: 4px;">
-                                                ✅ 景品マスター在庫: ${masterStock.toLocaleString()}個（十分な在庫があります）
+                                                ✅ 景品マスター在庫: ${formatNumber(masterStock)}個（十分な在庫があります）
                                             </div>
                                         `}
                                     </div>
@@ -3893,7 +3815,7 @@
                                                 class="btn btn-success"
                                                 onclick="document.getElementById('masterStock_${index}').value = ${prize.count}"
                                                 style="padding: 6px 12px; font-size: 12px; margin-left: auto;">
-                                                ➕ ${prize.count.toLocaleString()}個に増やす
+                                                ➕ ${formatNumber(prize.count)}個に増やす
                                             </button>
                                         ` : ''}
                                     </div>
@@ -4005,7 +3927,7 @@
                 if (countDifference > 0) {
                     const availableAfterMasterUpdate = oldMasterStock + masterStockDifference;
                     if (availableAfterMasterUpdate < countDifference) {
-                        alert(`景品「${prize.name}」の在庫を増やすには、景品マスターの在庫が不足しています。\n必要な追加: ${countDifference.toLocaleString()}個\n景品マスター更新後の在庫: ${availableAfterMasterUpdate.toLocaleString()}個`);
+                        alert(`景品「${prize.name}」の在庫を増やすには、景品マスターの在庫が不足しています。\n必要な追加: ${formatNumber(countDifference)}個\n景品マスター更新後の在庫: ${formatNumber(availableAfterMasterUpdate)}個`);
                         return;
                     }
                 }
@@ -4043,7 +3965,7 @@
                 oripas[index] = oripa;
             }
 
-            saveOripasToStorage();
+            saveOripasToCloud();
             savePrizeMaster();
 
             // 表示を更新
@@ -4066,7 +3988,7 @@
             }
 
             oripas = oripas.filter(o => o.id !== oripaId);
-            saveOripasToStorage();
+            saveOripasToCloud();
             updateOripaManagementLists();
             alert(`オリパ「${oripa.name}」を削除しました`);
         }
@@ -4101,16 +4023,16 @@
         const PRESETS_STORAGE_KEY = 'oripa_presets_v1';
 
         // オリパの開催日時と終了日時のデフォルト値を設定
-        function setDefaultOripaDates() {
+        function setDefaultOripaDates(force = false) {
             const releaseDateInput = document.getElementById('releaseDate');
             const endDateInput = document.getElementById('endDate');
 
-            // 既に値が入力されている場合はスキップ
-            if (releaseDateInput.value || endDateInput.value) {
+            // forceフラグがfalseで、既に値が入力されている場合はスキップ
+            if (!force && (releaseDateInput.value || endDateInput.value)) {
                 return;
             }
 
-            // 開催日時: 本日の20時00分
+            // 開始日時: 本日の20時00分
             const today = new Date();
             today.setHours(20, 0, 0, 0);
 
@@ -4155,7 +4077,7 @@
             const packPrice = parseFloat(document.getElementById('packPrice').value) || 0;
             const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
             const totalValue = packPrice * totalPacks;
-            document.getElementById('totalValue').textContent = `¥${totalValue.toLocaleString()}`;
+            document.getElementById('totalValue').textContent = `¥${formatNumber(totalValue)}`;
 
             // エラー状態をリセット（入力中はエラー表示しない）
             document.getElementById('packPrice').classList.remove('error');
@@ -4166,7 +4088,7 @@
         function formatPrizeValue(input) {
             let value = input.value.replace(/[^\d]/g, ''); // 数字以外を除去
             if (value) {
-                value = parseInt(value).toLocaleString(); // カンマ区切りに変換
+                value = formatNumber(parseInt(value)); // カンマ区切りに変換
             }
             input.value = value;
         }
@@ -4175,7 +4097,7 @@
         function formatBasicValue(input) {
             let value = input.value.replace(/[^\d]/g, ''); // 数字以外を除去
             if (value) {
-                value = parseInt(value).toLocaleString(); // カンマ区切りに変換
+                value = formatNumber(parseInt(value)); // カンマ区切りに変換
             }
             input.value = value;
             // オリパ提供価値のみ更新
@@ -4332,7 +4254,7 @@
             // フォームに値を設定
             document.getElementById('prizeName').value = prize.name;
             document.getElementById('prizeRank').value = prize.rank;
-            document.getElementById('prizeValue').value = prize.value.toLocaleString();
+            document.getElementById('prizeValue').value = formatNumber(prize.value);
             document.getElementById('prizeCount').value = prize.count;
 
             // 画像と仕入れ価格を表示（編集不可）
@@ -4346,7 +4268,7 @@
                 imageDisplay.innerHTML = `<div style="width: 60px; height: 90px; background: rgba(0, 0, 0, 0.05); border-radius: 4px; border: 2px solid rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; font-size: 24px;">📦</div>`;
             }
 
-            purchasePriceDisplay.textContent = `¥${prize.purchasePrice.toLocaleString()}`;
+            purchasePriceDisplay.textContent = `¥${formatNumber(prize.purchasePrice)}`;
             readonlyInfo.style.display = 'block';
 
             // ボタンの表示を切り替え
@@ -4393,11 +4315,11 @@
             if (masterPrize) {
                 const message = `景品マスターに「${name}」が登録されています。\n\n` +
                     `【現在の景品マスター情報】\n` +
-                    `仕入れ価格: ¥${masterPrize.purchasePrice.toLocaleString()}\n` +
-                    `還元価値: ¥${masterPrize.value.toLocaleString()}\n\n` +
+                    `仕入れ価格: ¥${formatNumber(masterPrize.purchasePrice)}\n` +
+                    `還元価値: ¥${formatNumber(masterPrize.value)}\n\n` +
                     `【今回の編集内容】\n` +
-                    `仕入れ価格: ¥${purchasePrice.toLocaleString()}\n` +
-                    `還元価値: ¥${value.toLocaleString()}\n\n` +
+                    `仕入れ価格: ¥${formatNumber(purchasePrice)}\n` +
+                    `還元価値: ¥${formatNumber(value)}\n\n` +
                     `どのように処理しますか？\n\n` +
                     `[1] 景品マスターも更新する（マスターの情報を今回の編集内容で上書き）\n` +
                     `[2] 景品マスターに新しく登録する（同じ名前で別の景品として登録）\n` +
@@ -4488,11 +4410,11 @@
                         <div class="prize-master-info">
                             <div class="prize-master-info-item">
                                 <div class="prize-master-info-label">仕入れ価格</div>
-                                <div class="prize-master-info-value">¥${prize.purchasePrice.toLocaleString()}</div>
+                                <div class="prize-master-info-value">¥${formatNumber(prize.purchasePrice)}</div>
                             </div>
                             <div class="prize-master-info-item">
                                 <div class="prize-master-info-label">ポイント還元価値</div>
-                                <div class="prize-master-info-value">¥${prize.value.toLocaleString()}</div>
+                                <div class="prize-master-info-value">¥${formatNumber(prize.value)}</div>
                             </div>
                         </div>
                     </div>
@@ -4625,14 +4547,8 @@
             // ソート処理
             let sortedPrizes = [...filteredPrizes];
 
-            // オリパ自動作成の置き換えモードの場合、還元価値に近い順でソート
-            if (isReplacingAutoCreateMode && targetPrizeValue !== null) {
-                sortedPrizes.sort((a, b) => {
-                    const diffA = Math.abs(a.value - targetPrizeValue);
-                    const diffB = Math.abs(b.value - targetPrizeValue);
-                    return diffA - diffB;
-                });
-            } else if (sortBy === 'price') {
+            // ソート処理
+            if (sortBy === 'price') {
                 sortedPrizes.sort((a, b) => {
                     if (sortOrder === 'desc') {
                         return b.purchasePrice - a.purchasePrice;
@@ -4659,7 +4575,7 @@
                 const typeLabel = prize.type || 'PSA10';
                 const isWanted = prize.isWanted || false;
                 const stockBadge = prize.count > 0
-                    ? `<span style="display: inline-block; padding: 6px 14px; background: rgba(52, 199, 89, 0.1); color: #34C759; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">${prize.count.toLocaleString()}個</span>`
+                    ? `<span style="display: inline-block; padding: 6px 14px; background: rgba(52, 199, 89, 0.1); color: #34C759; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">${formatNumber(prize.count)}個</span>`
                     : `<span style="display: inline-block; padding: 6px 14px; background: rgba(255, 59, 48, 0.1); color: #ff3b30; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">売り切れ</span>`;
 
                 return `
@@ -4682,11 +4598,11 @@
                                     <div class="prize-master-info">
                                         <div class="prize-master-info-item">
                                             <div class="prize-master-info-label">仕入れ価格</div>
-                                            <div class="prize-master-info-value">¥${prize.purchasePrice.toLocaleString()}</div>
+                                            <div class="prize-master-info-value">¥${formatNumber(prize.purchasePrice)}</div>
                                         </div>
                                         <div class="prize-master-info-item">
                                             <div class="prize-master-info-label">ポイント還元価値</div>
-                                            <div class="prize-master-info-value">¥${prize.value.toLocaleString()}</div>
+                                            <div class="prize-master-info-value">¥${formatNumber(prize.value)}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -4777,20 +4693,11 @@
 
         // 置き換えモードフラグ
         let isReplacingMode = false;
-        let isReplacingAutoCreateMode = false;
-        let autoCreateReplaceIndex = -1;
-        let targetPrizeValue = null; // 置き換え対象の景品の還元価値
 
         // メインタブ用：マスターから景品を選択してフォームに反映
         function selectPrizeFromMasterForMain(prizeId) {
             const prize = prizeMaster.find(p => p.id === prizeId);
             if (!prize) return;
-
-            // オリパ自動作成の置き換えモードの場合
-            if (isReplacingAutoCreateMode && autoCreateReplaceIndex >= 0) {
-                selectPrizeForReplacement(prizeId, autoCreateReplaceIndex);
-                return;
-            }
 
             // 置き換えモードの場合
             if (isReplacingMode) {
@@ -4803,7 +4710,7 @@
 
             // フォームに情報を設定
             document.getElementById('prizeName').value = prize.name;
-            document.getElementById('prizeValue').value = prize.value.toLocaleString();
+            document.getElementById('prizeValue').value = formatNumber(prize.value);
             document.getElementById('prizeCount').value = '1';
 
             // 画像と仕入れ価格を表示
@@ -4817,7 +4724,7 @@
                 imageDisplay.innerHTML = `<div style="width: 60px; height: 90px; background: rgba(0, 0, 0, 0.05); border-radius: 4px; border: 2px solid rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; font-size: 24px;">📦</div>`;
             }
 
-            purchasePriceDisplay.textContent = `¥${prize.purchasePrice.toLocaleString()}`;
+            purchasePriceDisplay.textContent = `¥${formatNumber(prize.purchasePrice)}`;
             readonlyInfo.style.display = 'block';
 
             // モーダルを閉じる
@@ -4849,7 +4756,7 @@
             document.getElementById('prizeName').value = newPrize.name;
             // 等級、還元価値、封入数は現在の値を維持
             document.getElementById('prizeRank').value = currentRank;
-            document.getElementById('prizeValue').value = currentValue.toLocaleString();
+            document.getElementById('prizeValue').value = formatNumber(currentValue);
             document.getElementById('prizeCount').value = currentCount;
 
             // 画像と仕入れ価格を表示
@@ -4863,7 +4770,7 @@
                 imageDisplay.innerHTML = `<div style="width: 60px; height: 90px; background: rgba(0, 0, 0, 0.05); border-radius: 4px; border: 2px solid rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; font-size: 24px;">📦</div>`;
             }
 
-            purchasePriceDisplay.textContent = `¥${newPrize.purchasePrice.toLocaleString()}`;
+            purchasePriceDisplay.textContent = `¥${formatNumber(newPrize.purchasePrice)}`;
             readonlyInfo.style.display = 'block';
 
             // editingMainPrizeを更新
@@ -4890,9 +4797,6 @@
 
             // 置き換えモードをリセット
             isReplacingMode = false;
-            isReplacingAutoCreateMode = false;
-            autoCreateReplaceIndex = -1;
-            targetPrizeValue = null;
         }
 
         // モーダル内の新規登録フォームを表示
@@ -5018,9 +4922,9 @@
                         <div class="prize-rank rank-${prize.rank}">${prize.rank}等</div>
                         <div class="prize-content" style="flex: 1;">
                             <div class="prize-name">${prize.name}</div>
-                            <div class="prize-purchase">仕入¥${prize.purchasePrice.toLocaleString()}</div>
-                            <div class="prize-value">還元¥${prize.value.toLocaleString()}</div>
-                            <div class="prize-count">${prize.count.toLocaleString()}枚</div>
+                            <div class="prize-purchase">仕入¥${formatNumber(prize.purchasePrice)}</div>
+                            <div class="prize-value">還元¥${formatNumber(prize.value)}</div>
+                            <div class="prize-count">${formatNumber(prize.count)}枚</div>
                             <div style="display: flex; gap: 8px;">
                                 <button class="btn btn-primary" onclick="editPrize(${prize.id})">編集</button>
                                 <button class="btn btn-danger" onclick="removePrize(${prize.id})">削除</button>
@@ -5039,29 +4943,29 @@
 
             if (errorData.type === 'count_overflow') {
                 message = `⚠️ 枚数が合いません\n\n` +
-                    `景品枚数：${errorData.prizesTotalCount.toLocaleString()}枚\n` +
-                    `ハズレ枚数：${errorData.manualLossTotalCount.toLocaleString()}枚\n` +
-                    `合計：${(errorData.prizesTotalCount + errorData.manualLossTotalCount).toLocaleString()}枚\n\n` +
-                    `総口数：${errorData.totalPacks.toLocaleString()}口\n` +
-                    `超過枚数：${errorData.excess.toLocaleString()}枚\n\n`;
+                    `景品枚数：${formatNumber(errorData.prizesTotalCount)}枚\n` +
+                    `ハズレ枚数：${formatNumber(errorData.manualLossTotalCount)}枚\n` +
+                    `合計：${formatNumber(errorData.prizesTotalCount + errorData.manualLossTotalCount)}枚\n\n` +
+                    `総口数：${formatNumber(errorData.totalPacks)}口\n` +
+                    `超過枚数：${formatNumber(errorData.excess)}枚\n\n`;
 
                 suggestions = `📋 代替案：\n\n` +
-                    `1️⃣ 総口数を${(errorData.prizesTotalCount + errorData.manualLossTotalCount).toLocaleString()}口に増やす\n\n` +
-                    `2️⃣ ハズレ枚数を${errorData.excess.toLocaleString()}枚減らす\n\n` +
-                    `3️⃣ 景品枚数を${errorData.excess.toLocaleString()}枚減らす`;
+                    `1️⃣ 総口数を${formatNumber(errorData.prizesTotalCount + errorData.manualLossTotalCount)}口に増やす\n\n` +
+                    `2️⃣ ハズレ枚数を${formatNumber(errorData.excess)}枚減らす\n\n` +
+                    `3️⃣ 景品枚数を${formatNumber(errorData.excess)}枚減らす`;
 
             } else if (errorData.type === 'count_shortage') {
                 message = `⚠️ 枚数が不足しています\n\n` +
-                    `景品枚数：${errorData.prizesTotalCount.toLocaleString()}枚\n` +
-                    `ハズレ枚数：${errorData.manualLossTotalCount.toLocaleString()}枚\n` +
-                    `合計：${(errorData.prizesTotalCount + errorData.manualLossTotalCount).toLocaleString()}枚\n\n` +
-                    `総口数：${errorData.totalPacks.toLocaleString()}口\n` +
-                    `不足枚数：${errorData.shortage.toLocaleString()}枚\n\n`;
+                    `景品枚数：${formatNumber(errorData.prizesTotalCount)}枚\n` +
+                    `ハズレ枚数：${formatNumber(errorData.manualLossTotalCount)}枚\n` +
+                    `合計：${formatNumber(errorData.prizesTotalCount + errorData.manualLossTotalCount)}枚\n\n` +
+                    `総口数：${formatNumber(errorData.totalPacks)}口\n` +
+                    `不足枚数：${formatNumber(errorData.shortage)}枚\n\n`;
 
                 suggestions = `📋 代替案：\n\n` +
-                    `1️⃣ 総口数を${(errorData.prizesTotalCount + errorData.manualLossTotalCount).toLocaleString()}口に減らす\n\n` +
-                    `2️⃣ ハズレ枚数を${errorData.shortage.toLocaleString()}枚増やす\n\n` +
-                    `3️⃣ 景品枚数を${errorData.shortage.toLocaleString()}枚増やす\n\n` +
+                    `1️⃣ 総口数を${formatNumber(errorData.prizesTotalCount + errorData.manualLossTotalCount)}口に減らす\n\n` +
+                    `2️⃣ ハズレ枚数を${formatNumber(errorData.shortage)}枚増やす\n\n` +
+                    `3️⃣ 景品枚数を${formatNumber(errorData.shortage)}枚増やす\n\n` +
                     `4️⃣ ハズレをすべて削除して自動計算に切り替える`;
             }
 
@@ -5350,8 +5254,8 @@
                 <div class="prize-item" style="background: rgba(255, 149, 0, 0.1); border-color: var(--sf-orange);">
                     <div class="prize-content" style="grid-template-columns: 2fr 1fr 1fr auto; margin-top: 8px;">
                         <div class="prize-name">${loss.name}</div>
-                        <div class="prize-value">¥${loss.value.toLocaleString()}</div>
-                        <div class="prize-count">${loss.count.toLocaleString()}枚</div>
+                        <div class="prize-value">¥${formatNumber(loss.value)}</div>
+                        <div class="prize-count">${formatNumber(loss.count)}枚</div>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn btn-primary" onclick="editLoss(${loss.id})">編集</button>
                             <button class="btn btn-danger" onclick="removeLoss(${loss.id})">削除</button>
@@ -5417,7 +5321,7 @@
 
             // 確認メッセージを表示
             const lossCount = totalPacks - prizesTotalCount;
-            alert(`プリセット「${preset.name}」を適用しました\n\n総口数: ${totalPacks.toLocaleString()}口\nパック単価: ¥${preset.packPrice.toLocaleString()}\n景品枚数: ${prizesTotalCount.toLocaleString()}枚\nハズレ枚数: ${lossCount.toLocaleString()}枚\n\n値を編集して再計算することもできます。`);
+            alert(`プリセット「${preset.name}」を適用しました\n\n総口数: ${formatNumber(totalPacks)}口\nパック単価: ¥${formatNumber(preset.packPrice)}\n景品枚数: ${formatNumber(prizesTotalCount)}枚\nハズレ枚数: ${formatNumber(lossCount)}枚\n\n値を編集して再計算することもできます。`);
         }
 
         // ガチャ難易度設定を取得
@@ -5461,7 +5365,7 @@
             const totalValue = packPrice * totalPacks;
 
             // オリパ提供価値表示
-            document.getElementById('totalValue').textContent = `¥${totalValue.toLocaleString()}`;
+            document.getElementById('totalValue').textContent = `¥${formatNumber(totalValue)}`;
 
             // 景品総価値計算（ポイント還元価値）
             const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
@@ -5607,15 +5511,15 @@
 
             // 総仕入れ額を表示
             const totalPurchaseAmount = prizes.reduce((sum, prize) => sum + (prize.purchasePrice * prize.count), 0);
-            document.getElementById('summaryTotalPurchase').textContent = `¥${totalPurchaseAmount.toLocaleString()}`;
+            document.getElementById('summaryTotalPurchase').textContent = `¥${formatNumber(totalPurchaseAmount)}`;
 
             // 当たり景品還元総額を表示
             const prizeTotalReward = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
-            document.getElementById('summaryPrizeTotalReward').textContent = `¥${prizeTotalReward.toLocaleString()}`;
+            document.getElementById('summaryPrizeTotalReward').textContent = `¥${formatNumber(prizeTotalReward)}`;
 
             // ハズレ還元総額を表示
             const lossTotalReward = data.lossTypes ? data.lossTypes.reduce((sum, loss) => sum + (loss.value * loss.count), 0) : 0;
-            document.getElementById('summaryLossTotalReward').textContent = `¥${lossTotalReward.toLocaleString()}`;
+            document.getElementById('summaryLossTotalReward').textContent = `¥${formatNumber(lossTotalReward)}`;
 
             // 景品詳細更新
             updatePrizeDetails();
@@ -5652,7 +5556,7 @@
                         ${imageHtml}
                         <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
                             <span class="result-label">${prize.rank}等 ${prize.name}</span>
-                            <span class="result-value">${prize.count.toLocaleString()}枚 / ${probability}% (仕入¥${prize.purchasePrice.toLocaleString()} / 還元¥${prize.value.toLocaleString()})</span>
+                            <span class="result-value">${formatNumber(prize.count)}枚 / ${probability}% (仕入¥${formatNumber(prize.purchasePrice)} / 還元¥${formatNumber(prize.value)})</span>
                         </div>
                     </div>
                 `;
@@ -5674,12 +5578,12 @@
                 return `
                     <div class="result-row">
                         <span class="result-label">${loss.name}</span>
-                        <span class="result-value">¥${loss.value.toLocaleString()} × ${loss.count.toLocaleString()}枚 (${probability}%)</span>
+                        <span class="result-value">¥${formatNumber(loss.value)} × ${formatNumber(loss.count)}枚 (${probability}%)</span>
                     </div>
                 `;
             }).join('');
 
-            document.getElementById('totalLossCount').textContent = `${lossCount.toLocaleString()}枚`;
+            document.getElementById('totalLossCount').textContent = `${formatNumber(lossCount)}枚`;
         }
 
 
@@ -5761,7 +5665,7 @@
             if (prizesTotalCount > totalPacks) {
                 document.getElementById('totalPacks').classList.add('error');
                 hasError = true;
-                errorMessages.push(`景品の総枚数（${prizesTotalCount.toLocaleString()}枚）が総口数（${totalPacks.toLocaleString()}口）を超えています。`);
+                errorMessages.push(`景品の総枚数（${formatNumber(prizesTotalCount)}枚）が総口数（${formatNumber(totalPacks)}口）を超えています。`);
             }
 
             if (hasError) {
@@ -5943,7 +5847,7 @@
             }
             
             if (gachaPool.length < count) {
-                alert(`残り${gachaPool.length.toLocaleString()}枚しかありません`);
+                alert(`残り${formatNumber(gachaPool.length)}枚しかありません`);
                 count = gachaPool.length;
             }
             
@@ -5986,17 +5890,17 @@
                     <div class="gacha-stat-label">当選回数</div>
                 </div>
                 <div class="gacha-stat-item">
-                    <div class="gacha-stat-value">¥${totalValue.toLocaleString()}</div>
+                    <div class="gacha-stat-value">¥${formatNumber(totalValue)}</div>
                     <div class="gacha-stat-label">総還元価値</div>
                 </div>
                 <div class="gacha-stat-item">
                     <div class="gacha-stat-value" style="color: ${profit >= 0 ? 'var(--sf-green)' : 'var(--sf-red)'}">
-                        ${profit >= 0 ? '+' : ''}¥${profit.toLocaleString()}
+                        ${profit >= 0 ? '+' : ''}¥${formatNumber(profit)}
                     </div>
                     <div class="gacha-stat-label">収支</div>
                 </div>
             `;
-            
+
             // 履歴表示（最新10件）
             const recentDraws = gachaDrawHistory.slice(-10).reverse();
             document.getElementById('gachaHistory').innerHTML = `
@@ -6004,7 +5908,7 @@
                 ${recentDraws.map(draw => `
                     <div class="gacha-draw-item ${draw.type === 'prize' ? 'gacha-draw-prize' : 'gacha-draw-loss'}">
                         <span>${draw.item.name}</span>
-                        <span>¥${draw.item.value.toLocaleString()}</span>
+                        <span>¥${formatNumber(draw.item.value)}</span>
                     </div>
                 `).join('')}
             `;
@@ -6044,7 +5948,7 @@
             } else {
                 // eventがない場合（プログラムから呼ばれた場合）、対応するボタンを探してactiveにする
                 const buttons = document.querySelectorAll('.tab-button');
-                const tabNames = ['main', 'oripa-management', 'prize-list', 'auto-create'];
+                const tabNames = ['main', 'oripa-management', 'prize-list'];
                 const index = tabNames.indexOf(tabName);
                 if (index >= 0 && buttons[index]) {
                     buttons[index].classList.add('active');
@@ -6064,11 +5968,6 @@
                 updatePrizeMasterList();
                 // Firebase認証を開始（初回のみ）
                 initializeAuth();
-            }
-
-            // オリパ自動作成タブが表示された時
-            if (tabName === 'auto-create') {
-                // 特に何もしない（必要に応じて処理を追加）
             }
         }
 
@@ -6643,13 +6542,13 @@
             return new Promise((resolve) => {
                 const message = `同じ名前の景品「${existingPrize.name}」が既に登録されています。\n\n` +
                     `【既存の景品】\n` +
-                    `  仕入れ価格: ¥${existingPrize.purchasePrice.toLocaleString()}\n` +
-                    `  還元価値: ¥${existingPrize.value.toLocaleString()}\n` +
-                    `  在庫数: ${existingPrize.count.toLocaleString()}個\n\n` +
+                    `  仕入れ価格: ¥${formatNumber(existingPrize.purchasePrice)}\n` +
+                    `  還元価値: ¥${formatNumber(existingPrize.value)}\n` +
+                    `  在庫数: ${formatNumber(existingPrize.count)}個\n\n` +
                     `【新しい景品】\n` +
-                    `  仕入れ価格: ¥${newPrize.purchasePrice.toLocaleString()}\n` +
-                    `  還元価値: ¥${newPrize.value.toLocaleString()}\n` +
-                    `  在庫数: ${(newPrize.count || 1).toLocaleString()}個\n\n` +
+                    `  仕入れ価格: ¥${formatNumber(newPrize.purchasePrice)}\n` +
+                    `  還元価値: ¥${formatNumber(newPrize.value)}\n` +
+                    `  在庫数: ${formatNumber(newPrize.count || 1)}個\n\n` +
                     `どのように処理しますか？\n\n` +
                     `[1] 上書きする（既存の情報を新しい情報で置き換える）\n` +
                     `[2] 別々に保存する（両方とも保持する）\n` +
@@ -6795,7 +6694,7 @@
 
                             prizeMaster.push(newPrize);
                             addedCount++;
-                            console.log(`追加: ${name} - ¥${purchasePrice.toLocaleString()} - 画像URL: ${imageData ? 'あり' : 'なし'}`);
+                            console.log(`追加: ${name} - ¥${formatNumber(purchasePrice)} - 画像URL: ${imageData ? 'あり' : 'なし'}`);
                         }
                     } catch (rowError) {
                         console.error(`行${i + 1}の処理中にエラー:`, rowError);
@@ -7170,16 +7069,16 @@
                         <div class="prize-master-info">
                             <div class="prize-master-info-item">
                                 <div class="prize-master-info-label">仕入れ価格</div>
-                                <div class="prize-master-info-value">¥${prize.purchasePrice.toLocaleString()}</div>
+                                <div class="prize-master-info-value">¥${formatNumber(prize.purchasePrice)}</div>
                             </div>
                             <div class="prize-master-info-item">
                                 <div class="prize-master-info-label">ポイント還元価値</div>
-                                <div class="prize-master-info-value">¥${prize.value.toLocaleString()}</div>
+                                <div class="prize-master-info-value">¥${formatNumber(prize.value)}</div>
                             </div>
                             <div class="prize-master-info-item">
                                 <div class="prize-master-info-label">在庫数</div>
                                 <div class="prize-master-info-value" style="color: ${prize.count === 0 ? 'var(--sf-red)' : 'inherit'}; font-weight: ${prize.count === 0 ? '600' : 'inherit'};">
-                                    ${prize.count.toLocaleString()}個${prize.count === 0 ? ' (売り切れ)' : ''}
+                                    ${formatNumber(prize.count)}個${prize.count === 0 ? ' (売り切れ)' : ''}
                                 </div>
                             </div>
                         </div>
@@ -7241,8 +7140,8 @@
 
             // モーダルのフォームに値を設定
             document.getElementById('editPrizeName').value = prize.name;
-            document.getElementById('editPrizePurchasePrice').value = prize.purchasePrice.toLocaleString();
-            document.getElementById('editPrizeValue').value = prize.value.toLocaleString();
+            document.getElementById('editPrizePurchasePrice').value = formatNumber(prize.purchasePrice);
+            document.getElementById('editPrizeValue').value = formatNumber(prize.value);
             document.getElementById('editPrizeCount').value = prize.count;
             document.getElementById('editPrizeType').value = prize.type || 'PSA10';
             document.getElementById('editPrizeIsWanted').checked = prize.isWanted || false;
@@ -7714,516 +7613,6 @@
             }
         });
 
-        // ==================== オリパ自動作成機能 ====================
-        let autoCreatedPrizes = []; // 自動作成された景品リスト
-        let autoCreatedSettings = {}; // 自動作成時の設定
-
-        // ハズレの種類数に応じて最低保証の表示を切り替え
-        function toggleAutoMinGuarantee() {
-            const lossTypes = document.getElementById('autoLossTypes').value;
-            const minGuaranteeGroup = document.getElementById('autoMinGuaranteeGroup');
-
-            if (lossTypes === '1') {
-                minGuaranteeGroup.style.display = 'none';
-            } else {
-                minGuaranteeGroup.style.display = 'block';
-            }
-        }
-
-        // オリパを自動作成
-        function createAutoOripa() {
-            if (prizeMaster.length === 0) {
-                showCustomAlert(
-                    'まず景品マスタータブで景品を登録してください。',
-                    '景品マスターが空です',
-                    '📋'
-                );
-                return;
-            }
-
-            // 基本設定を取得
-            const packPrice = parseInt(document.getElementById('autoPackPrice').value) || 0;
-            const totalPacks = parseInt(document.getElementById('autoTotalPacks').value) || 0;
-            const targetReturnRate = parseFloat(document.getElementById('autoReturnRate').value) || 0;
-            const actualReturnRateLimit = parseFloat(document.getElementById('autoActualReturnRateLimit').value) || 0;
-            const prizeFilter = document.getElementById('autoPrizeFilter').value;
-            const lossTypes = parseInt(document.getElementById('autoLossTypes').value) || 1;
-            const minGuarantee = lossTypes === 1 ? 0 : (parseInt(document.getElementById('autoMinGuarantee').value) || 100);
-
-            // 各等級の枚数を取得
-            const rankCounts = {
-                1: parseInt(document.getElementById('autoRank1Count').value) || 0,
-                2: parseInt(document.getElementById('autoRank2Count').value) || 0,
-                3: parseInt(document.getElementById('autoRank3Count').value) || 0,
-                4: parseInt(document.getElementById('autoRank4Count').value) || 0,
-                5: parseInt(document.getElementById('autoRank5Count').value) || 0
-            };
-
-            // バリデーション
-            if (packPrice <= 0 || totalPacks <= 0 || targetReturnRate <= 0) {
-                showCustomAlert(
-                    'パック単価、総口数、目標還元率を正しく入力してください',
-                    '入力エラー',
-                    '⚠️'
-                );
-                return;
-            }
-
-            // 景品マスターから選択対象の景品をフィルタリング
-            let availablePrizes = [...prizeMaster];
-
-            if (prizeFilter === 'inStock') {
-                availablePrizes = availablePrizes.filter(p => p.count > 0);
-            } else if (prizeFilter === 'inStockAndWanted') {
-                availablePrizes = availablePrizes.filter(p => p.count > 0 || p.isWanted === true);
-            }
-
-            if (availablePrizes.length === 0) {
-                showCustomAlert(
-                    'フィルター条件を変更するか、景品マスターに景品を追加してください。',
-                    '選択条件に一致する景品がありません',
-                    '🔍'
-                );
-                return;
-            }
-
-            // 当たり景品の総数を計算
-            const totalPrizeCount = Object.values(rankCounts).reduce((sum, count) => sum + count, 0);
-
-            if (totalPrizeCount > totalPacks) {
-                showCustomAlert(
-                    `総口数: ${totalPacks.toLocaleString()}枚\n当たり総数: ${totalPrizeCount.toLocaleString()}枚`,
-                    '当たり景品の総数が総口数を超えています',
-                    '⚠️'
-                );
-                return;
-            }
-
-            // 目標還元総額を計算
-            const totalValue = packPrice * totalPacks;
-            const targetReturnValue = totalValue * (targetReturnRate / 100);
-            const maxPrizeReturnValue = totalValue * (actualReturnRateLimit / 100);
-
-            // 等級ごとの目標還元額を計算（等級が高いほど価値が高くなるように重み付け）
-            const rankWeights = {
-                1: 0.50,  // 1等: 50%
-                2: 0.25,  // 2等: 25%
-                3: 0.15,  // 3等: 15%
-                4: 0.07,  // 4等: 7%
-                5: 0.03   // 5等: 3%
-            };
-
-            // 各等級の景品を選択
-            autoCreatedPrizes = [];
-            let currentReturnValue = 0;
-
-            // 価値でソート（高い順）
-            availablePrizes.sort((a, b) => b.value - a.value);
-
-            for (let rank = 1; rank <= 5; rank++) {
-                const count = rankCounts[rank];
-                if (count === 0) continue;
-
-                const rankTargetValue = targetReturnValue * rankWeights[rank];
-                const perPrizeTargetValue = rankTargetValue / count;
-
-                // 1等は必ず指定枚数、2-5等は±20%の範囲で調整可能
-                const minCount = (rank === 1) ? count : Math.floor(count * 0.8);
-                const maxCount = (rank === 1) ? count : Math.ceil(count * 1.2);
-
-                let addedCount = 0;
-
-                // まず指定枚数まで景品を追加
-                for (let i = 0; i < count; i++) {
-                    // 残り追加可能な還元額を計算
-                    const remainingValue = maxPrizeReturnValue - currentReturnValue;
-
-                    // 実質還元率上限を超える場合は追加できる最大価値で制限
-                    let targetValue = perPrizeTargetValue;
-                    if (remainingValue < perPrizeTargetValue) {
-                        targetValue = remainingValue;
-                    }
-
-                    // 追加可能な還元額がほぼゼロの場合
-                    if (remainingValue <= 0) {
-                        // 1等の場合は必ず枚数を守る必要があるため警告
-                        if (rank === 1 && addedCount < count) {
-                            console.warn(`実質還元率上限に達したため、1等の指定枚数を満たせませんでした`);
-                        }
-                        break;
-                    }
-
-                    // 目標価値に最も近く、かつ残り予算内の景品を選ぶ
-                    let selectedPrize = null;
-                    let minDiff = Infinity;
-
-                    for (const prize of availablePrizes) {
-                        // 予算を超える景品は除外
-                        if (prize.value > remainingValue) continue;
-
-                        const diff = Math.abs(prize.value - targetValue);
-                        if (diff < minDiff) {
-                            minDiff = diff;
-                            selectedPrize = prize;
-                        }
-                    }
-
-                    // 選択可能な景品がない場合
-                    if (!selectedPrize) {
-                        // 1等の場合は必ず枚数を守る必要があるため警告
-                        if (rank === 1 && addedCount < count) {
-                            console.warn(`実質還元率上限内で選択できる景品がないため、1等の指定枚数を満たせませんでした`);
-                        }
-                        break;
-                    }
-
-                    // 景品を追加
-                    autoCreatedPrizes.push({
-                        id: Date.now() + Math.random(),
-                        name: selectedPrize.name,
-                        rank: rank,
-                        purchasePrice: selectedPrize.purchasePrice,
-                        value: selectedPrize.value,
-                        count: 1,
-                        image: selectedPrize.image || null,
-                        masterPrizeId: selectedPrize.id
-                    });
-
-                    currentReturnValue += selectedPrize.value;
-                    addedCount++;
-                }
-
-                // 2-5等は、指定枚数を満たした後、最大枚数まで追加の景品を追加可能
-                if (rank !== 1 && addedCount >= count && addedCount < maxCount) {
-                    while (addedCount < maxCount) {
-                        const remainingValue = maxPrizeReturnValue - currentReturnValue;
-                        if (remainingValue <= 0) break;
-
-                        // 残り予算内で目標価値に近い景品を選ぶ
-                        let selectedPrize = null;
-                        let minDiff = Infinity;
-
-                        for (const prize of availablePrizes) {
-                            if (prize.value > remainingValue) continue;
-
-                            const diff = Math.abs(prize.value - perPrizeTargetValue);
-                            if (diff < minDiff) {
-                                minDiff = diff;
-                                selectedPrize = prize;
-                            }
-                        }
-
-                        if (!selectedPrize) break;
-
-                        // 景品を追加
-                        autoCreatedPrizes.push({
-                            id: Date.now() + Math.random(),
-                            name: selectedPrize.name,
-                            rank: rank,
-                            purchasePrice: selectedPrize.purchasePrice,
-                            value: selectedPrize.value,
-                            count: 1,
-                            image: selectedPrize.image || null,
-                            masterPrizeId: selectedPrize.id
-                        });
-
-                        currentReturnValue += selectedPrize.value;
-                        addedCount++;
-                    }
-                }
-            }
-
-            // 実際の景品総数を計算（枚数増減許可の場合、実際の枚数が変わる可能性がある）
-            const actualPrizeCount = autoCreatedPrizes.length;
-
-            // ハズレ枚数を計算
-            const lossCount = totalPacks - actualPrizeCount;
-
-            // ハズレの還元額を計算
-            let calculatedMinGuarantee = minGuarantee;
-            if (lossTypes === 1) {
-                // ハズレが1種類の場合は、最低保証を自動計算
-                // 目標還元率から景品の還元額を引いた残りをハズレ枚数で割る
-                const targetLossReturnValue = (totalValue * targetReturnRate / 100) - currentReturnValue;
-                calculatedMinGuarantee = lossCount > 0 ? Math.floor(targetLossReturnValue / lossCount) : 0;
-                if (calculatedMinGuarantee < 0) calculatedMinGuarantee = 0;
-            }
-
-            const lossReturnValue = lossCount * calculatedMinGuarantee;
-            const totalReturnValue = currentReturnValue + lossReturnValue;
-
-            // 全体還元率を計算（景品＋ハズレ）
-            const actualReturnRate = (totalReturnValue / totalValue) * 100;
-
-            // 実質還元率を計算（カード景品のみ）
-            const actualPrizeReturnRate = (currentReturnValue / totalValue) * 100;
-
-            // 設定を保存
-            autoCreatedSettings = {
-                packPrice,
-                totalPacks,
-                targetReturnRate,
-                actualReturnRateLimit,
-                minGuarantee: calculatedMinGuarantee,
-                lossTypes,
-                actualReturnRate,
-                actualPrizeReturnRate,
-                lossCount
-            };
-
-            // プレビュー表示に切り替え
-            updatePreviewDisplay();
-        }
-
-        // プレビュー表示を更新
-        function updatePreviewDisplay() {
-            const settings = autoCreatedSettings;
-
-            // 設定画面を非表示、プレビューを表示
-            document.getElementById('autoCreateSettings').style.display = 'none';
-            document.getElementById('autoCreatePreview').style.display = 'block';
-
-            // サマリーを作成
-            const totalValue = settings.packPrice * settings.totalPacks;
-            const prizeReturnValue = autoCreatedPrizes.reduce((sum, p) => sum + (p.value * p.count), 0);
-            const lossReturnValue = settings.lossCount * settings.minGuarantee;
-            const totalReturnValue = prizeReturnValue + lossReturnValue;
-
-            const summaryHtml = `
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">目標還元率（全体）</div>
-                        <div style="font-size: 20px; font-weight: 700; color: var(--sf-blue);">${settings.targetReturnRate.toFixed(1)}%</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">実際の還元率（全体）</div>
-                        <div style="font-size: 20px; font-weight: 700; color: var(--sf-green);">${settings.actualReturnRate.toFixed(1)}%</div>
-                    </div>
-                    <div style="grid-column: 1 / -1; padding: 16px; background: rgba(255, 149, 0, 0.1); border-radius: var(--radius-md); border: 2px solid rgba(255, 149, 0, 0.3);">
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                            <div>
-                                <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">実質還元率上限</div>
-                                <div style="font-size: 18px; font-weight: 700; color: var(--sf-orange);">${settings.actualReturnRateLimit.toFixed(1)}%</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">実際の実質還元率</div>
-                                <div style="font-size: 18px; font-weight: 700; color: ${settings.actualPrizeReturnRate <= settings.actualReturnRateLimit ? 'var(--sf-green)' : 'var(--sf-red)'};">${settings.actualPrizeReturnRate.toFixed(1)}%</div>
-                            </div>
-                        </div>
-                        <div style="font-size: 12px; color: var(--sf-gray); margin-top: 8px; font-style: italic;">
-                            💡 実質還元率 = カード景品のみの還元率（ハズレを除く）
-                        </div>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">総売上</div>
-                        <div style="font-size: 18px; font-weight: 600;">¥${totalValue.toLocaleString()}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">総還元額</div>
-                        <div style="font-size: 18px; font-weight: 600;">¥${totalReturnValue.toLocaleString()}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">景品還元額</div>
-                        <div style="font-size: 18px; font-weight: 600;">¥${prizeReturnValue.toLocaleString()}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 4px;">ハズレ還元額</div>
-                        <div style="font-size: 18px; font-weight: 600;">¥${lossReturnValue.toLocaleString()}</div>
-                    </div>
-                </div>
-            `;
-            document.getElementById('autoPreviewSummary').innerHTML = summaryHtml;
-
-            // 景品リストを作成
-            let prizesHtml = `<h4 style="margin-bottom: 12px;">当たり景品 (${autoCreatedPrizes.length.toLocaleString()}枚)</h4>`;
-
-            for (let rank = 1; rank <= 5; rank++) {
-                const rankPrizes = autoCreatedPrizes.filter(p => p.rank === rank);
-                if (rankPrizes.length === 0) continue;
-
-                prizesHtml += `<div style="margin-bottom: 16px;">`;
-                prizesHtml += `<div style="font-weight: 600; color: var(--sf-blue); margin-bottom: 8px;">${rank}等 (${rankPrizes.length.toLocaleString()}枚)</div>`;
-
-                rankPrizes.forEach((prize, index) => {
-                    const imageHtml = prize.image
-                        ? `<img src="${prize.image}" style="width: 50px; height: 75px; object-fit: cover; border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.1); margin-right: 12px;">`
-                        : `<div style="width: 50px; height: 75px; background: rgba(0, 0, 0, 0.05); border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 12px;">📦</div>`;
-
-                    prizesHtml += `
-                        <div style="background: white; padding: 12px; border-radius: var(--radius-md); margin-bottom: 8px; border: 1px solid rgba(0, 0, 0, 0.08); display: flex; align-items: center;">
-                            ${imageHtml}
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; margin-bottom: 4px;">${prize.name}</div>
-                                <div style="font-size: 13px; color: var(--sf-gray);">
-                                    仕入れ: ¥${prize.purchasePrice.toLocaleString()} / 還元価値: ¥${prize.value.toLocaleString()}
-                                </div>
-                            </div>
-                            <button onclick="replacePrizeInPreview(${autoCreatedPrizes.indexOf(prize)})" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px; white-space: nowrap;">
-                                🔄 変更
-                            </button>
-                        </div>
-                    `;
-                });
-                prizesHtml += `</div>`;
-            }
-
-            // ハズレ情報を追加
-            const lossTypesText = settings.lossTypes === 1 ? '1種類（最低保証は自動計算）' : `${settings.lossTypes}種類`;
-            prizesHtml += `
-                <div style="background: rgba(142, 142, 147, 0.1); padding: 16px; border-radius: var(--radius-md); border: 1px solid rgba(142, 142, 147, 0.3); margin-top: 16px;">
-                    <div style="font-weight: 600; color: var(--sf-gray); margin-bottom: 8px;">ハズレ（${lossTypesText}）</div>
-                    <div style="font-size: 13px; color: var(--sf-gray);">
-                        <div>総枚数: ${settings.lossCount.toLocaleString()}枚</div>
-                        <div>種類数: ${settings.lossTypes}種類</div>
-                        <div>最低保証: ¥${settings.minGuarantee.toLocaleString()} ${settings.lossTypes === 1 ? '<span style="color: var(--sf-orange);">(自動計算)</span>' : ''}</div>
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(142, 142, 147, 0.2);">
-                            合計還元額: ¥${lossReturnValue.toLocaleString()}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('autoPreviewPrizes').innerHTML = prizesHtml;
-        }
-
-        // 設定画面に戻る
-        function backToSettings() {
-            document.getElementById('autoCreatePreview').style.display = 'none';
-            document.getElementById('autoCreateSettings').style.display = 'block';
-        }
-
-        // プレビュー内の景品を変更
-        function replacePrizeInPreview(index) {
-            const prize = autoCreatedPrizes[index];
-            if (!prize) return;
-
-            // 置き換えモードを設定
-            isReplacingAutoCreateMode = true;
-            autoCreateReplaceIndex = index;
-            targetPrizeValue = prize.value; // 元の景品の還元価値を記憶
-
-            // 景品マスターモーダルを開く
-            const modal = document.getElementById('selectPrizeMasterModal');
-            modal.style.display = 'flex';
-
-            // 検索条件をリセット
-            const searchInput = document.getElementById('modalSearchText');
-            if (searchInput) searchInput.value = '';
-
-            // ソート条件を還元価値順に設定
-            const sortBySelect = document.getElementById('modalSortBy');
-            if (sortBySelect) sortBySelect.value = 'price';
-
-            // モーダルの景品リストを更新
-            updatePrizeMasterSelectList();
-        }
-
-        // 景品マスターから選択した景品で置き換え
-        function selectPrizeForReplacement(prizeId, previewIndex) {
-            const selectedPrize = prizeMaster.find(p => p.id === prizeId);
-            if (!selectedPrize) return;
-
-            const oldPrize = autoCreatedPrizes[previewIndex];
-
-            // 景品を置き換え
-            autoCreatedPrizes[previewIndex] = {
-                id: Date.now() + Math.random(),
-                name: selectedPrize.name,
-                rank: oldPrize.rank, // 等級は維持
-                purchasePrice: selectedPrize.purchasePrice,
-                value: selectedPrize.value,
-                count: 1,
-                image: selectedPrize.image || null,
-                masterPrizeId: selectedPrize.id
-            };
-
-            // プレビューを更新
-            updatePreviewDisplay();
-
-            // 置き換えモードをリセット
-            isReplacingAutoCreateMode = false;
-            autoCreateReplaceIndex = -1;
-            targetPrizeValue = null;
-
-            // モーダルを閉じる
-            const modal = document.getElementById('selectPrizeMasterModal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        // オリパ登録確認
-        function confirmRegisterOripa() {
-            if (autoCreatedPrizes.length === 0) {
-                alert('登録できるオリパがありません');
-                return;
-            }
-
-            if (!confirm('このオリパをメインタブに登録しますか？')) {
-                return;
-            }
-
-            // メインタブの設定を更新
-            const settings = autoCreatedSettings;
-            document.getElementById('packPrice').value = settings.packPrice;
-            document.getElementById('totalPacks').value = settings.totalPacks;
-            document.getElementById('minGuaranteeValue').value = settings.minGuarantee;
-
-            // 景品を適用
-            prizes = [...autoCreatedPrizes];
-
-            // ハズレを生成
-            losses = [];
-            const lossTypes = settings.lossTypes || 1;
-            const totalLossCount = settings.lossCount;
-            const minGuarantee = settings.minGuarantee;
-
-            if (lossTypes === 1) {
-                // 1種類の場合
-                losses.push({
-                    id: Date.now(),
-                    name: 'ハズレ',
-                    value: minGuarantee,
-                    count: totalLossCount
-                });
-            } else {
-                // 2種類以上の場合は均等に分配
-                const countPerType = Math.floor(totalLossCount / lossTypes);
-                const remainder = totalLossCount % lossTypes;
-
-                for (let i = 0; i < lossTypes; i++) {
-                    const count = i === 0 ? countPerType + remainder : countPerType;
-                    if (count > 0) {
-                        losses.push({
-                            id: Date.now() + i,
-                            name: `ハズレ${i + 1}`,
-                            value: minGuarantee,
-                            count: count
-                        });
-                    }
-                }
-            }
-
-            // データを保存
-            saveData();
-
-            // 表示を更新
-            updatePrizeList();
-            updateLossList();
-            updateTotalValue();
-
-            // メインタブに切り替え
-            switchTab('main');
-            document.querySelector('.tab-button:nth-child(1)').classList.add('active');
-            document.querySelector('.tab-button:nth-child(3)').classList.remove('active');
-
-            alert('オリパをメインタブに登録しました！');
-
-            // プレビューを閉じて設定画面に戻す
-            document.getElementById('autoCreatePreview').style.display = 'none';
-            document.getElementById('autoCreateSettings').style.display = 'block';
-        }
-
         // ページ読み込み時に景品マスターをlocalStorageから読み込む
         document.addEventListener('DOMContentLoaded', function() {
             // まずlocalStorageから読み込み（即座に表示）
@@ -8307,18 +7696,53 @@
             console.log('Auth:', typeof auth !== 'undefined' ? 'OK' : 'NG');
             console.log('認証状態:', isAuthReady ? '認証済み' : '未認証');
             console.log('現在のユーザー:', auth.currentUser ? auth.currentUser.uid : 'なし');
-            console.log('オリパ数:', oripas.length);
+            console.log('ローカルのオリパ数:', oripas.length);
 
             // クラウドからデータを確認
             if (typeof database !== 'undefined' && isAuthReady) {
+                // オリパデータを確認
+                console.log('\n--- オリパデータ(/oripas) ---');
                 database.ref('oripas').once('value').then((snapshot) => {
                     const data = snapshot.val();
-                    console.log('クラウドのデータ:', data ? `あり (${data.oripas?.length || 0}件)` : 'なし');
-                    if (data && data.updatedAt) {
-                        console.log('クラウド最終更新:', new Date(data.updatedAt).toLocaleString('ja-JP'));
+                    console.log('クラウドのデータ:', data ? 'あり' : 'なし');
+                    if (data) {
+                        console.log('オリパ件数:', data.oripas?.length || 0, '件');
+                        if (data.updatedAt) {
+                            console.log('最終更新:', new Date(data.updatedAt).toLocaleString('ja-JP'));
+                        }
+                        if (data.oripas && data.oripas.length > 0) {
+                            console.log('オリパ一覧:');
+                            data.oripas.forEach((o, i) => {
+                                console.log(`  [${i}] ${o.name} (ID: ${o.id}, 型: ${typeof o.id})`);
+                            });
+                        }
                     }
                 }).catch((error) => {
-                    console.error('クラウドデータの確認に失敗:', error);
+                    console.error('オリパデータの確認に失敗:', error);
+                });
+
+                // 設定データを確認
+                console.log('\n--- 設定データ(/configs) ---');
+                database.ref('configs').once('value').then((snapshot) => {
+                    const configs = snapshot.val();
+                    console.log('クラウドの設定:', configs ? 'あり' : 'なし');
+                    if (configs) {
+                        const keys = Object.keys(configs);
+                        console.log('設定件数:', keys.length, '件');
+                        if (keys.length > 0) {
+                            console.log('設定一覧:');
+                            keys.slice(0, 10).forEach((key, i) => {
+                                const cfg = configs[key];
+                                const date = cfg.updatedAt ? new Date(cfg.updatedAt).toLocaleString('ja-JP') : '不明';
+                                console.log(`  [${i}] ${key} (更新: ${date})`);
+                            });
+                            if (keys.length > 10) {
+                                console.log(`  ... 他${keys.length - 10}件`);
+                            }
+                        }
+                    }
+                }).catch((error) => {
+                    console.error('設定データの確認に失敗:', error);
                 });
             }
             console.log('===========================');
@@ -8744,8 +8168,13 @@ function loadConfigFromURL() {
     if (configData && configData.data) {
       loadConfig(configData.data);
       currentCloudConfigId = configId;
-      document.getElementById('updateCloudBtn').disabled = false;
-      document.getElementById('cloudConfigName').value = configId;
+
+      // UIを更新
+      const updateBtn = document.getElementById('updateCloudBtn');
+      if (updateBtn) updateBtn.disabled = false;
+
+      const nameInput = document.getElementById('cloudConfigName');
+      if (nameInput) nameInput.value = configId;
 
       // セレクトボックスの選択状態も更新
       const selectBox = document.getElementById('cloudConfigList');
@@ -8897,6 +8326,85 @@ function showShareLinkModal(shareUrl) {
   document.body.appendChild(modal);
 }
 
+// 現在の設定から共有リンクを生成
+function generateShareLinkFromCurrent() {
+  // 現在の設定を取得
+  const config = getCurrentConfig();
+
+  // タイムスタンプベースのユニークなIDを生成
+  const configId = 'config_' + Date.now();
+
+  updateShareStatus('⏳ 共有リンクを生成中...');
+
+  // Firebaseに保存
+  database.ref('configs/' + configId).set({
+    data: config,
+    updatedAt: Date.now(),
+    createdBy: 'user'
+  }).then(() => {
+    // 共有リンクを生成
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?config=${encodeURIComponent(configId)}`;
+
+    // クリップボードにコピー
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      updateShareStatus('✅ リンクをクリップボードにコピーしました');
+
+      // 成功ポップアップを表示（簡易版）
+      const popup = document.createElement('div');
+      popup.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #34C759, #30D158);
+        color: white;
+        padding: 20px 24px;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(52, 199, 89, 0.3);
+        z-index: 10000;
+        max-width: 350px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      `;
+
+      popup.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+          <div style="font-size: 24px;">✅</div>
+          <div style="font-size: 16px; font-weight: 600;">リンクをコピーしました！</div>
+        </div>
+        <div style="font-size: 13px; opacity: 0.9; margin-bottom: 12px;">
+          この設定の共有リンクがクリップボードにコピーされました
+        </div>
+        <div style="font-size: 11px; opacity: 0.8; word-break: break-all; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 8px;">
+          ${shareUrl}
+        </div>
+      `;
+
+      document.body.appendChild(popup);
+
+      // 3秒後に自動で消える
+      setTimeout(() => {
+        popup.style.opacity = '0';
+        popup.style.transform = 'translateX(400px)';
+        setTimeout(() => {
+          if (popup.parentElement) {
+            document.body.removeChild(popup);
+          }
+        }, 300);
+      }, 3000);
+
+    }).catch(() => {
+      updateShareStatus('❌ コピーに失敗しました');
+      // フォールバック: モーダル表示
+      alert(`共有リンク:\n${shareUrl}\n\n手動でコピーしてください。`);
+    });
+
+  }).catch((error) => {
+    console.error('❌ 共有リンクの生成に失敗しました:', error);
+    updateShareStatus('❌ 生成に失敗しました');
+    alert(`❌ 共有リンクの生成に失敗しました。\n\nエラー: ${error.message}`);
+  });
+}
+
 // モーダルからのコピー処理
 function copyFromModal(shareUrl, buttonElement) {
   navigator.clipboard.writeText(shareUrl).then(() => {
@@ -8939,6 +8447,8 @@ function updateShareStatus(message) {
 // 共有ボタンの状態を更新
 function updateShareButtonState() {
   const shareBtn = document.getElementById('shareBtn');
+  if (!shareBtn) return;
+
   if (currentCloudConfigId) {
     shareBtn.disabled = false;
     shareBtn.textContent = `📋 「${currentCloudConfigId}」のリンクをコピー`;
@@ -9122,22 +8632,22 @@ function displayWeeklyStats(stats) {
     <div style="display: grid; gap: 8px;">
       <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
         <span style="color: var(--sf-gray);">提供価値合計</span>
-        <span style="font-weight: 600;">¥${stats.totalValue.toLocaleString()}</span>
+        <span style="font-weight: 600;">¥${formatNumber(stats.totalValue)}</span>
       </div>
 
       <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
         <span style="color: var(--sf-gray);">提供価値平均</span>
-        <span style="font-weight: 600;">¥${Math.round(stats.avgValue).toLocaleString()}</span>
+        <span style="font-weight: 600;">¥${formatNumber(Math.round(stats.avgValue))}</span>
       </div>
 
       <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
         <span style="color: var(--sf-gray);">仕入れ合計</span>
-        <span style="font-weight: 600; color: var(--sf-orange);">¥${stats.totalPurchase.toLocaleString()}</span>
+        <span style="font-weight: 600; color: var(--sf-orange);">¥${formatNumber(stats.totalPurchase)}</span>
       </div>
 
       <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
         <span style="color: var(--sf-gray);">仕入れ平均</span>
-        <span style="font-weight: 600; color: var(--sf-orange);">¥${Math.round(stats.avgPurchase).toLocaleString()}</span>
+        <span style="font-weight: 600; color: var(--sf-orange);">¥${formatNumber(Math.round(stats.avgPurchase))}</span>
       </div>
 
       <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
@@ -9152,27 +8662,27 @@ function displayWeeklyStats(stats) {
 
       <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
         <span style="color: var(--sf-gray);">総口数合計</span>
-        <span style="font-weight: 600;">${stats.totalPacks.toLocaleString()}口</span>
+        <span style="font-weight: 600;">${formatNumber(stats.totalPacks)}口</span>
       </div>
 
       <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
         <span style="color: var(--sf-gray);">平均口数</span>
-        <span style="font-weight: 600;">${Math.round(stats.avgPacks).toLocaleString()}口</span>
+        <span style="font-weight: 600;">${formatNumber(Math.round(stats.avgPacks))}口</span>
       </div>
 
       <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
         <span style="color: var(--sf-gray);">当選者総数</span>
-        <span style="font-weight: 600; color: var(--sf-purple);">${stats.totalWinners.toLocaleString()}人</span>
+        <span style="font-weight: 600; color: var(--sf-purple);">${formatNumber(stats.totalWinners)}人</span>
       </div>
 
       <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
         <span style="color: var(--sf-gray);">景品総枚数</span>
-        <span style="font-weight: 600;">${stats.totalPrizeCount.toLocaleString()}枚</span>
+        <span style="font-weight: 600;">${formatNumber(stats.totalPrizeCount)}枚</span>
       </div>
 
       <div style="display: flex; justify-content: space-between; padding: 8px 0;">
         <span style="color: var(--sf-gray);">ハズレ総枚数</span>
-        <span style="font-weight: 600;">${stats.totalLossCount.toLocaleString()}枚</span>
+        <span style="font-weight: 600;">${formatNumber(stats.totalLossCount)}枚</span>
       </div>
     </div>
 
@@ -9299,7 +8809,7 @@ function displayActiveOripaStats(stats, activeOripas) {
     <div style="background: white; padding: 16px; border-radius: 8px;">
       <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
         <span style="color: var(--sf-gray);">オリパ数</span>
-        <span style="font-weight: 600;">${stats.totalOripaCount}件</span>
+        <span style="font-weight: 600;">${formatNumber(stats.totalOripaCount)}件</span>
       </div>
 
       <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sf-gray-5);">
@@ -9314,7 +8824,7 @@ function displayActiveOripaStats(stats, activeOripas) {
 
       <div style="display: flex; justify-content: space-between; padding: 8px 0;">
         <span style="color: var(--sf-gray);">総仕入れ価格</span>
-        <span style="font-weight: 600;">¥${stats.totalPurchase.toLocaleString()}</span>
+        <span style="font-weight: 600;">¥${formatNumber(stats.totalPurchase)}</span>
       </div>
     </div>
 
@@ -9529,7 +9039,7 @@ function displayScoreDetails(scoreData) {
         </div>
         <div class="score-detail-item">
             <span class="score-detail-label">オリパ提供価値</span>
-            <span class="score-detail-value">¥${scoreData.totalValue.toLocaleString()}</span>
+            <span class="score-detail-value">¥${formatNumber(scoreData.totalValue)}</span>
         </div>
         <div class="score-detail-item">
             <span class="score-detail-label">総口数</span>
