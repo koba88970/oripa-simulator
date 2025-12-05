@@ -4190,10 +4190,14 @@
             // 仮装景品モードの場合、ポイント還元価値を仕入れ価格にも自動コピー
             if (input.id === 'prizeValue') {
                 const isTemporary = document.getElementById('isTemporaryPrize')?.checked;
+                console.log('📝 ポイント還元価値が変更されました:', value, '/ 仮装景品モード:', isTemporary);
                 if (isTemporary) {
                     const tempPurchasePriceInput = document.getElementById('tempPrizePurchasePrice');
                     if (tempPurchasePriceInput) {
                         tempPurchasePriceInput.value = value;
+                        console.log('✅ 仕入れ価格に自動コピーしました:', value);
+                    } else {
+                        console.warn('⚠️ 仕入れ価格入力フィールドが見つかりません');
                     }
                 }
             }
@@ -4229,6 +4233,7 @@
 
             if (isTemporary) {
                 // 仮装景品モード
+                console.log('🔄 仮装景品モードON');
                 if (selectButton) {
                     selectButton.disabled = true;
                     selectButton.style.opacity = '0.5';
@@ -4242,16 +4247,25 @@
                 if (tempPurchasePriceField) {
                     tempPurchasePriceField.style.display = 'block';
                 }
-                // 既にポイント還元価値が入力されている場合は、仕入れ価格にもコピー
+                // ポイント還元価値を仕入れ価格にコピー
                 const prizeValueInput = document.getElementById('prizeValue');
                 const tempPurchasePriceInput = document.getElementById('tempPrizePurchasePrice');
-                if (prizeValueInput && tempPurchasePriceInput && prizeValueInput.value) {
-                    tempPurchasePriceInput.value = prizeValueInput.value;
+                if (prizeValueInput && tempPurchasePriceInput) {
+                    // 既に値がある場合はコピー
+                    if (prizeValueInput.value) {
+                        tempPurchasePriceInput.value = prizeValueInput.value;
+                        console.log('✅ ポイント還元価値を仕入れ価格にコピーしました:', prizeValueInput.value);
+                    } else {
+                        // 値がない場合は空にする（プレースホルダーが表示される）
+                        tempPurchasePriceInput.value = '';
+                        console.log('ℹ️ ポイント還元価値が未入力のため、仕入れ価格は空です');
+                    }
                 }
                 // 選択をクリア
                 selectedMasterPrizeForMain = null;
             } else {
                 // 通常モード
+                console.log('🔄 仮装景品モードOFF');
                 if (selectButton) {
                     selectButton.disabled = false;
                     selectButton.style.opacity = '1';
@@ -4261,6 +4275,11 @@
                 // 仮装景品用の仕入れ価格フィールドを非表示
                 if (tempPurchasePriceField) {
                     tempPurchasePriceField.style.display = 'none';
+                }
+                // 仕入れ価格フィールドをクリア
+                const tempPurchasePriceInput = document.getElementById('tempPrizePurchasePrice');
+                if (tempPurchasePriceInput) {
+                    tempPurchasePriceInput.value = '';
                 }
             }
         }
@@ -4288,7 +4307,19 @@
 
             if (isTemporary) {
                 // 仮装景品の場合
-                const tempPurchasePrice = parseFormattedNumber(document.getElementById('tempPrizePurchasePrice').value) || 0;
+                const tempPurchasePriceInput = document.getElementById('tempPrizePurchasePrice');
+                const tempPurchasePrice = parseFormattedNumber(tempPurchasePriceInput.value) || 0;
+
+                console.log('📦 仮装景品を追加:', {
+                    name: name,
+                    purchasePrice: tempPurchasePrice,
+                    value: value,
+                    inputValue: tempPurchasePriceInput.value
+                });
+
+                if (tempPurchasePrice === 0) {
+                    console.warn('⚠️ 仮装景品の仕入れ価格が0です。ポイント還元価値と同じ値を設定することをお勧めします。');
+                }
 
                 prize = {
                     id: Date.now(),
