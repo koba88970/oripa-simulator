@@ -8256,41 +8256,65 @@ function initializeAuth() {
 
 // 現在の設定を取得する関数
 function getCurrentConfig() {
-  return {
+  const memoValue = document.getElementById('oripaMemo')?.value || '';
+  const minGuaranteeValue = document.getElementById('minGuaranteeValue')?.value;
+  const enableMinGuaranteeAuto = document.getElementById('enableMinGuaranteeAuto')?.checked || false;
+
+  console.log('📝 メモを取得:', memoValue);
+  console.log('💰 最低保証価値を取得:', minGuaranteeValue);
+  console.log('✅ 最低保証自動併用を取得:', enableMinGuaranteeAuto);
+
+  const config = {
     oripaName: document.getElementById('oripaName').value,
     packPrice: document.getElementById('packPrice').value,
     totalPacks: document.getElementById('totalPacks').value,
     releaseDate: document.getElementById('releaseDate').value,
     endDate: document.getElementById('endDate').value,
-    minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
-    memo: document.getElementById('oripaMemo')?.value || '',
+    minGuaranteeValue: minGuaranteeValue,
+    memo: memoValue,
     isTemporaryOripa: document.getElementById('isTemporaryOripa')?.checked || false,
-    enableMinGuaranteeAuto: document.getElementById('enableMinGuaranteeAuto')?.checked || false,
+    enableMinGuaranteeAuto: enableMinGuaranteeAuto,
     prizes: [...prizes],
     losses: [...losses]
   };
+
+  console.log('💾 保存する設定:', config);
+  return config;
 }
 
 // 設定を読み込む関数
 function loadConfig(config) {
+  console.log('📥 loadConfig 開始:', config);
+
   document.getElementById('oripaName').value = config.oripaName || '';
   document.getElementById('packPrice').value = config.packPrice || '40000';
   document.getElementById('totalPacks').value = config.totalPacks || '100';
   document.getElementById('releaseDate').value = config.releaseDate || '';
   document.getElementById('endDate').value = config.endDate || '';
-  document.getElementById('minGuaranteeValue').value = config.minGuaranteeValue || '1';
+
+  // 最低保証価値を復元
+  const minGuaranteeValue = config.minGuaranteeValue || '1';
+  document.getElementById('minGuaranteeValue').value = minGuaranteeValue;
+  console.log('💰 最低保証価値を復元:', minGuaranteeValue);
 
   // メモを復元
   if (document.getElementById('oripaMemo')) {
-    document.getElementById('oripaMemo').value = config.memo || '';
+    const memoValue = config.memo || '';
+    document.getElementById('oripaMemo').value = memoValue;
+    console.log('📝 メモを復元:', memoValue);
   }
 
   // 仮装オリパの設定を復元
   if (document.getElementById('isTemporaryOripa')) {
     document.getElementById('isTemporaryOripa').checked = config.isTemporaryOripa || false;
+    console.log('📝 仮装オリパを復元:', config.isTemporaryOripa || false);
   }
+
+  // 最低保証自動併用を復元
   if (document.getElementById('enableMinGuaranteeAuto')) {
-    document.getElementById('enableMinGuaranteeAuto').checked = config.enableMinGuaranteeAuto || false;
+    const enableMinGuaranteeAuto = config.enableMinGuaranteeAuto || false;
+    document.getElementById('enableMinGuaranteeAuto').checked = enableMinGuaranteeAuto;
+    console.log('✅ 最低保証自動併用を復元:', enableMinGuaranteeAuto);
   }
 
   if (config.prizes) {
@@ -8517,22 +8541,27 @@ function saveToCloudWithName() {
   const config = getCurrentConfig();
   updateCloudStatus('保存中...');
 
-  // 表示名と内部IDを両方保存
-  database.ref('configs/' + internalId).set({
+  const saveData = {
     data: config,
     displayName: displayName,  // ユーザーが入力した元の名前（. / 含む）
     internalId: internalId,    // サニタイズされた内部ID
     updatedAt: Date.now(),
     createdBy: 'user',
     version: '1.0'
-  }).then(() => {
+  };
+
+  console.log('🔥 Firebaseに保存するデータ:', saveData);
+
+  // 表示名と内部IDを両方保存
+  database.ref('configs/' + internalId).set(saveData).then(() => {
     currentCloudConfigId = internalId;
     document.getElementById('updateCloudBtn').disabled = false;
     updateCloudStatus(`「${displayName}」を保存しました`);
     console.log(`✅ 保存完了:`, {
       displayName: displayName,
       internalId: internalId,
-      path: 'configs/' + internalId
+      path: 'configs/' + internalId,
+      memo: config.memo
     });
     refreshCloudConfigList();
     document.getElementById('cloudConfigName').value = '';
@@ -8569,12 +8598,21 @@ function updateCloudConfig() {
   const config = getCurrentConfig();
   updateCloudStatus('更新中...');
 
-  // 既存のdisplayNameを保持しながら更新
-  database.ref('configs/' + currentCloudConfigId).update({
+  const updateData = {
     data: config,
     updatedAt: Date.now()
-  }).then(() => {
+  };
+
+  console.log('🔥 Firebaseを更新するデータ:', updateData);
+
+  // 既存のdisplayNameを保持しながら更新
+  database.ref('configs/' + currentCloudConfigId).update(updateData).then(() => {
     updateCloudStatus(`「${displayName}」を更新しました`);
+    console.log(`✅ 更新完了:`, {
+      displayName: displayName,
+      internalId: currentCloudConfigId,
+      memo: config.memo
+    });
     refreshCloudConfigList();
     // 集計を自動更新
     setTimeout(() => refreshWeeklyStats(), 500);
@@ -8602,7 +8640,11 @@ function loadSelectedCloudConfig() {
 
   database.ref('configs/' + selectedConfigId).once('value').then((snapshot) => {
     const configData = snapshot.val();
+    console.log('🔥 Firebaseから取得したデータ:', configData);
+
     if (configData && configData.data) {
+      console.log('📋 読み込む設定データ:', configData.data);
+      console.log('📝 読み込むメモ:', configData.data.memo);
       loadConfig(configData.data);
       currentCloudConfigId = selectedConfigId;
       document.getElementById('updateCloudBtn').disabled = false;
@@ -8611,6 +8653,7 @@ function loadSelectedCloudConfig() {
       const displayName = configData.displayName || selectedConfigId;
       document.getElementById('cloudConfigName').value = displayName;
       updateCloudStatus(`「${displayName}」を読み込みました`);
+      console.log(`✅ 読み込み完了: ${displayName}`);
     } else {
       updateCloudStatus('設定データが見つかりませんでした');
     }
