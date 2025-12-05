@@ -2022,7 +2022,10 @@
                     <!-- 保存セクション -->
                     <div class="form-group">
                         <label>設定名</label>
-                        <input type="text" id="cloudConfigName" placeholder="設定名を入力（例: ポケモンオリパA案）">
+                        <input type="text" id="cloudConfigName" placeholder="設定名を入力（例: ポケモンオリパA案、1.9賞金）" oninput="sanitizeConfigNameInput(this)">
+                        <div id="configNameWarning" style="font-size: 11px; color: var(--sf-blue); margin-top: 4px; display: none;">
+                            💡 保存時に使用できない文字は内部的に変換されますが、表示名はそのまま保持されます
+                        </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;">
                         <button class="btn btn-primary" onclick="saveToCloudWithName()" style="font-size: 12px;">
@@ -8558,7 +8561,10 @@ function updateCloudConfigSelectBox() {
     const date = new Date(config.updatedAt).toLocaleString('ja-JP');
     const option = document.createElement('option');
     option.value = configId;
-    option.textContent = `${configId} (${date})`;
+
+    // 表示名がある場合はそれを優先、なければ内部IDを表示
+    const displayName = config.displayName || configId;
+    option.textContent = `${displayName} (${date})`;
     selectBox.appendChild(option);
   });
 
@@ -8602,21 +8608,38 @@ function sanitizeFirebasePath(name) {
   return sanitized;
 }
 
+// 入力フィールドのリアルタイムサニタイズ（警告のみ、自動変換しない）
+function sanitizeConfigNameInput(input) {
+  const originalValue = input.value;
+  const sanitizedValue = sanitizeFirebasePath(originalValue);
+
+  // 値が変更される場合は警告を表示（ただし入力値は変更しない）
+  const warning = document.getElementById('configNameWarning');
+  if (warning) {
+    if (originalValue !== sanitizedValue && originalValue.length > 0) {
+      warning.style.display = 'block';
+      warning.textContent = '💡 保存時に使用できない文字は内部的に変換されますが、表示名はそのまま保持されます';
+    } else {
+      warning.style.display = 'none';
+    }
+  }
+}
+
 // 新規クラウド保存
 function saveToCloudWithName() {
-  const rawConfigName = document.getElementById('cloudConfigName').value.trim();
-  if (!rawConfigName) {
-    alert('設定名を入力してください');
+  const displayName = document.getElementById('cloudConfigName').value.trim();
+  if (!displayName) {
+    alert('❌ 設定名を入力してください');
     return;
   }
 
-  // 設定名をサニタイズ
-  const configName = sanitizeFirebasePath(rawConfigName);
+  // 内部ID（Firebaseのキー）をサニタイズ
+  const internalId = sanitizeFirebasePath(displayName);
 
-  // サニタイズ後に名前が変更された場合は通知
-  if (configName !== rawConfigName) {
-    console.log(`⚠️ 設定名をサニタイズしました: "${rawConfigName}" → "${configName}"`);
-    console.log('💡 Firebaseパスで使用できない文字（. # $ [ ] /）を置換しました');
+  // 設定名が空の場合（サニタイズ後に空になった場合）
+  if (!internalId) {
+    alert('❌ 有効な設定名を入力してください');
+    return;
   }
 
   // 認証完了を待つ
@@ -8627,8 +8650,8 @@ function saveToCloudWithName() {
   }
 
   // 同名の設定が既に存在するかチェック
-  if (cloudConfigs[configName]) {
-    if (!confirm(`「${configName}」という設定が既に存在します。上書きしますか？`)) {
+  if (cloudConfigs[internalId]) {
+    if (!confirm(`「${displayName}」という設定が既に存在します。上書きしますか？`)) {
       return;
     }
   }
@@ -8636,21 +8659,30 @@ function saveToCloudWithName() {
   const config = getCurrentConfig();
   updateCloudStatus('保存中...');
 
-  database.ref('configs/' + configName).set({
+  // 表示名と内部IDを両方保存
+  database.ref('configs/' + internalId).set({
     data: config,
+    displayName: displayName,  // ユーザーが入力した元の名前（. / 含む）
+    internalId: internalId,    // サニタイズされた内部ID
     updatedAt: Date.now(),
-    createdBy: 'user', // 将来的にユーザー管理を追加する場合
+    createdBy: 'user',
     version: '1.0'
   }).then(() => {
-    currentCloudConfigId = configName;
+    currentCloudConfigId = internalId;
     document.getElementById('updateCloudBtn').disabled = false;
-    updateCloudStatus(`「${configName}」を保存しました`);
+    updateCloudStatus(`「${displayName}」を保存しました`);
+    console.log(`✅ 保存完了:`, {
+      displayName: displayName,
+      internalId: internalId,
+      path: 'configs/' + internalId
+    });
     refreshCloudConfigList();
     document.getElementById('cloudConfigName').value = '';
     // 集計を自動更新
     setTimeout(() => refreshWeeklyStats(), 500);
   }).catch((error) => {
     updateCloudStatus('保存に失敗しました: ' + error.message);
+    console.error('❌ 保存エラー:', error);
   });
 }
 
@@ -8668,18 +8700,23 @@ function updateCloudConfig() {
     return;
   }
 
-  if (!confirm(`「${currentCloudConfigId}」を現在の設定で上書き更新しますか？`)) {
+  // 表示名を取得
+  const configData = cloudConfigs[currentCloudConfigId];
+  const displayName = configData?.displayName || currentCloudConfigId;
+
+  if (!confirm(`「${displayName}」を現在の設定で上書き更新しますか？`)) {
     return;
   }
 
   const config = getCurrentConfig();
   updateCloudStatus('更新中...');
 
+  // 既存のdisplayNameを保持しながら更新
   database.ref('configs/' + currentCloudConfigId).update({
     data: config,
     updatedAt: Date.now()
   }).then(() => {
-    updateCloudStatus(`「${currentCloudConfigId}」を更新しました`);
+    updateCloudStatus(`「${displayName}」を更新しました`);
     refreshCloudConfigList();
     // 集計を自動更新
     setTimeout(() => refreshWeeklyStats(), 500);
@@ -8711,8 +8748,11 @@ function loadSelectedCloudConfig() {
       loadConfig(configData.data);
       currentCloudConfigId = selectedConfigId;
       document.getElementById('updateCloudBtn').disabled = false;
-      document.getElementById('cloudConfigName').value = selectedConfigId;
-      updateCloudStatus(`「${selectedConfigId}」を読み込みました`);
+
+      // 表示名がある場合はそれを使用、なければ内部IDを使用
+      const displayName = configData.displayName || selectedConfigId;
+      document.getElementById('cloudConfigName').value = displayName;
+      updateCloudStatus(`「${displayName}」を読み込みました`);
     } else {
       updateCloudStatus('設定データが見つかりませんでした');
     }
@@ -8736,7 +8776,11 @@ function deleteSelectedCloudConfig() {
     return;
   }
 
-  if (!confirm(`「${selectedConfigId}」を削除しますか？この操作は取り消せません。`)) {
+  // 表示名を取得
+  const configData = cloudConfigs[selectedConfigId];
+  const displayName = configData?.displayName || selectedConfigId;
+
+  if (!confirm(`「${displayName}」を削除しますか？この操作は取り消せません。`)) {
     return;
   }
 
@@ -8748,7 +8792,7 @@ function deleteSelectedCloudConfig() {
       document.getElementById('updateCloudBtn').disabled = true;
       document.getElementById('cloudConfigName').value = '';
     }
-    updateCloudStatus(`「${selectedConfigId}」を削除しました`);
+    updateCloudStatus(`「${displayName}」を削除しました`);
     refreshCloudConfigList();
   }).catch((error) => {
     updateCloudStatus('削除に失敗しました: ' + error.message);
