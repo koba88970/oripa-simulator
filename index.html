@@ -6035,7 +6035,7 @@
 
             if (totalPacks > 0) {
                 const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
-                const remainingSlots = totalPacks - prizesTotalCount;
+                let remainingSlots = totalPacks - prizesTotalCount;
 
                 console.log('ガチャプール生成デバッグ:', {
                     totalPacks: totalPacks,
@@ -6045,6 +6045,9 @@
 
                 // 手動ハズレが設定されている場合
                 if (losses.length > 0) {
+                    const manualLossCount = losses.reduce((sum, loss) => sum + loss.count, 0);
+                    console.log('手動ハズレ追加:', { count: manualLossCount });
+
                     losses.forEach(loss => {
                         console.log(`${loss.name} 生成:`, { count: loss.count, value: loss.value });
                         for (let j = 0; j < loss.count; j++) {
@@ -6058,9 +6061,20 @@
                             });
                         }
                     });
-                } else if (remainingSlots > 0) {
-                    // 自動計算モード
+
+                    // 手動ハズレを追加した後の残りスロット数を再計算
+                    remainingSlots = remainingSlots - manualLossCount;
+                    console.log('手動ハズレ追加後の残りスロット:', remainingSlots);
+                }
+
+                // 残りスロットを最低保証で埋める
+                // 条件: (1) 手動ハズレがない、または (2) 「手動ハズレと最低保証を併用」がON
+                const enableMinGuaranteeAuto = document.getElementById('enableMinGuaranteeAuto')?.checked || false;
+                const shouldFillWithMinGuarantee = (losses.length === 0) || enableMinGuaranteeAuto;
+
+                if (remainingSlots > 0 && shouldFillWithMinGuarantee) {
                     const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
+                    console.log(`最低保証でハズレを自動生成: ${remainingSlots}個 (価値: ${adjustedMinValue}円)`);
 
                     for (let j = 0; j < remainingSlots; j++) {
                         gachaPool.push({
@@ -6072,8 +6086,10 @@
                             }
                         });
                     }
-                } else {
-                    console.log('ハズレ生成スキップ:', { remainingSlots, reason: 'remainingSlots <= 0' });
+                } else if (remainingSlots > 0) {
+                    console.warn(`⚠️ 残り${remainingSlots}スロットが未割り当てです。「💡 手動ハズレと最低保証を併用する」をONにすることを推奨します。`);
+                } else if (remainingSlots < 0) {
+                    console.error(`❌ エラー: 景品とハズレの合計が総口数を超えています（超過数: ${Math.abs(remainingSlots)}）`);
                 }
             }
             
@@ -6282,13 +6298,25 @@
 
         // 景品マスターをFirebaseに保存
         function savePrizeMasterToCloud() {
+            // まずlocalStorageに保存（常に実行）
+            try {
+                localStorage.setItem(PRIZE_MASTER_STORAGE_KEY, JSON.stringify(prizeMaster));
+                console.log('💾 景品マスターをlocalStorageに保存しました');
+            } catch (e) {
+                console.error('❌ localStorageへの保存に失敗:', e);
+            }
+
+            // Firebaseへの保存を試行
             if (typeof database === 'undefined') {
-                console.warn('Firebaseが初期化されていません');
+                console.warn('⚠️ Firebaseが初期化されていません（localStorageのみ保存）');
+                updateSyncStatus('💾 ローカル保存済み');
                 return;
             }
 
             // 認証完了を待つ
             if (!isAuthReady) {
+                console.log('⏳ Firebase認証を待っています...');
+                updateSyncStatus('⏳ 認証待ち');
                 waitForAuth(() => savePrizeMasterToCloud());
                 return;
             }
@@ -6301,23 +6329,23 @@
                 };
 
                 database.ref('prizeMaster').set(data).then(() => {
-                    console.log('景品マスターをクラウドに保存しました');
+                    console.log('✅ 景品マスターをクラウドに保存しました');
                     updateSyncStatus('✅ クラウドに保存済み');
                 }).catch((error) => {
-                    console.error('Firebaseへの保存に失敗しました:', error);
-                    console.error('エラー詳細:', error.code, error.message);
+                    console.error('❌ Firebaseへの保存に失敗しました:', error.code || error.message);
 
-                    let errorMsg = '❌ 保存失敗';
                     if (error.code === 'PERMISSION_DENIED') {
-                        errorMsg = '❌ 権限がありません';
-                        console.error('⚠️ Firebase Consoleでデータベースルールを確認してください');
-                        console.error('ルール例: { "rules": { "prizeMaster": { ".read": "auth != null", ".write": "auth != null" } } }');
-                        alert('❌ クラウド保存に失敗しました\n\nFirebase Realtime Databaseのルール設定を確認してください。\n\n手順：\n1. Firebase Console を開く\n2. Realtime Database > ルール\n3. 認証済みユーザーの読み書きを許可する');
+                        console.warn('⚠️ クラウド保存の権限がありません（localStorageには保存済み）');
+                        console.info('💡 Firebase Consoleでデータベースルールを確認してください');
+                        console.info('ルール例: { "rules": { ".read": "auth != null", ".write": "auth != null" } }');
+                        updateSyncStatus('💾 ローカル保存済み');
+                    } else {
+                        updateSyncStatus('❌ 保存失敗');
                     }
-                    updateSyncStatus(errorMsg);
                 });
             } catch (e) {
-                console.error('クラウド保存エラー:', e);
+                console.error('❌ クラウド保存エラー:', e);
+                updateSyncStatus('❌ 保存エラー');
             }
         }
 
@@ -6348,13 +6376,23 @@
 
         // 仮装景品マスターをFirebaseに保存
         function saveTemporaryPrizeMasterToCloud() {
+            // まずlocalStorageに保存（常に実行）
+            try {
+                localStorage.setItem(TEMPORARY_PRIZE_MASTER_STORAGE_KEY, JSON.stringify(temporaryPrizeMaster));
+                console.log('💾 仮装景品マスターをlocalStorageに保存しました');
+            } catch (e) {
+                console.error('❌ localStorageへの保存に失敗:', e);
+            }
+
+            // Firebaseへの保存を試行
             if (typeof database === 'undefined') {
-                console.warn('Firebaseが初期化されていません');
+                console.warn('⚠️ Firebaseが初期化されていません（localStorageのみ保存）');
                 return;
             }
 
             // 認証完了を待つ
             if (!isAuthReady) {
+                console.log('⏳ Firebase認証を待っています...');
                 waitForAuth(() => saveTemporaryPrizeMasterToCloud());
                 return;
             }
@@ -6367,12 +6405,17 @@
                 };
 
                 database.ref('temporaryPrizeMaster').set(data).then(() => {
-                    console.log('仮装景品マスターをクラウドに保存しました');
+                    console.log('✅ 仮装景品マスターをクラウドに保存しました');
                 }).catch((error) => {
-                    console.error('仮装景品マスターのFirebaseへの保存に失敗しました:', error);
+                    if (error.code === 'PERMISSION_DENIED') {
+                        console.warn('⚠️ クラウド保存の権限がありません（localStorageには保存済み）');
+                        console.info('💡 Firebase Consoleでデータベースルールを確認してください');
+                    } else {
+                        console.error('❌ 仮装景品マスターのクラウド保存に失敗:', error.code || error.message);
+                    }
                 });
             } catch (e) {
-                console.error('仮装景品マスターのクラウド保存エラー:', e);
+                console.error('❌ 仮装景品マスターのクラウド保存エラー:', e);
             }
         }
 
@@ -6380,6 +6423,8 @@
         function loadTemporaryPrizeMasterFromCloud() {
             if (typeof database === 'undefined') {
                 console.warn('Firebaseが初期化されていません');
+                // localStorageから読み込む
+                loadTemporaryPrizeMasterFromLocalStorage();
                 return;
             }
 
@@ -6396,13 +6441,35 @@
                         console.error('localStorageへの保存に失敗:', e);
                     }
 
-                    console.log(`仮装景品マスターを読み込みました（${temporaryPrizeMaster.length}件）`);
+                    console.log(`✅ 仮装景品マスターをクラウドから読み込みました（${temporaryPrizeMaster.length}件）`);
                 } else {
-                    console.log('仮装景品マスターのクラウドデータがありません');
+                    console.log('ℹ️ 仮装景品マスターのクラウドデータがありません（localStorageから読み込みます）');
+                    // クラウドにデータがない場合はlocalStorageから読み込む
+                    loadTemporaryPrizeMasterFromLocalStorage();
                 }
             }).catch((error) => {
-                console.error('仮装景品マスターの読み込みに失敗しました:', error);
+                console.error('❌ 仮装景品マスターの読み込みに失敗しました:', error.code || error.message);
+                // エラー時はlocalStorageから読み込む
+                console.log('💾 localStorageから仮装景品マスターを読み込みます');
+                loadTemporaryPrizeMasterFromLocalStorage();
             });
+        }
+
+        // localStorageから仮装景品マスターを読み込む
+        function loadTemporaryPrizeMasterFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem(TEMPORARY_PRIZE_MASTER_STORAGE_KEY);
+                if (saved) {
+                    temporaryPrizeMaster = JSON.parse(saved);
+                    console.log(`✅ 仮装景品マスターをlocalStorageから読み込みました（${temporaryPrizeMaster.length}件）`);
+                } else {
+                    console.log('ℹ️ localStorageに仮装景品マスターがありません（新規作成）');
+                    temporaryPrizeMaster = [];
+                }
+            } catch (e) {
+                console.error('❌ localStorageからの読み込みに失敗:', e);
+                temporaryPrizeMaster = [];
+            }
         }
 
         // 景品マスターをFirebaseから読み込み（初回専用）
@@ -8512,12 +8579,44 @@ function updateCloudStatus(message) {
   }, 3000);
 }
 
+// Firebase パス名をサニタイズする関数
+function sanitizeFirebasePath(name) {
+  if (!name) return '';
+
+  // Firebaseで使用できない文字を除去または置換
+  // . # $ [ ] / は使用不可
+  let sanitized = name
+    .replace(/\./g, '_')  // ドットをアンダースコアに置換
+    .replace(/\#/g, '_')  // ハッシュをアンダースコアに置換
+    .replace(/\$/g, '_')  // ドル記号をアンダースコアに置換
+    .replace(/\[/g, '(')  // 開き角括弧を開き丸括弧に置換
+    .replace(/\]/g, ')')  // 閉じ角括弧を閉じ丸括弧に置換
+    .replace(/\//g, '_')  // スラッシュをアンダースコアに置換
+    .trim();
+
+  // 空文字列の場合はデフォルト名を使用
+  if (!sanitized) {
+    sanitized = 'config_' + Date.now();
+  }
+
+  return sanitized;
+}
+
 // 新規クラウド保存
 function saveToCloudWithName() {
-  const configName = document.getElementById('cloudConfigName').value.trim();
-  if (!configName) {
+  const rawConfigName = document.getElementById('cloudConfigName').value.trim();
+  if (!rawConfigName) {
     alert('設定名を入力してください');
     return;
+  }
+
+  // 設定名をサニタイズ
+  const configName = sanitizeFirebasePath(rawConfigName);
+
+  // サニタイズ後に名前が変更された場合は通知
+  if (configName !== rawConfigName) {
+    console.log(`⚠️ 設定名をサニタイズしました: "${rawConfigName}" → "${configName}"`);
+    console.log('💡 Firebaseパスで使用できない文字（. # $ [ ] /）を置換しました');
   }
 
   // 認証完了を待つ
