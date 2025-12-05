@@ -1569,6 +1569,16 @@
                         <div class="calculated-value" id="totalValue">¥0</div>
                     </div>
 
+                    <!-- メモ欄 -->
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            📝 メモ
+                            <span style="font-size: 12px; color: var(--text-secondary); font-weight: 400;">（クラウド共有されます）</span>
+                        </label>
+                        <textarea id="oripaMemo" placeholder="このオリパに関するメモを入力してください&#10;例: 高額カード多めの設定、初心者向け、期間限定など"
+                                  style="width: 100%; min-height: 100px; padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-family: inherit; font-size: 14px; resize: vertical; line-height: 1.6;"></textarea>
+                    </div>
+
                     <!-- プリセット設定 -->
                     <div class="preset-section" style="margin-top: 20px; padding: 16px; background: rgba(0, 122, 255, 0.05); border: 1px solid var(--sf-blue); border-radius: var(--border-radius-small);">
                         <label style="display: block; font-weight: 600; color: var(--sf-black); margin-bottom: 12px; font-size: 14px;">
@@ -8253,6 +8263,7 @@ function getCurrentConfig() {
     releaseDate: document.getElementById('releaseDate').value,
     endDate: document.getElementById('endDate').value,
     minGuaranteeValue: document.getElementById('minGuaranteeValue').value,
+    memo: document.getElementById('oripaMemo')?.value || '',
     isTemporaryOripa: document.getElementById('isTemporaryOripa')?.checked || false,
     enableMinGuaranteeAuto: document.getElementById('enableMinGuaranteeAuto')?.checked || false,
     prizes: [...prizes],
@@ -8268,6 +8279,11 @@ function loadConfig(config) {
   document.getElementById('releaseDate').value = config.releaseDate || '';
   document.getElementById('endDate').value = config.endDate || '';
   document.getElementById('minGuaranteeValue').value = config.minGuaranteeValue || '1';
+
+  // メモを復元
+  if (document.getElementById('oripaMemo')) {
+    document.getElementById('oripaMemo').value = config.memo || '';
+  }
 
   // 仮装オリパの設定を復元
   if (document.getElementById('isTemporaryOripa')) {
@@ -8396,7 +8412,17 @@ function updateCloudConfigSelectBox() {
 
     // 表示名がある場合はそれを優先、なければ内部IDを表示
     const displayName = config.displayName || configId;
-    option.textContent = `${displayName} (${date})`;
+
+    // メモがある場合は、プレビューを追加
+    let optionText = `${displayName} (${date})`;
+    if (config.data && config.data.memo) {
+      const memoPreview = config.data.memo.length > 30
+        ? config.data.memo.substring(0, 30) + '...'
+        : config.data.memo;
+      optionText = `${displayName} - 📝 ${memoPreview} (${date})`;
+    }
+
+    option.textContent = optionText;
     selectBox.appendChild(option);
   });
 
