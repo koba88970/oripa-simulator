@@ -1671,7 +1671,7 @@
                     <div class="add-prize-form">
                         <div class="form-group">
                             <label>景品名</label>
-                            <input type="text" id="prizeName" placeholder="例: レアカード">
+                            <input type="text" id="prizeName" placeholder="下のボタンから景品を選択してください" readonly style="background: rgba(0, 0, 0, 0.02); cursor: not-allowed;">
                             <div style="display: flex; gap: 8px; margin-top: 8px;">
                                 <button class="btn btn-primary" onclick="selectFromPrizeMasterForMain()" style="flex: 1; white-space: nowrap;">
                                     📋 マスターから選択
@@ -1720,11 +1720,8 @@
                             <label>封入数</label>
                             <input type="number" id="prizeCount" min="1" value="1">
                         </div>
-                        <div class="form-group" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255, 149, 0, 0.05); border: 1px solid rgba(255, 149, 0, 0.3); border-radius: var(--radius-md);">
-                            <input type="checkbox" id="isTemporaryPrize" onchange="toggleTemporaryPrizeMode()" style="width: 20px; height: 20px; cursor: pointer;">
-                            <label for="isTemporaryPrize" style="cursor: pointer; margin: 0; font-weight: 600; color: var(--sf-orange); font-size: 13px;">
-                                📝 仮装景品（実在しないカードを仮登録）
-                            </label>
+                        <div class="form-group" style="display: none;">
+                            <input type="checkbox" id="isTemporaryPrize" onchange="toggleTemporaryPrizeMode()">
                         </div>
                         <button class="btn btn-success" id="addPrizeBtn" onclick="addPrizeFromForm()" style="width: 100%;">景品を追加</button>
                         <button class="btn btn-success" id="updatePrizeBtn" onclick="updatePrizeFromForm()" style="display: none; width: 100%;">景品を更新</button>
@@ -2418,7 +2415,7 @@
 
                     <div class="form-group">
                         <label>在庫数 *</label>
-                        <input type="number" id="modalPrizeCount" min="0" value="1" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
+                        <input type="number" id="modalPrizeCount" min="0" value="0" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
                     </div>
 
                     <div class="form-group">
@@ -4143,7 +4140,13 @@
             const count = parseInt(document.getElementById('prizeCount').value) || 0;
             const isTemporary = document.getElementById('isTemporaryPrize').checked;
 
-            if (!name || value <= 0 || count <= 0) {
+            // 景品名が空の場合、選択を促す
+            if (!name) {
+                alert('景品を選択してください。\n\n「📋 マスターから選択」または「📝 仮装景品から選択」ボタンを押して景品を選んでください。');
+                return;
+            }
+
+            if (value <= 0 || count <= 0) {
                 alert('すべての項目を正しく入力してください');
                 return;
             }
@@ -4781,6 +4784,10 @@
             // 選択した景品を一時保存
             selectedMasterPrizeForMain = prize;
 
+            // 仮装景品モードをOFFにする
+            document.getElementById('isTemporaryPrize').checked = false;
+            toggleTemporaryPrizeMode();
+
             // フォームに情報を設定
             document.getElementById('prizeName').value = prize.name;
             document.getElementById('prizeValue').value = formatNumber(prize.value);
@@ -4965,7 +4972,11 @@
             // 登録した景品をメインフォームに自動選択
             selectPrizeFromMasterForMain(newPrize.id);
 
-            alert(`✅ 景品「${name}」を景品マスターに登録しました！\n\nこの景品は他のオリパでも使用できます。`);
+            // メインタブに切り替え
+            showTab('main');
+
+            // 成功通知を表示
+            showNotification(`✅ 景品「${name}」を景品マスターに登録しました！この景品は他のオリパでも使用できます。`, 'success');
         }
 
         // 景品リスト更新
