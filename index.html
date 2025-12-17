@@ -8330,13 +8330,17 @@ function loadConfig(config) {
 
   if (config.prizes) {
     prizes = [...config.prizes];
-    updatePrizeList();
+  } else {
+    prizes = [];
   }
+  updatePrizeList();
 
   if (config.losses) {
     losses = [...config.losses];
-    updateLossList();
+  } else {
+    losses = [];
   }
+  updateLossList();
 
   updateTotalValue();
 }
