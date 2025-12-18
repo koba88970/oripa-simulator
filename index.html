@@ -1713,12 +1713,25 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label>景品タイプ</label>
+                            <select id="prizeType" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);" onchange="handlePrizeTypeChange()">
+                                <option value="normal">通常景品</option>
+                                <option value="lastOne">ラストワン賞</option>
+                                <option value="milestone">キリ番賞</option>
+                            </select>
+                            <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;" id="prizeTypeDescription">
+                                通常のガチャ景品として抽選プールに入ります
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label>ポイント還元価値</label>
                             <input type="text" id="prizeValue" placeholder="70,000" oninput="formatPrizeValue(this)">
                         </div>
                         <div class="form-group">
                             <label>封入数</label>
                             <input type="number" id="prizeCount" min="1" value="1">
+                            <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;" id="prizeCountDescription">
+                            </div>
                         </div>
                         <div class="form-group" style="display: none;">
                             <input type="checkbox" id="isTemporaryPrize" onchange="toggleTemporaryPrizeMode()">
@@ -4025,6 +4038,34 @@
             }
         }
 
+        // 景品タイプ変更時の処理
+        function handlePrizeTypeChange() {
+            const prizeType = document.getElementById('prizeType').value;
+            const prizeCountInput = document.getElementById('prizeCount');
+            const prizeTypeDescription = document.getElementById('prizeTypeDescription');
+            const prizeCountDescription = document.getElementById('prizeCountDescription');
+
+            if (prizeType === 'lastOne') {
+                // ラストワン賞の場合
+                prizeCountInput.value = '1';
+                prizeCountInput.disabled = true;
+                prizeTypeDescription.textContent = '最後の1個が引かれた時に獲得できる特別景品（封入数: 1個固定）';
+                prizeCountDescription.textContent = 'ラストワン賞は1個固定です';
+                prizeCountDescription.style.color = 'var(--sf-blue)';
+            } else if (prizeType === 'milestone') {
+                // キリ番賞の場合
+                prizeCountInput.disabled = false;
+                prizeTypeDescription.textContent = '特定の回数（例: 100回目、200回目）で獲得できる特別景品';
+                prizeCountDescription.textContent = 'キリ番の数だけ封入数を設定してください（例: 100回目と200回目なら2個）';
+                prizeCountDescription.style.color = 'var(--sf-orange)';
+            } else {
+                // 通常景品の場合
+                prizeCountInput.disabled = false;
+                prizeTypeDescription.textContent = '通常のガチャ景品として抽選プールに入ります';
+                prizeCountDescription.textContent = '';
+            }
+        }
+
         // 仮装景品マスターから選択（メイン用）
         function selectFromTemporaryPrizeMaster() {
             if (temporaryPrizeMaster.length === 0) {
@@ -4139,6 +4180,7 @@
             const value = parseFormattedNumber(document.getElementById('prizeValue').value);
             const count = parseInt(document.getElementById('prizeCount').value) || 0;
             const isTemporary = document.getElementById('isTemporaryPrize').checked;
+            const prizeType = document.getElementById('prizeType').value || 'normal';
 
             // 景品名が空の場合、選択を促す
             if (!name) {
@@ -4177,7 +4219,8 @@
                     value: value,
                     count: count,
                     image: null,
-                    isTemporary: true // 仮装景品フラグ
+                    isTemporary: true, // 仮装景品フラグ
+                    prizeType: prizeType // 景品タイプ（normal, lastOne, milestone）
                 };
 
                 // 仮装景品マスターに追加（重複チェック）
@@ -4215,7 +4258,8 @@
                     value: value,
                     count: count,
                     image: selectedMasterPrizeForMain.image || null,
-                    isTemporary: false
+                    isTemporary: false,
+                    prizeType: prizeType // 景品タイプ（normal, lastOne, milestone）
                 };
 
                 showNotification(`✅ 景品「${name}」を追加しました（${count}個）`, 'success');
@@ -4238,6 +4282,7 @@
             const rank = parseInt(document.getElementById('prizeRank').value);
             const value = parseFormattedNumber(document.getElementById('prizeValue').value);
             const count = parseInt(document.getElementById('prizeCount').value) || 0;
+            const prizeType = document.getElementById('prizeType').value || 'normal';
 
             if (!name || value <= 0 || count <= 0) {
                 alert('すべての項目を正しく入力してください');
@@ -4262,7 +4307,8 @@
                     name: name,
                     rank: rank,
                     value: value,
-                    count: count
+                    count: count,
+                    prizeType: prizeType
                 };
             }
 
@@ -4292,6 +4338,12 @@
             document.getElementById('prizeReadonlyInfo').style.display = 'none';
             document.getElementById('isTemporaryPrize').checked = false;
             document.getElementById('tempPrizePurchasePrice').value = ''; // 仮装景品用仕入れ価格をクリア
+
+            // 景品タイプをリセット
+            document.getElementById('prizeType').value = 'normal';
+            document.getElementById('prizeCount').disabled = false;
+            document.getElementById('prizeTypeDescription').textContent = '通常のガチャ景品として抽選プールに入ります';
+            document.getElementById('prizeCountDescription').textContent = '';
 
             // 仮装景品モードをリセット
             toggleTemporaryPrizeMode();
@@ -4332,6 +4384,10 @@
             document.getElementById('prizeRank').value = prize.rank;
             document.getElementById('prizeValue').value = formatNumber(prize.value);
             document.getElementById('prizeCount').value = prize.count;
+            document.getElementById('prizeType').value = prize.prizeType || 'normal';
+
+            // 景品タイプに応じたUI更新
+            handlePrizeTypeChange();
 
             // 画像と仕入れ価格を表示（編集不可）
             const readonlyInfo = document.getElementById('prizeReadonlyInfo');
@@ -5003,13 +5059,21 @@
                     ? '<span style="display: inline-block; background: var(--sf-orange); color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">📝 仮装</span>'
                     : '';
 
+                // 景品タイプのバッジ
+                let prizeTypeBadge = '';
+                if (prize.prizeType === 'lastOne') {
+                    prizeTypeBadge = '<span style="display: inline-block; background: var(--sf-blue); color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">🎯 ラストワン賞</span>';
+                } else if (prize.prizeType === 'milestone') {
+                    prizeTypeBadge = '<span style="display: inline-block; background: var(--sf-purple); color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">🎊 キリ番賞</span>';
+                }
+
                 return `
                 <div class="prize-item" style="display: flex; align-items: center;">
                     ${imageHtml}
                     <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
                         <div class="prize-rank rank-${prize.rank}">${prize.rank}等</div>
                         <div class="prize-content" style="flex: 1;">
-                            <div class="prize-name">${prize.name}${temporaryBadge}</div>
+                            <div class="prize-name">${prize.name}${temporaryBadge}${prizeTypeBadge}</div>
                             <div class="prize-purchase">仕入¥${formatNumber(prize.purchasePrice)}</div>
                             <div class="prize-value">還元¥${formatNumber(prize.value)}</div>
                             <div class="prize-count">${formatNumber(prize.count)}枚</div>
@@ -5455,12 +5519,23 @@
             // オリパ提供価値表示
             document.getElementById('totalValue').textContent = `¥${formatNumber(totalValue)}`;
 
-            // 景品総価値計算（ポイント還元価値）
-            const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
-            const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
+            // 通常景品と特別景品（ラストワン賞、キリ番賞）を分離
+            const normalPrizes = prizes.filter(p => !p.prizeType || p.prizeType === 'normal');
+            const specialPrizes = prizes.filter(p => p.prizeType === 'lastOne' || p.prizeType === 'milestone');
 
-            // 景品総仕入れ価格計算
+            // 景品総価値計算（ポイント還元価値）- 全ての景品を含む
+            const prizesTotalValue = prizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
+
+            // 景品総数計算（抽選プールに入る通常景品のみ）
+            const prizesTotalCount = normalPrizes.reduce((sum, prize) => sum + prize.count, 0);
+
+            // 景品総仕入れ価格計算（全ての景品を含む：通常景品 + 特別景品）
             const prizesTotalPurchasePrice = prizes.reduce((sum, prize) => sum + (prize.purchasePrice * prize.count), 0);
+
+            // 特別景品の情報（ラストワン賞、キリ番賞）
+            const specialPrizesTotalValue = specialPrizes.reduce((sum, prize) => sum + (prize.value * prize.count), 0);
+            const specialPrizesTotalPurchasePrice = specialPrizes.reduce((sum, prize) => sum + (prize.purchasePrice * prize.count), 0);
+            const specialPrizesCount = specialPrizes.reduce((sum, prize) => sum + prize.count, 0);
 
             // 実質還元率計算（仕入れ価格ベース）
             const realReturnRate = totalValue > 0 ? (prizesTotalPurchasePrice / totalValue) * 100 : 0;
@@ -5564,8 +5639,8 @@
                 }
             }
 
-            // 期待値計算
-            let expectedValue = prizes.reduce((sum, prize) => {
+            // 期待値計算（抽選プールの通常景品のみ）
+            let expectedValue = normalPrizes.reduce((sum, prize) => {
                 const probability = prize.count / totalPacks;
                 return sum + (prize.value * probability);
             }, 0);
@@ -5575,8 +5650,8 @@
                 expectedValue += loss.value * probability;
             });
 
-            // 標準偏差計算
-            let variance = prizes.reduce((sum, prize) => {
+            // 標準偏差計算（抽選プールの通常景品のみ）
+            let variance = normalPrizes.reduce((sum, prize) => {
                 const probability = prize.count / totalPacks;
                 return sum + (Math.pow(prize.value - expectedValue, 2) * probability);
             }, 0);
@@ -5874,9 +5949,10 @@
         // ガチャプール生成
         function generateGachaPool() {
             gachaPool = [];
-            
-            // 景品を追加
-            prizes.forEach(prize => {
+
+            // 通常景品のみを追加（ラストワン賞とキリ番賞は除外）
+            const normalPrizes = prizes.filter(p => !p.prizeType || p.prizeType === 'normal');
+            normalPrizes.forEach(prize => {
                 for (let i = 0; i < prize.count; i++) {
                     gachaPool.push({
                         type: 'prize',
@@ -5884,13 +5960,13 @@
                     });
                 }
             });
-            
+
             // 現在の設定でハズレを計算
             const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
             const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
 
             if (totalPacks > 0) {
-                const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
+                const prizesTotalCount = normalPrizes.reduce((sum, prize) => sum + prize.count, 0);
                 let remainingSlots = totalPacks - prizesTotalCount;
 
                 console.log('ガチャプール生成デバッグ:', {
