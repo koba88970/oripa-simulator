@@ -2418,12 +2418,18 @@
 
                     <div class="form-group">
                         <label>仕入れ価格 *</label>
-                        <input type="text" id="modalPurchasePrice" placeholder="50,000" oninput="formatPrizeValue(this)" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
+                        <input type="text" id="modalPurchasePrice" placeholder="50,000" oninput="formatPrizeValue(this); updateModalRewardValueIfSame();" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
                     </div>
 
                     <div class="form-group">
                         <label>ポイント還元価値 *</label>
                         <input type="text" id="modalPrizeValue" placeholder="70,000" oninput="formatPrizeValue(this)" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
+                        <div style="margin-top: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+                                <input type="checkbox" id="modalSamePriceAsReward" onchange="handleSamePriceAsRewardChange()" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span style="font-weight: 600; color: var(--sf-blue);">景品価格と同額にする</span>
+                            </label>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -4959,9 +4965,11 @@
             document.getElementById('modalPrizeType').value = 'PSA10';
             document.getElementById('modalPurchasePrice').value = '';
             document.getElementById('modalPrizeValue').value = '';
-            document.getElementById('modalPrizeCount').value = '1';
+            document.getElementById('modalPrizeCount').value = '0';  // デフォルトを0に変更
             document.getElementById('modalPrizeImage').value = '';
             document.getElementById('modalPrizeWanted').checked = false;
+            document.getElementById('modalSamePriceAsReward').checked = false;  // チェックボックスをリセット
+            document.getElementById('modalPrizeValue').disabled = false;  // 還元価値の入力を有効化
             document.getElementById('modalImagePreview').style.display = 'none';
         }
 
@@ -4991,6 +4999,33 @@
                 preview.style.display = 'block';
             } else {
                 preview.style.display = 'none';
+            }
+        }
+
+        // 「景品価格と同額にする」チェックボックスの処理
+        function handleSamePriceAsRewardChange() {
+            const checkbox = document.getElementById('modalSamePriceAsReward');
+            const purchasePrice = document.getElementById('modalPurchasePrice').value;
+            const rewardValueInput = document.getElementById('modalPrizeValue');
+
+            if (checkbox.checked && purchasePrice) {
+                // チェックされた場合、仕入れ価格を還元価値にコピー
+                rewardValueInput.value = purchasePrice;
+                rewardValueInput.disabled = true;
+            } else {
+                // チェックが外れた場合、還元価値の入力を有効化
+                rewardValueInput.disabled = false;
+            }
+        }
+
+        // 仕入れ価格が変更された時、チェックボックスがONなら還元価値も更新
+        function updateModalRewardValueIfSame() {
+            const checkbox = document.getElementById('modalSamePriceAsReward');
+            const purchasePrice = document.getElementById('modalPurchasePrice').value;
+            const rewardValueInput = document.getElementById('modalPrizeValue');
+
+            if (checkbox && checkbox.checked) {
+                rewardValueInput.value = purchasePrice;
             }
         }
 
@@ -5029,14 +5064,11 @@
             // クラウド同期
             syncPrizeMasterToCloud();
 
-            // 登録した景品をメインフォームに自動選択
+            // 登録した景品をメインフォームに自動選択（モーダルも自動で閉じられる）
             selectPrizeFromMasterForMain(newPrize.id);
 
-            // メインタブに切り替え
-            showTab('main');
-
             // 成功通知を表示
-            showNotification(`✅ 景品「${name}」を景品マスターに登録しました！この景品は他のオリパでも使用できます。`, 'success');
+            showNotification(`✅ 景品「${name}」を景品マスターに登録しました！`, 'success');
         }
 
         // 景品リスト更新
