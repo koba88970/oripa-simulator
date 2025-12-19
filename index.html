@@ -1702,7 +1702,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" id="prizeRankGroup">
                             <label>等級</label>
                             <select id="prizeRank" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
                                 <option value="1">1等</option>
@@ -4044,6 +4044,7 @@
             const prizeCountInput = document.getElementById('prizeCount');
             const prizeTypeDescription = document.getElementById('prizeTypeDescription');
             const prizeCountDescription = document.getElementById('prizeCountDescription');
+            const prizeRankGroup = document.getElementById('prizeRankGroup');
 
             if (prizeType === 'lastOne') {
                 // ラストワン賞の場合
@@ -4052,17 +4053,20 @@
                 prizeTypeDescription.textContent = '最後の1個が引かれた時に獲得できる特別景品（封入数: 1個固定）';
                 prizeCountDescription.textContent = 'ラストワン賞は1個固定です';
                 prizeCountDescription.style.color = 'var(--sf-blue)';
+                prizeRankGroup.style.display = 'none';  // 等級フィールドを非表示
             } else if (prizeType === 'milestone') {
                 // キリ番賞の場合
                 prizeCountInput.disabled = false;
                 prizeTypeDescription.textContent = '特定の回数（例: 100回目、200回目）で獲得できる特別景品';
                 prizeCountDescription.textContent = 'キリ番の数だけ封入数を設定してください（例: 100回目と200回目なら2個）';
                 prizeCountDescription.style.color = 'var(--sf-orange)';
+                prizeRankGroup.style.display = 'none';  // 等級フィールドを非表示
             } else {
                 // 通常景品の場合
                 prizeCountInput.disabled = false;
                 prizeTypeDescription.textContent = '通常のガチャ景品として抽選プールに入ります';
                 prizeCountDescription.textContent = '';
+                prizeRankGroup.style.display = 'block';  // 等級フィールドを表示
             }
         }
 
@@ -5752,11 +5756,21 @@
                     ? `<img src="${prize.image}" alt="${prize.name}" style="width: 40px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.1); margin-right: 10px;" onerror="this.style.display='none';">`
                     : `<div style="width: 40px; height: 60px; background: rgba(0, 0, 0, 0.05); border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.1); display: inline-flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 10px; vertical-align: middle;">📦</div>`;
 
+                // 景品タイプに応じてラベルを変更
+                let prizeLabel = '';
+                if (prize.prizeType === 'lastOne') {
+                    prizeLabel = 'ラストワン賞';
+                } else if (prize.prizeType === 'milestone') {
+                    prizeLabel = 'キリ番賞';
+                } else {
+                    prizeLabel = `${prize.rank}等`;
+                }
+
                 return `
                     <div class="result-row" style="display: flex; align-items: center;">
                         ${imageHtml}
                         <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
-                            <span class="result-label">${prize.rank}等 ${prize.name}</span>
+                            <span class="result-label">${prizeLabel} ${prize.name}</span>
                             <span class="result-value">${formatNumber(prize.count)}枚 / ${probability}% (仕入¥${formatNumber(prize.purchasePrice)} / 還元¥${formatNumber(prize.value)})</span>
                         </div>
                     </div>
