@@ -287,10 +287,8 @@
 
         /* left-panelの表示順を制御 */
         .left-panel > .panel:nth-child(1) { order: 1; } /* 基本設定 */
-        .left-panel > .panel:nth-child(2) { order: 4; } /* ハズレ管理 → 4番目へ */
-        .left-panel > .panel:nth-child(3) { order: 3; } /* 景品管理 */
-        .left-panel > .panel:nth-child(4) { order: 2; } /* クラウド設定 → 2番目へ */
-        .left-panel > .panel:nth-child(5) { order: 5; } /* 過去7日間の集計 */
+        .left-panel > .panel:nth-child(2) { order: 3; } /* ハズレ管理 → 3番目へ */
+        .left-panel > .panel:nth-child(3) { order: 2; } /* 景品管理 → 2番目へ */
 
         /* パネル - 強化されたグラスモーフィズム */
         .panel {
@@ -1405,6 +1403,16 @@
                 <!-- 基本設定 -->
                 <div class="panel">
                     <h2>基本設定</h2>
+
+                    <!-- オリパ名 -->
+                    <div class="form-group">
+                        <label>オリパ名</label>
+                        <input type="text" id="cloudConfigName" placeholder="例: ポケモンオリパA案、1.9賞金" oninput="sanitizeConfigNameInput(this)">
+                        <div id="configNameWarning" style="font-size: 11px; color: var(--sf-blue); margin-top: 4px; display: none;">
+                            💡 保存時に使用できない文字は内部的に変換されますが、表示名はそのまま保持されます
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label>パック単価 (円)</label>
                         <input type="number" id="packPrice" value="40000">
@@ -1428,26 +1436,55 @@
                                   style="width: 100%; min-height: 100px; padding: 12px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: var(--radius-md); font-family: inherit; font-size: 14px; resize: vertical; line-height: 1.6;"></textarea>
                     </div>
 
-                    <!-- プリセット設定 -->
-                    <div class="preset-section" style="margin-top: 20px; padding: 16px; background: rgba(0, 122, 255, 0.05); border: 1px solid var(--sf-blue); border-radius: var(--border-radius-small);">
-                        <label style="display: block; font-weight: 600; color: var(--sf-black); margin-bottom: 12px; font-size: 14px;">
-                            ⚡ プリセットオリパ
-                        </label>
-                        <div id="presetList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-                            <!-- プリセット一覧がここに動的に生成されます -->
-                        </div>
-                        <button class="btn btn-success" onclick="openAddPresetModal()" style="width: 100%; font-size: 12px; padding: 8px; margin-bottom: 8px;">
-                            ➕ 新規プリセット追加
-                        </button>
-                        <button class="btn btn-primary" onclick="applyPreset()" style="width: 100%; font-size: 13px; padding: 10px;">
-                            ⚡ プリセットから計算
-                        </button>
-                    </div>
-
                     <div style="margin-top: 16px;">
                         <button class="btn btn-success" onclick="calculate()" style="width: 100%; font-size: 16px; padding: 14px;">
                             🧮 計算する
                         </button>
+                    </div>
+
+                    <!-- クラウド保存・共有 -->
+                    <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--sf-gray-5);">
+                        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--sf-blue);">☁️ クラウド保存・共有</h3>
+
+                        <!-- 保存ボタン -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                            <button class="btn btn-primary" onclick="saveToCloudWithName()" style="font-size: 12px;">
+                                💾 新規保存
+                            </button>
+                            <button class="btn btn-accent" onclick="updateCloudConfig()" style="font-size: 12px;" id="updateCloudBtn" disabled>
+                                🔄 上書き更新
+                            </button>
+                        </div>
+
+                        <!-- 読み込みセクション -->
+                        <div class="form-group">
+                            <label style="font-size: 13px;">クラウド設定一覧</label>
+                            <select id="cloudConfigList" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small); font-size: 13px;">
+                                <option value="">設定を選択してください</option>
+                            </select>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                            <button class="btn btn-success" onclick="loadSelectedCloudConfig()" style="font-size: 12px;">
+                                📂 読み込み
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteSelectedCloudConfig()" style="font-size: 12px;">
+                                🗑️ 削除
+                            </button>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="refreshCloudConfigList()" style="width: 100%; font-size: 12px; margin-bottom: 12px;">
+                            🔄 一覧を更新
+                        </button>
+
+                        <!-- 共有リンク -->
+                        <div style="padding-top: 12px; border-top: 1px solid var(--sf-gray-5);">
+                            <button class="btn btn-accent" onclick="generateShareLink()" style="width: 100%; font-size: 12px;" id="shareBtn" disabled>
+                                🔗 共有リンクをコピー
+                            </button>
+                            <div id="shareStatus" style="margin-top: 8px; font-size: 11px; color: var(--sf-gray); text-align: center;"></div>
+                        </div>
+
+                        <div id="cloudStatus" style="margin-top: 12px; font-size: 12px; color: var(--sf-gray);"></div>
                     </div>
                 </div>
 
@@ -1580,61 +1617,6 @@
                         <button class="btn btn-primary" id="replacePrizeBtn" onclick="selectFromPrizeMasterForReplace()" style="display: none; margin-top: 8px;">🔄 別の景品に置き換え</button>
                         <button class="btn btn-danger" id="cancelEditBtn" onclick="cancelEditPrize()" style="display: none; margin-top: 8px;">キャンセル</button>
                     </div>
-                </div>
-
-                <!-- クラウド設定管理 -->
-                <div class="panel" style="background: rgba(0, 122, 255, 0.05); border-color: var(--sf-blue);">
-                    <h2 style="border-bottom-color: var(--sf-blue);">☁️ クラウド設定共有</h2>
-
-                    <!-- 保存セクション -->
-                    <div class="form-group">
-                        <label>設定名</label>
-                        <input type="text" id="cloudConfigName" placeholder="設定名を入力（例: ポケモンオリパA案、1.9賞金）" oninput="sanitizeConfigNameInput(this)">
-                        <div id="configNameWarning" style="font-size: 11px; color: var(--sf-blue); margin-top: 4px; display: none;">
-                            💡 保存時に使用できない文字は内部的に変換されますが、表示名はそのまま保持されます
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;">
-                        <button class="btn btn-primary" onclick="saveToCloudWithName()" style="font-size: 12px;">
-                            💾 新規保存
-                        </button>
-                        <button class="btn btn-accent" onclick="updateCloudConfig()" style="font-size: 12px;" id="updateCloudBtn" disabled>
-                            🔄 上書き更新
-                        </button>
-                    </div>
-
-                    <!-- 読み込みセクション -->
-                    <div class="form-group">
-                        <label>クラウド設定一覧</label>
-                        <select id="cloudConfigList" style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--border-radius-small);">
-                            <option value="">設定を選択してください</option>
-                        </select>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;">
-                        <button class="btn btn-success" onclick="loadSelectedCloudConfig()" style="font-size: 12px;">
-                            📂 読み込み
-                        </button>
-                        <button class="btn btn-danger" onclick="deleteSelectedCloudConfig()" style="font-size: 12px;">
-                            🗑️ 削除
-                        </button>
-                    </div>
-
-                    <button class="btn btn-primary" onclick="refreshCloudConfigList()" style="width: 100%; font-size: 12px;">
-                        🔄 一覧を更新
-                    </button>
-
-                    <!-- 共有リンク生成セクション -->
-                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--sf-gray-5);">
-                        <label style="display: block; font-weight: 500; color: var(--sf-black); margin-bottom: 8px; font-size: 14px;">
-                            🔗 リンク共有
-                        </label>
-                        <button class="btn btn-accent" onclick="generateShareLink()" style="width: 100%; font-size: 12px;" id="shareBtn" disabled>
-                            📋 共有リンクをコピー
-                        </button>
-                        <div id="shareStatus" style="margin-top: 8px; font-size: 11px; color: var(--sf-gray); text-align: center;"></div>
-                    </div>
-
-                    <div id="cloudStatus" style="margin-top: 12px; font-size: 12px; color: var(--sf-gray);"></div>
                 </div>
 
             </div>
@@ -2228,38 +2210,6 @@
         </div>
     </div>
 
-    <!-- プリセット編集モーダル -->
-    <div id="presetModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">プリセットを編集</h2>
-                <span class="modal-close" onclick="closePresetModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>プリセット名</label>
-                    <input type="text" id="modalPresetName" placeholder="例: カスタム500">
-                </div>
-                <div class="form-group">
-                    <label>倍率（何分の1で当たるか）</label>
-                    <input type="number" id="modalMultiplier" placeholder="例: 500" min="1">
-                </div>
-                <div class="form-group">
-                    <label>パック単価（デフォルト値）</label>
-                    <input type="number" id="modalPackPrice" placeholder="例: 10" min="1">
-                </div>
-                <div class="form-group">
-                    <label>ハズレ価値（デフォルト値）</label>
-                    <input type="number" id="modalMinGuarantee" placeholder="例: 1" min="1">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" onclick="savePreset()">保存</button>
-                <button class="btn btn-danger" onclick="closePresetModal()">キャンセル</button>
-            </div>
-        </div>
-    </div>
-
     <!-- 仮装景品選択モーダル -->
     <div id="temporaryPrizeSelectModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 800px;">
@@ -2324,10 +2274,6 @@
         let editingPrizeId = null; // 編集中の景品ID
         let editingLossId = null; // 編集中のハズレID
 
-        // プリセット管理
-        let presets = [];
-        let editingPresetId = null; // 編集中のプリセットID
-
         // 数字を3桁カンマ区切りでフォーマット
         function formatNumber(num) {
             if (num === null || num === undefined || num === '') return '0';
@@ -2377,39 +2323,12 @@
 
 
 
-        // 初期プリセット（初回のみ使用）
-        const INITIAL_PRESETS = [
-            {
-                id: 'preset_319',
-                name: '319',
-                multiplier: 319,
-                packPrice: 13,
-                minGuaranteeValue: 1
-            },
-            {
-                id: 'preset_198',
-                name: '198',
-                multiplier: 198,
-                packPrice: 39,
-                minGuaranteeValue: 1
-            },
-            {
-                id: 'preset_nibuchi',
-                name: 'ニブイチ',
-                multiplier: 2,
-                packPrice: 350,
-                minGuaranteeValue: 1
-            }
-        ];
-
         // ローカルストレージのキー
         const STORAGE_KEY = 'oripa_simulator_v2';
-        const PRESETS_STORAGE_KEY = 'oripa_presets_v1';
 
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
-            loadPresetsFromStorage(); // プリセットを読み込み
             attachEventListeners();
             updateTotalValue();
         });
@@ -3775,172 +3694,6 @@
             document.getElementById('cancelEditLossBtn').style.display = 'none';
         }
 
-        // ========== プリセット管理機能 ==========
-
-        // プリセット一覧を更新
-        function updatePresetList() {
-            const container = document.getElementById('presetList');
-
-            if (presets.length === 0) {
-                container.innerHTML = '<p style="color: var(--sf-gray); text-align: center; margin: 12px 0; font-size: 13px;">プリセットを追加してください</p>';
-                return;
-            }
-
-            container.innerHTML = presets.map(preset => `
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(255, 255, 255, 0.5); border-radius: 8px; border: 1px solid var(--sf-gray-4);">
-                    <label style="flex: 1; cursor: pointer; margin: 0; display: flex; align-items: center;">
-                        <input type="radio" name="preset" value="${preset.id}" style="margin-right: 8px;">
-                        <span style="font-size: 13px; font-weight: 500;">${preset.name}</span>
-                        <span style="font-size: 11px; color: var(--sf-gray); margin-left: 8px;">(${preset.multiplier}分の1)</span>
-                    </label>
-                    <button class="btn btn-primary" onclick="openEditPresetModal('${preset.id}')" style="font-size: 11px; padding: 4px 8px;">編集</button>
-                    <button class="btn btn-danger" onclick="deletePreset('${preset.id}')" style="font-size: 11px; padding: 4px 8px;">削除</button>
-                </div>
-            `).join('');
-        }
-
-        // プリセット追加モーダルを開く
-        function openAddPresetModal() {
-            editingPresetId = null;
-            document.getElementById('modalTitle').textContent = '新規プリセット追加';
-            document.getElementById('modalPresetName').value = '';
-            document.getElementById('modalMultiplier').value = '';
-            document.getElementById('modalPackPrice').value = '';
-            document.getElementById('modalMinGuarantee').value = '1';
-            document.getElementById('presetModal').style.display = 'flex';
-        }
-
-        // プリセット編集モーダルを開く
-        function openEditPresetModal(presetId) {
-            const preset = presets.find(p => p.id === presetId);
-            if (!preset) return;
-
-            editingPresetId = presetId;
-            document.getElementById('modalTitle').textContent = 'プリセットを編集';
-            document.getElementById('modalPresetName').value = preset.name;
-            document.getElementById('modalMultiplier').value = preset.multiplier;
-            document.getElementById('modalPackPrice').value = preset.packPrice;
-            document.getElementById('modalMinGuarantee').value = preset.minGuaranteeValue;
-            document.getElementById('presetModal').style.display = 'flex';
-        }
-
-        // モーダルを閉じる
-        function closePresetModal() {
-            document.getElementById('presetModal').style.display = 'none';
-            editingPresetId = null;
-        }
-
-        // プリセットを保存
-        function savePreset() {
-            const name = document.getElementById('modalPresetName').value.trim();
-            const multiplier = parseInt(document.getElementById('modalMultiplier').value) || 0;
-            const packPrice = parseInt(document.getElementById('modalPackPrice').value) || 0;
-            const minGuaranteeValue = parseInt(document.getElementById('modalMinGuarantee').value) || 1;
-
-            if (!name || multiplier <= 0 || packPrice <= 0 || minGuaranteeValue <= 0) {
-                alert('すべての項目を正しく入力してください');
-                return;
-            }
-
-            if (editingPresetId) {
-                // 編集モード
-                const presetIndex = presets.findIndex(p => p.id === editingPresetId);
-                if (presetIndex !== -1) {
-                    presets[presetIndex] = {
-                        id: editingPresetId,
-                        name: name,
-                        multiplier: multiplier,
-                        packPrice: packPrice,
-                        minGuaranteeValue: minGuaranteeValue
-                    };
-                }
-            } else {
-                // 新規追加モード
-                const newPreset = {
-                    id: 'preset_' + Date.now(),
-                    name: name,
-                    multiplier: multiplier,
-                    packPrice: packPrice,
-                    minGuaranteeValue: minGuaranteeValue
-                };
-                presets.push(newPreset);
-            }
-
-            savePresetsToStorage();
-            savePresetsToFirebase();
-            updatePresetList();
-            closePresetModal();
-        }
-
-        // プリセットを削除
-        function deletePreset(presetId) {
-            const preset = presets.find(p => p.id === presetId);
-            if (!preset) return;
-
-            if (!confirm(`プリセット「${preset.name}」を削除しますか？`)) {
-                return;
-            }
-
-            presets = presets.filter(p => p.id !== presetId);
-            savePresetsToStorage();
-            savePresetsToFirebase();
-            updatePresetList();
-        }
-
-        // プリセットをLocalStorageに保存
-        function savePresetsToStorage() {
-            try {
-                localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(presets));
-            } catch (e) {
-                console.error('プリセットの保存に失敗しました:', e);
-            }
-        }
-
-        // プリセットをLocalStorageから読み込み
-        function loadPresetsFromStorage() {
-            try {
-                const savedPresets = localStorage.getItem(PRESETS_STORAGE_KEY);
-                if (savedPresets) {
-                    presets = JSON.parse(savedPresets);
-                } else {
-                    // 初回起動時は初期プリセットを使用
-                    presets = [...INITIAL_PRESETS];
-                    savePresetsToStorage();
-                }
-                updatePresetList();
-            } catch (e) {
-                console.error('プリセットの読み込みに失敗しました:', e);
-                presets = [...INITIAL_PRESETS];
-                updatePresetList();
-            }
-        }
-
-        // プリセットをFirebaseに保存
-        function savePresetsToFirebase() {
-            database.ref('presets').set({
-                data: presets,
-                updatedAt: Date.now()
-            }).then(() => {
-                console.log('プリセットをFirebaseに保存しました');
-            }).catch((error) => {
-                console.error('Firebaseへの保存に失敗しました:', error);
-            });
-        }
-
-        // プリセットをFirebaseから読み込み
-        function loadPresetsFromFirebase() {
-            database.ref('presets').once('value').then((snapshot) => {
-                const data = snapshot.val();
-                if (data && data.data) {
-                    presets = data.data;
-                    savePresetsToStorage();
-                    updatePresetList();
-                    console.log('Firebaseからプリセットを読み込みました');
-                }
-            }).catch((error) => {
-                console.error('Firebaseからの読み込みに失敗しました:', error);
-            });
-        }
 
         // ハズレリスト更新
         function updateLossList() {
@@ -3971,59 +3724,6 @@
             return Math.round(value / 10) * 10;
         }
 
-        // プリセットオリパを適用
-        function applyPreset() {
-            // 選択されたプリセットを取得
-            const selectedPresetRadio = document.querySelector('input[name="preset"]:checked');
-
-            if (!selectedPresetRadio) {
-                alert('プリセットを選択してください');
-                return;
-            }
-
-            // 景品が登録されているかチェック
-            if (prizes.length === 0) {
-                alert('先に景品を登録してください');
-                return;
-            }
-
-            const presetId = selectedPresetRadio.value;
-
-            // プリセットを検索
-            const preset = presets.find(p => p.id === presetId);
-            if (!preset) {
-                alert('プリセットが見つかりませんでした');
-                return;
-            }
-
-            // 景品の総枚数を計算
-            const prizesTotalCount = prizes.reduce((sum, prize) => sum + prize.count, 0);
-
-            // 総口数を計算
-            const totalPacks = prizesTotalCount * preset.multiplier;
-
-            // フォームに値を設定
-            document.getElementById('packPrice').value = preset.packPrice;
-            document.getElementById('totalPacks').value = totalPacks;
-            document.getElementById('minGuaranteeValue').value = preset.minGuaranteeValue;
-
-            // ハズレをクリア（自動計算モードにする）
-            losses = [];
-            updateLossList();
-
-            // オリパ提供価値を更新
-            updateTotalValue();
-
-            // データを保存
-            saveData();
-
-            // 自動で計算を実行
-            calculate();
-
-            // 確認メッセージを表示
-            const lossCount = totalPacks - prizesTotalCount;
-            alert(`プリセット「${preset.name}」を適用しました\n\n総口数: ${formatNumber(totalPacks)}口\nパック単価: ¥${formatNumber(preset.packPrice)}\n景品枚数: ${formatNumber(prizesTotalCount)}枚\nハズレ枚数: ${formatNumber(lossCount)}枚\n\n値を編集して再計算することもできます。`);
-        }
 
         // ガチャ難易度設定を取得
         function getDifficultySettings(difficulty) {
