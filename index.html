@@ -1440,6 +1440,9 @@
                         <button class="btn btn-success" onclick="calculate()" style="width: 100%; font-size: 16px; padding: 14px;">
                             🧮 計算する
                         </button>
+                        <button class="btn btn-danger" onclick="clearAllSettings()" style="width: 100%; font-size: 14px; padding: 12px; margin-top: 12px;">
+                            🗑️ 全クリア（新規オリパ作成）
+                        </button>
                     </div>
 
                     <!-- クラウド保存・共有 -->
@@ -3719,6 +3722,68 @@
                         maxValueCap: 0.7 // パック単価の70%まで
                     };
             }
+        }
+
+        // 全設定をクリアして新規オリパ作成を開始
+        function clearAllSettings() {
+            // 確認ダイアログを表示
+            const confirmed = confirm('現在の設定を全てクリアして、新しいオリパの作成を開始しますか？\n\n以下の項目がクリアされます：\n• オリパ名\n• パック単価・総口数\n• メモ\n• 景品リスト\n• ハズレリスト\n• 計算結果\n\n※クラウドに保存済みのデータは削除されません');
+
+            if (!confirmed) {
+                return;
+            }
+
+            // 基本設定をクリア
+            document.getElementById('cloudConfigName').value = '';
+            document.getElementById('packPrice').value = '40000';
+            document.getElementById('totalPacks').value = '100';
+            document.getElementById('configMemo').value = '';
+            document.getElementById('minGuaranteeValue').value = '1';
+            document.getElementById('enableMinGuaranteeAuto').checked = false;
+
+            // 景品リストをクリア
+            prizes = [];
+            updatePrizeList();
+
+            // ハズレリストをクリア
+            losses = [];
+            updateLossList();
+
+            // 計算結果をクリア
+            document.getElementById('totalValue').textContent = '¥0';
+            document.getElementById('summaryTotalReturn').textContent = '0.0%';
+            document.getElementById('summaryRealReturn').textContent = '0.0%';
+            document.getElementById('summaryWinnerCount').textContent = '0人';
+            document.getElementById('summaryTotalPurchase').textContent = '¥0';
+            document.getElementById('summaryPrizeTotalReward').textContent = '¥0';
+            document.getElementById('summaryLossTotalReward').textContent = '¥0';
+            document.getElementById('prizeDetails').innerHTML = '<p style="color: var(--sf-gray); text-align: center;">景品を追加してください</p>';
+            document.getElementById('lossDetails').innerHTML = '<p style="color: var(--sf-gray); text-align: center;">ハズレはありません</p>';
+
+            // 期待値シミュレーションをクリア
+            const simulationResults = document.getElementById('simulationResults');
+            if (simulationResults) {
+                simulationResults.innerHTML = '<p style="color: var(--sf-gray); text-align: center;">計算を実行すると表示されます</p>';
+            }
+
+            // グラフキャンバスをクリア
+            const canvas = document.getElementById('expectationCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // 共有ボタンを無効化
+            updateShareButtonState();
+
+            // ローカルストレージに保存
+            saveData();
+
+            // オリパ提供価値を更新
+            updateTotalValue();
+
+            // 成功メッセージを表示
+            alert('✅ 全ての設定をクリアしました。\n新しいオリパの作成を開始できます！');
         }
 
         // メイン計算
