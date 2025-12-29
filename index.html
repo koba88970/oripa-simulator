@@ -1418,6 +1418,16 @@
                         <div class="calculated-value" id="totalValue">¥0</div>
                     </div>
 
+                    <!-- メモ欄 -->
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            📝 メモ
+                            <span style="font-size: 12px; color: var(--sf-gray); font-weight: 400;">（クラウド共有されます）</span>
+                        </label>
+                        <textarea id="configMemo" placeholder="このオリパに関するメモを入力してください&#10;例: 高額カード多めの設定、初心者向け、期間限定など"
+                                  style="width: 100%; min-height: 100px; padding: 12px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: var(--radius-md); font-family: inherit; font-size: 14px; resize: vertical; line-height: 1.6;"></textarea>
+                    </div>
+
                     <!-- プリセット設定 -->
                     <div class="preset-section" style="margin-top: 20px; padding: 16px; background: rgba(0, 122, 255, 0.05); border: 1px solid var(--sf-blue); border-radius: var(--border-radius-small);">
                         <label style="display: block; font-weight: 600; color: var(--sf-black); margin-bottom: 12px; font-size: 14px;">
@@ -1496,10 +1506,6 @@
                     <div class="prize-list" id="prizeList">
                         <!-- 景品リストがここに表示されます -->
                     </div>
-
-                    <button class="btn btn-accent" onclick="exportPrizesToJSON()" style="width: 100%; margin: 16px 0; font-size: 14px;">
-                        💾 景品をJSONでエクスポート
-                    </button>
 
                     <div class="add-prize-form">
                         <div class="form-group">
@@ -1736,7 +1742,7 @@
             <div class="panel">
                 <h2>景品マスター</h2>
                 <p style="color: var(--sf-gray); font-size: 14px; margin-bottom: 24px;">
-                    オリパで使用する景品を管理します。メインタブで作成した景品をJSONでエクスポートし、ここでインポートしてください。
+                    オリパで使用する景品を管理します。景品データはクラウドに自動保存され、メインタブで選択して使用できます。
                 </p>
 
                 <div style="margin-bottom: 24px;">
@@ -2771,6 +2777,9 @@
 
             updatePrizeList();
             saveData();
+
+            // リアルタイム計算
+            calculate();
         }
 
         // メイン専用：フォームから景品を更新
@@ -2817,6 +2826,9 @@
             updatePrizeList();
             saveData();
 
+            // リアルタイム計算
+            calculate();
+
             // 成功通知
             showNotification(`✅ 景品「${name}」を更新しました`, 'success');
         }
@@ -2862,6 +2874,9 @@
             prizes = prizes.filter(p => p.id !== id);
             updatePrizeList();
             saveData();
+
+            // リアルタイム計算
+            calculate();
 
             // 成功通知
             showNotification(`🗑️ 景品「${prizeName}」を削除しました`, 'success');
@@ -3020,7 +3035,7 @@
         // 景品マスター選択モーダルを開く
         function selectFromPrizeMaster() {
             if (prizeMaster.length === 0) {
-                alert('景品マスターが空です。\n\n手順：\n1. メインタブで景品を作成\n2. 「💾 景品をJSONでエクスポート」をクリック\n3. 景品マスタータブで「📥 JSONファイルから景品を追加」をクリック');
+                alert('景品マスターが空です。\n\n景品マスタータブで景品を登録してください。\n\n手順：\n1. 景品マスタータブを開く\n2. 「➕ 新規景品を追加」で景品を登録\n3. メインタブで登録した景品を選択');
                 return;
             }
 
@@ -3683,6 +3698,9 @@
 
             updateLossList();
             saveData();
+
+            // リアルタイム計算
+            calculate();
         }
 
         // ハズレ削除
@@ -3690,6 +3708,9 @@
             losses = losses.filter(l => l.id !== id);
             updateLossList();
             saveData();
+
+            // リアルタイム計算
+            calculate();
         }
 
         // ハズレ編集
@@ -3736,6 +3757,9 @@
             cancelEditLoss();
             updateLossList();
             saveData();
+
+            // リアルタイム計算
+            calculate();
         }
 
         // ハズレ編集キャンセル
@@ -5167,54 +5191,8 @@
             });
         }
 
-        // ==================== JSON エクスポート/インポート機能 ====================
+        // ==================== データインポート機能 ====================
 
-        // 景品をJSONでエクスポート（メインタブの景品）
-        function exportPrizesToJSON() {
-            if (prizes.length === 0) {
-                alert('エクスポートする景品がありません。\n先に景品を追加してください。');
-                return;
-            }
-
-            // JSONデータを作成
-            const jsonData = {
-                exportDate: new Date().toISOString(),
-                version: '1.0',
-                prizes: prizes.map(prize => ({
-                    name: prize.name,
-                    purchasePrice: prize.purchasePrice,
-                    value: prize.value,
-                    count: prize.count
-                }))
-            };
-
-            // JSON文字列に変換（整形あり）
-            const jsonString = JSON.stringify(jsonData, null, 2);
-
-            // Blobを作成
-            const blob = new Blob([jsonString], { type: 'application/json' });
-
-            // ダウンロードリンクを作成
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-
-            // ファイル名を生成（日時付き）
-            const now = new Date();
-            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-            const timeStr = now.toTimeString().slice(0, 5).replace(/:/g, '');
-            a.download = `oripa_prizes_${dateStr}_${timeStr}.json`;
-
-            // ダウンロードを実行
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            alert(`✅ ${prizes.length}件の景品をJSONファイルでエクスポートしました。\n\nファイル: ${a.download}`);
-        }
-
-        // JSONファイルから景品をインポート（景品マスターに追加）
         // データファイルから景品をインポート（JSON/CSV自動判定）
         async function importPrizesFromFile(event) {
             const files = Array.from(event.target.files);
@@ -5755,7 +5733,7 @@
                     <div class="empty-state">
                         <div class="empty-state-icon">🎁</div>
                         <div class="empty-state-text">景品マスターが空です</div>
-                        <div class="empty-state-subtext">メインタブで景品を作成し、JSONでエクスポート後、ここでインポートしてください</div>
+                        <div class="empty-state-subtext">「➕ 新規景品を追加」または「📥 JSONファイルから景品を追加」で景品を登録してください</div>
                     </div>
                 `;
                 return;
@@ -6812,15 +6790,18 @@ function initializeAuth() {
 function getCurrentConfig() {
   const minGuaranteeValue = document.getElementById('minGuaranteeValue')?.value;
   const enableMinGuaranteeAuto = document.getElementById('enableMinGuaranteeAuto')?.checked || false;
+  const memoValue = document.getElementById('configMemo')?.value || '';
 
   console.log('💰 最低保証価値を取得:', minGuaranteeValue);
   console.log('✅ 最低保証自動併用を取得:', enableMinGuaranteeAuto);
+  console.log('📝 メモを取得:', memoValue);
 
   const config = {
     packPrice: document.getElementById('packPrice').value,
     totalPacks: document.getElementById('totalPacks').value,
     minGuaranteeValue: minGuaranteeValue,
     enableMinGuaranteeAuto: enableMinGuaranteeAuto,
+    memo: memoValue,
     prizes: [...prizes],
     losses: [...losses]
   };
@@ -6840,6 +6821,13 @@ function loadConfig(config) {
   const minGuaranteeValue = config.minGuaranteeValue || '1';
   document.getElementById('minGuaranteeValue').value = minGuaranteeValue;
   console.log('💰 最低保証価値を復元:', minGuaranteeValue);
+
+  // メモを復元
+  if (document.getElementById('configMemo')) {
+    const memoValue = config.memo || '';
+    document.getElementById('configMemo').value = memoValue;
+    console.log('📝 メモを復元:', memoValue);
+  }
 
   // 最低保証自動併用を復元
   if (document.getElementById('enableMinGuaranteeAuto')) {
@@ -7778,14 +7766,12 @@ function displayWeeklyStats(stats) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  // 既存の初期化処理の後に追加
+  // URLパラメータで設定が指定されている場合は自動読み込み
   setTimeout(() => {
-    refreshCloudConfigList();
-    // URLパラメータで設定が指定されている場合は自動読み込み
     loadConfigFromURL();
     // 共有ボタンの初期状態を設定
     updateShareButtonState();
-  }, 1000); // Firebaseの初期化を待つ
+  }, 500);
 });
 
 </script>
