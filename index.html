@@ -3493,6 +3493,19 @@
                     ? '<span style="display: inline-block; background: var(--sf-orange); color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">📝 仮装</span>'
                     : '';
 
+                // 在庫状況バッジ（仮装景品以外）
+                let stockBadge = '';
+                if (!prize.isTemporary) {
+                    const masterPrize = prizeMaster.find(p => p.name === prize.name);
+                    if (masterPrize) {
+                        if (masterPrize.count > 0) {
+                            stockBadge = `<span style="display: inline-block; background: rgba(52, 199, 89, 0.15); color: #34C759; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">在庫あり (${masterPrize.count}個)</span>`;
+                        } else {
+                            stockBadge = '<span style="display: inline-block; background: rgba(255, 59, 48, 0.15); color: #FF3B30; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">在庫なし</span>';
+                        }
+                    }
+                }
+
                 // 景品タイプのバッジ
                 let prizeTypeBadge = '';
                 if (prize.prizeType === 'lastOne') {
@@ -3507,7 +3520,7 @@
                     <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
                         <div class="prize-rank rank-${prize.rank}">${prize.rank}等</div>
                         <div class="prize-content" style="flex: 1;">
-                            <div class="prize-name">${prize.name}${temporaryBadge}${prizeTypeBadge}</div>
+                            <div class="prize-name">${prize.name}${temporaryBadge}${stockBadge}${prizeTypeBadge}</div>
                             <div class="prize-purchase">仕入¥${formatNumber(prize.purchasePrice)}</div>
                             <div class="prize-value">還元¥${formatNumber(prize.value)}</div>
                             <div class="prize-count">${formatNumber(prize.count)}枚</div>
