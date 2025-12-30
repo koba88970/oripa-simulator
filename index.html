@@ -3111,6 +3111,8 @@
 
                 const typeLabel = prize.type || 'PSA10';
                 const isWanted = prize.isWanted || false;
+                // すでに景品として設定されているかチェック
+                const isAlreadySet = prizes.some(p => p.name === prize.name && !p.isTemporary);
                 const stockBadge = prize.count > 0
                     ? `<span style="display: inline-block; padding: 6px 14px; background: rgba(52, 199, 89, 0.1); color: #34C759; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">${formatNumber(prize.count)}個</span>`
                     : `<span style="display: inline-block; padding: 6px 14px; background: rgba(255, 59, 48, 0.1); color: #ff3b30; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">売り切れ</span>`;
@@ -3128,6 +3130,7 @@
                                                 <span style="display: inline-block; padding: 6px 14px; background: rgba(0, 122, 255, 0.1); color: #007AFF; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">${typeLabel}</span>
                                                 <span id="stockBadge_${prize.id}" style="display: inline-block; padding: 6px 14px; background: ${prize.count > 0 ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)'}; color: ${prize.count > 0 ? '#34C759' : '#ff3b30'}; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">${prize.count > 0 ? prize.count + '個' : '売り切れ'}</span>
                                                 ${isWanted ? '<span style="font-size: 14px; filter: none;" title="欲しいものリスト">❤️</span>' : ''}
+                                                ${isAlreadySet ? '<span style="display: inline-block; padding: 6px 14px; background: rgba(142, 142, 147, 0.15); color: #8E8E93; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">すでに設定されています</span>' : ''}
                                             </div>
                                         </div>
                                         <div style="color: var(--sf-blue); font-weight: 600;">選択 →</div>
