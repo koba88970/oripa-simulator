@@ -3475,8 +3475,8 @@
                 return;
             }
 
-            // 等級順にソート
-            prizes.sort((a, b) => a.rank - b.rank);
+            // 還元ポイント順にソート（降順）
+            prizes.sort((a, b) => b.value - a.value);
 
             container.innerHTML = prizes.map(prize => {
                 const imageHtml = prize.image
@@ -4029,7 +4029,10 @@
 
             const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
 
-            container.innerHTML = prizes.map(prize => {
+            // 還元ポイント順にソート（降順）
+            const sortedPrizes = [...prizes].sort((a, b) => b.value - a.value);
+
+            container.innerHTML = sortedPrizes.map(prize => {
                 const probability = totalPacks > 0 ? (prize.count / totalPacks * 100).toFixed(2) : '0.00';
                 const imageHtml = prize.image
                     ? `<img src="${prize.image}" alt="${prize.name}" style="width: 40px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.1); margin-right: 10px;" onerror="this.style.display='none';">`
