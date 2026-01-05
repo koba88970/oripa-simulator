@@ -1791,6 +1791,33 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 種類別枚数 -->
+                    <div style="background: white; padding: 16px; border-radius: var(--radius-md); box-shadow: var(--shadow-xs); border: 1px solid rgba(0, 0, 0, 0.05); margin-top: 16px;">
+                        <div style="font-size: 13px; font-weight: 600; color: var(--sf-label); margin-bottom: 12px;">種類別枚数</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0, 122, 255, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-blue);">🏆 PSA10</span>
+                                <span id="summaryTypePSA10" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0枚</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(52, 199, 89, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-green);">✨ 美品</span>
+                                <span id="summaryType美品" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0枚</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255, 149, 0, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-orange);">📦 パック</span>
+                                <span id="summaryTypeパック" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0個</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(175, 82, 222, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-purple);">📦 ボックス</span>
+                                <span id="summaryTypeボックス" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0個</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(142, 142, 147, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-gray);">📋 その他</span>
+                                <span id="summaryTypeその他" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0枚</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="margin-bottom: 24px;">
@@ -5063,6 +5090,24 @@
                 }
             });
 
+            // 種類別枚数（在庫数をカウント）
+            const typeCounts = {
+                'PSA10': 0,
+                '美品': 0,
+                'パック': 0,
+                'ボックス': 0,
+                'その他': 0
+            };
+            inStockPrizes.forEach(prize => {
+                const type = prize.type || 'PSA10';
+                const count = prize.count || 0;
+                if (typeCounts.hasOwnProperty(type)) {
+                    typeCounts[type] += count;
+                } else {
+                    typeCounts['その他'] += count;
+                }
+            });
+
             // DOMを更新
             const stockCountEl = document.getElementById('summaryStockCount');
             const purchasePriceEl = document.getElementById('summaryTotalPurchasePrice');
@@ -5076,6 +5121,19 @@
                 const rangeEl = document.getElementById('summaryRange' + i);
                 if (rangeEl) rangeEl.textContent = formatNumber(ranges[i]) + '枚';
             }
+
+            // 種類別枚数を更新
+            const typeUnits = {
+                'PSA10': '枚',
+                '美品': '枚',
+                'パック': '個',
+                'ボックス': '個',
+                'その他': '枚'
+            };
+            Object.keys(typeCounts).forEach(type => {
+                const typeEl = document.getElementById('summaryType' + type);
+                if (typeEl) typeEl.textContent = formatNumber(typeCounts[type]) + typeUnits[type];
+            });
         }
 
         // 景品一覧を更新（景品マスターを表示）
