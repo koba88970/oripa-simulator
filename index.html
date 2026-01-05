@@ -1730,6 +1730,69 @@
                     オリパで使用する景品を管理します。景品データはクラウドに自動保存され、メインタブで選択して使用できます。
                 </p>
 
+                <!-- 在庫サマリーセクション -->
+                <div id="inventorySummary" style="background: linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(88, 86, 214, 0.08) 100%); padding: 20px; border-radius: var(--radius-lg); border: 1px solid rgba(0, 122, 255, 0.2); margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--sf-black); display: flex; align-items: center; gap: 8px;">
+                        📊 在庫サマリー
+                        <span style="font-size: 12px; font-weight: 500; color: var(--sf-gray);">（在庫ありのカードのみ）</span>
+                    </h3>
+
+                    <!-- メイン統計 -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                        <div style="background: white; padding: 16px; border-radius: var(--radius-md); box-shadow: var(--shadow-xs); border: 1px solid rgba(0, 0, 0, 0.05);">
+                            <div style="font-size: 12px; color: var(--sf-gray); margin-bottom: 4px;">在庫数</div>
+                            <div id="summaryStockCount" style="font-size: 24px; font-weight: 700; color: var(--sf-blue);">0 枚</div>
+                        </div>
+                        <div style="background: white; padding: 16px; border-radius: var(--radius-md); box-shadow: var(--shadow-xs); border: 1px solid rgba(0, 0, 0, 0.05);">
+                            <div style="font-size: 12px; color: var(--sf-gray); margin-bottom: 4px;">仕入れ総価格</div>
+                            <div id="summaryTotalPurchasePrice" style="font-size: 24px; font-weight: 700; color: var(--sf-green);">¥0</div>
+                        </div>
+                        <div style="background: white; padding: 16px; border-radius: var(--radius-md); box-shadow: var(--shadow-xs); border: 1px solid rgba(0, 0, 0, 0.05);">
+                            <div style="font-size: 12px; color: var(--sf-gray); margin-bottom: 4px;">還元ポイント総価格</div>
+                            <div id="summaryTotalRewardValue" style="font-size: 24px; font-weight: 700; color: var(--sf-orange);">¥0</div>
+                        </div>
+                    </div>
+
+                    <!-- 還元ポイント価格帯別枚数 -->
+                    <div style="background: white; padding: 16px; border-radius: var(--radius-md); box-shadow: var(--shadow-xs); border: 1px solid rgba(0, 0, 0, 0.05);">
+                        <div style="font-size: 13px; font-weight: 600; color: var(--sf-label); margin-bottom: 12px;">還元ポイント価格帯別枚数</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(142, 142, 147, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-gray);">〜1,000pt</span>
+                                <span id="summaryRange0" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0枚</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(52, 199, 89, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-green);">1,001〜5,000pt</span>
+                                <span id="summaryRange1" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0枚</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0, 122, 255, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-blue);">5,001〜10,000pt</span>
+                                <span id="summaryRange2" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0枚</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(175, 82, 222, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-purple);">10,001〜20,000pt</span>
+                                <span id="summaryRange3" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0枚</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255, 149, 0, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-orange);">20,001〜50,000pt</span>
+                                <span id="summaryRange4" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0枚</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255, 45, 85, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-pink);">50,001〜100,000pt</span>
+                                <span id="summaryRange5" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0枚</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255, 59, 48, 0.1); border-radius: var(--radius-sm);">
+                                <span style="font-size: 13px; color: var(--sf-red);">100,001〜200,000pt</span>
+                                <span id="summaryRange6" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0枚</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: linear-gradient(135deg, rgba(255, 204, 0, 0.15) 0%, rgba(255, 149, 0, 0.15) 100%); border-radius: var(--radius-sm); border: 1px solid rgba(255, 204, 0, 0.3);">
+                                <span style="font-size: 13px; color: #B8860B; font-weight: 600;">200,001pt〜</span>
+                                <span id="summaryRange7" style="font-size: 15px; font-weight: 600; color: var(--sf-black);">0枚</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div style="margin-bottom: 24px;">
                     <!-- クラウド同期ステータス -->
                     <div style="background: rgba(52, 199, 89, 0.1); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid rgba(52, 199, 89, 0.3); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
@@ -4957,8 +5020,69 @@
             return text.toString().replace(/[&<>"']/g, (m) => map[m]);
         }
 
+        // 在庫サマリーを更新
+        function updateInventorySummary() {
+            // 在庫ありのカードのみを対象にする
+            const inStockPrizes = prizeMaster.filter(prize => prize.count > 0);
+
+            // 在庫数（各カードのcount合計）
+            const totalStockCount = inStockPrizes.reduce((sum, prize) => sum + (prize.count || 0), 0);
+
+            // 仕入れ総価格（各カードの仕入れ価格 × 在庫数の合計）
+            const totalPurchasePrice = inStockPrizes.reduce((sum, prize) => {
+                return sum + ((prize.purchasePrice || 0) * (prize.count || 0));
+            }, 0);
+
+            // 還元ポイント総価格（各カードの還元ポイント価値 × 在庫数の合計）
+            const totalRewardValue = inStockPrizes.reduce((sum, prize) => {
+                return sum + ((prize.value || 0) * (prize.count || 0));
+            }, 0);
+
+            // 還元ポイント価格帯別枚数（在庫数をカウント）
+            // 〜1000, 1001〜5000, 5001〜10000, 10001〜20000, 20001〜50000, 50001〜100000, 100001〜200000, 200001〜
+            const ranges = [0, 0, 0, 0, 0, 0, 0, 0];
+            inStockPrizes.forEach(prize => {
+                const value = prize.value || 0;
+                const count = prize.count || 0;
+                if (value <= 1000) {
+                    ranges[0] += count;
+                } else if (value <= 5000) {
+                    ranges[1] += count;
+                } else if (value <= 10000) {
+                    ranges[2] += count;
+                } else if (value <= 20000) {
+                    ranges[3] += count;
+                } else if (value <= 50000) {
+                    ranges[4] += count;
+                } else if (value <= 100000) {
+                    ranges[5] += count;
+                } else if (value <= 200000) {
+                    ranges[6] += count;
+                } else {
+                    ranges[7] += count;
+                }
+            });
+
+            // DOMを更新
+            const stockCountEl = document.getElementById('summaryStockCount');
+            const purchasePriceEl = document.getElementById('summaryTotalPurchasePrice');
+            const rewardValueEl = document.getElementById('summaryTotalRewardValue');
+
+            if (stockCountEl) stockCountEl.textContent = formatNumber(totalStockCount) + ' 枚';
+            if (purchasePriceEl) purchasePriceEl.textContent = '¥' + formatNumber(totalPurchasePrice);
+            if (rewardValueEl) rewardValueEl.textContent = '¥' + formatNumber(totalRewardValue);
+
+            for (let i = 0; i < 8; i++) {
+                const rangeEl = document.getElementById('summaryRange' + i);
+                if (rangeEl) rangeEl.textContent = formatNumber(ranges[i]) + '枚';
+            }
+        }
+
         // 景品一覧を更新（景品マスターを表示）
         function updatePrizeMasterList() {
+            // 在庫サマリーを更新
+            updateInventorySummary();
+
             const listContainer = document.getElementById('prizeMasterList');
 
             if (prizeMaster.length === 0) {
