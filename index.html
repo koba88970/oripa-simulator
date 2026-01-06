@@ -1393,6 +1393,7 @@
         <div class="tab-navigation">
             <button class="tab-button active" onclick="switchTab('main', event)">メイン</button>
             <button class="tab-button" onclick="switchTab('prize-list', event)">景品マスター</button>
+            <button class="tab-button" onclick="switchTab('inventory-adjustment', event)">📦 在庫調整</button>
             <button class="tab-button" onclick="switchTab('temporary-prize-list', event)" style="display: none;">📝 仮装景品</button>
         </div>
 
@@ -2024,6 +2025,108 @@
         </div>
     </div>
     <!-- /仮装景品管理タブコンテンツ -->
+
+    <!-- 在庫調整タブコンテンツ -->
+    <div id="tab-inventory-adjustment" class="tab-content">
+        <div style="max-width: 1400px; margin: 0 auto;">
+            <h2 style="color: var(--sf-blue); border-bottom: 2px solid var(--sf-blue); padding-bottom: 12px; margin-bottom: 20px;">
+                📦 在庫調整
+            </h2>
+
+            <!-- JSONインポートセクション -->
+            <div style="background: linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(88, 86, 214, 0.08) 100%); padding: 20px; border-radius: var(--radius-lg); border: 1px solid rgba(0, 122, 255, 0.2); margin-bottom: 24px;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--sf-black);">
+                    📥 在庫データをインポート
+                </h3>
+                <p style="font-size: 14px; color: var(--sf-gray); margin-bottom: 16px;">
+                    Pythonスクリプトで生成したJSONファイルを読み込んでください。
+                </p>
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <input type="file" id="inventoryJsonInput" accept=".json" onchange="loadInventoryJson(event)" style="display: none;">
+                    <button class="btn btn-primary" onclick="document.getElementById('inventoryJsonInput').click()" style="padding: 12px 24px;">
+                        📂 JSONファイルを選択
+                    </button>
+                    <span id="inventoryFileName" style="font-size: 14px; color: var(--sf-gray);"></span>
+                </div>
+                <div id="inventoryImportStatus" style="margin-top: 12px; font-size: 14px;"></div>
+            </div>
+
+            <!-- サマリーセクション -->
+            <div id="inventoryAdjustmentSummary" style="display: none; background: white; padding: 20px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 24px;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--sf-black);">
+                    📊 インポートデータサマリー
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    <div style="background: rgba(255, 149, 0, 0.1); padding: 16px; border-radius: var(--radius-md);">
+                        <div style="font-size: 12px; color: var(--sf-orange); margin-bottom: 4px;">発送待ち</div>
+                        <div id="summaryShippingRequested" style="font-size: 24px; font-weight: 700; color: var(--sf-black);">0 点</div>
+                    </div>
+                    <div style="background: rgba(52, 199, 89, 0.1); padding: 16px; border-radius: var(--radius-md);">
+                        <div style="font-size: 12px; color: var(--sf-green); margin-bottom: 4px;">発送済み</div>
+                        <div id="summaryShipped" style="font-size: 24px; font-weight: 700; color: var(--sf-black);">0 点</div>
+                    </div>
+                    <div style="background: rgba(0, 122, 255, 0.1); padding: 16px; border-radius: var(--radius-md);">
+                        <div style="font-size: 12px; color: var(--sf-blue); margin-bottom: 4px;">景品種類数</div>
+                        <div id="summaryUniqueItems" style="font-size: 24px; font-weight: 700; color: var(--sf-black);">0 種類</div>
+                    </div>
+                    <div style="background: rgba(142, 142, 147, 0.1); padding: 16px; border-radius: var(--radius-md);">
+                        <div style="font-size: 12px; color: var(--sf-gray); margin-bottom: 4px;">抽出日時</div>
+                        <div id="summaryExtractedAt" style="font-size: 14px; font-weight: 600; color: var(--sf-black);">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- フィルターセクション -->
+            <div id="inventoryFilterSection" style="display: none; margin-bottom: 16px; padding: 16px; background: rgba(0, 0, 0, 0.02); border-radius: var(--radius-lg);">
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <label style="font-weight: 600; font-size: 14px; color: var(--sf-label);">ステータス:</label>
+                    <select id="inventoryStatusFilter" onchange="filterInventoryItems()" style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 0, 0, 0.1); background: white; font-size: 14px; cursor: pointer;">
+                        <option value="all">すべて</option>
+                        <option value="needs_procurement">仕入れ必要</option>
+                        <option value="procuring">仕入れ中</option>
+                        <option value="ready_to_ship">発送Ready</option>
+                    </select>
+                    <div style="width: 1px; height: 24px; background: rgba(0, 0, 0, 0.1);"></div>
+                    <label style="font-weight: 600; font-size: 14px; color: var(--sf-label);">検索:</label>
+                    <input type="text" id="inventorySearchText" oninput="filterInventoryItems()" placeholder="景品名で検索..." style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 0, 0, 0.1); background: white; font-size: 14px; min-width: 200px;">
+                </div>
+            </div>
+
+            <!-- 景品一覧セクション -->
+            <div id="inventoryItemsList" style="display: none;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--sf-black);">
+                    📋 発送待ちの景品
+                </h3>
+                <div id="inventoryItemsContainer" style="display: grid; gap: 12px;">
+                    <!-- 景品カードがここに動的に追加される -->
+                </div>
+            </div>
+
+            <!-- 発送済み景品セクション -->
+            <div id="shippedItemsList" style="display: none; margin-top: 32px;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--sf-black);">
+                    ✅ 発送済みの景品
+                </h3>
+                <div id="shippedItemsContainer" style="display: grid; gap: 12px;">
+                    <!-- 発送済み景品カードがここに動的に追加される -->
+                </div>
+            </div>
+
+            <!-- 仕入れ履歴セクション -->
+            <div id="procurementHistorySection" style="margin-top: 32px;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--sf-black); display: flex; align-items: center; gap: 8px;">
+                    📜 仕入れ履歴
+                    <span id="procurementHistoryCount" style="font-size: 12px; font-weight: 500; color: var(--sf-gray);">(0件)</span>
+                </h3>
+                <div id="procurementHistoryContainer" style="background: white; border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-sm);">
+                    <p style="color: var(--sf-gray); text-align: center; padding: 20px 0;">
+                        仕入れ履歴がありません
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /在庫調整タブコンテンツ -->
 
     <!-- カスタムアラートモーダル -->
     <div id="customAlertModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10000; align-items: center; justify-content: center;">
@@ -4568,7 +4671,7 @@
             } else {
                 // eventがない場合（プログラムから呼ばれた場合）、対応するボタンを探してactiveにする
                 const buttons = document.querySelectorAll('.tab-button');
-                const tabNames = ['main', 'prize-list', 'temporary-prize-list'];
+                const tabNames = ['main', 'prize-list', 'temporary-prize-list', 'inventory-adjustment'];
                 const index = tabNames.indexOf(tabName);
                 if (index >= 0 && buttons[index]) {
                     buttons[index].classList.add('active');
@@ -4586,6 +4689,20 @@
             // 仮装景品タブが表示された時
             if (tabName === 'temporary-prize-list') {
                 updateTemporaryPrizeMasterList();
+            }
+
+            // 在庫調整タブが表示された時
+            if (tabName === 'inventory-adjustment') {
+                // 仕入れ履歴を再描画（ローカルストレージから復元）
+                const savedHistory = localStorage.getItem('procurementHistory');
+                if (savedHistory) {
+                    try {
+                        procurementHistory = JSON.parse(savedHistory);
+                        renderProcurementHistory();
+                    } catch (e) {
+                        console.error('仕入れ履歴の読み込みに失敗:', e);
+                    }
+                }
             }
         }
 
@@ -6048,6 +6165,392 @@
         // ページにFirebase状態を表示（開発用）
         console.log('%c💡 デバッグTIP', 'color: #34C759; font-weight: bold; font-size: 14px;');
         console.log('コンソールで debugFirebase() を実行すると、Firebaseの接続状態を確認できます');
+
+        // ==================================================
+        // 在庫調整機能
+        // ==================================================
+
+        // 在庫調整データの保存用
+        let inventoryData = null;  // インポートされたJSONデータ
+        let inventoryItemStatuses = {};  // 景品ごとのステータス管理
+        let procurementHistory = [];  // 仕入れ履歴
+
+        // JSONファイルを読み込む
+        function loadInventoryJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    inventoryData = data;
+
+                    // ファイル名を表示
+                    document.getElementById('inventoryFileName').textContent = file.name;
+
+                    // サマリーを更新
+                    document.getElementById('summaryShippingRequested').textContent =
+                        (data.summary?.total_pending_items || data.summary?.total_shipping_requested || 0).toLocaleString() + ' 点';
+                    document.getElementById('summaryShipped').textContent =
+                        (data.summary?.total_shipped_items || data.summary?.total_shipped || 0).toLocaleString() + ' 点';
+                    document.getElementById('summaryUniqueItems').textContent =
+                        ((data.summary?.unique_items_pending || data.summary?.unique_items_shipping_requested || 0) +
+                         (data.summary?.unique_items_shipped || 0)).toLocaleString() + ' 種類';
+                    document.getElementById('summaryExtractedAt').textContent =
+                        data.extracted_at ? new Date(data.extracted_at).toLocaleString('ja-JP') : '-';
+
+                    // 各景品のステータスを初期化（景品マスターとマッチング）
+                    initializeItemStatuses(data);
+
+                    // UIを表示
+                    document.getElementById('inventoryAdjustmentSummary').style.display = 'block';
+                    document.getElementById('inventoryFilterSection').style.display = 'block';
+                    document.getElementById('inventoryItemsList').style.display = 'block';
+                    document.getElementById('shippedItemsList').style.display = 'block';
+
+                    // 景品を描画
+                    renderInventoryItems();
+
+                    // インポート状態を表示
+                    document.getElementById('inventoryImportStatus').innerHTML =
+                        '<span style="color: var(--sf-green);">✅ インポート完了！</span>';
+
+                    console.log('在庫データをインポートしました:', data);
+
+                } catch (error) {
+                    console.error('JSONの解析に失敗:', error);
+                    document.getElementById('inventoryImportStatus').innerHTML =
+                        '<span style="color: var(--sf-red);">❌ JSONの解析に失敗しました: ' + error.message + '</span>';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 景品ステータスの初期化（景品マスターとマッチング）
+        function initializeItemStatuses(data) {
+            // shipping_pending または shipping_requested をサポート
+            const pendingItems = data.shipping_pending || data.shipping_requested || [];
+            if (pendingItems.length === 0) return;
+
+            // 既存のステータスをロード（保存されていれば）
+            const savedStatuses = localStorage.getItem('inventoryItemStatuses');
+            if (savedStatuses) {
+                try {
+                    inventoryItemStatuses = JSON.parse(savedStatuses);
+                } catch (e) {
+                    inventoryItemStatuses = {};
+                }
+            }
+
+            // 仕入れ履歴をロード
+            const savedHistory = localStorage.getItem('procurementHistory');
+            if (savedHistory) {
+                try {
+                    procurementHistory = JSON.parse(savedHistory);
+                } catch (e) {
+                    procurementHistory = [];
+                }
+            }
+
+            // 新しいアイテムの初期ステータスを設定
+            pendingItems.forEach(item => {
+                if (!inventoryItemStatuses[item.name]) {
+                    // 景品マスターと照合して在庫を確認
+                    const masterItem = findPrizeMasterItem(item.name);
+                    if (masterItem && masterItem.stock > 0) {
+                        // 在庫あり → 発送Ready
+                        inventoryItemStatuses[item.name] = {
+                            status: 'ready_to_ship',
+                            masterStock: masterItem.stock,
+                            lastUpdated: new Date().toISOString()
+                        };
+                    } else {
+                        // 在庫なし → 仕入れ必要
+                        inventoryItemStatuses[item.name] = {
+                            status: 'needs_procurement',
+                            masterStock: masterItem ? masterItem.stock : 0,
+                            lastUpdated: new Date().toISOString()
+                        };
+                    }
+                }
+            });
+
+            // ステータスを保存
+            saveInventoryStatuses();
+        }
+
+        // 景品マスターからアイテムを検索
+        function findPrizeMasterItem(name) {
+            if (!prizeMaster || prizeMaster.length === 0) return null;
+
+            // 完全一致で検索
+            let found = prizeMaster.find(p => p.name === name);
+            if (found) return found;
+
+            // 部分一致で検索（カード番号などが異なる場合用）
+            const normalizedName = name.replace(/[\[\]\/\-\s]/g, '').toLowerCase();
+            found = prizeMaster.find(p => {
+                const normalizedPrizeName = p.name.replace(/[\[\]\/\-\s]/g, '').toLowerCase();
+                return normalizedPrizeName === normalizedName ||
+                       normalizedPrizeName.includes(normalizedName) ||
+                       normalizedName.includes(normalizedPrizeName);
+            });
+
+            return found || null;
+        }
+
+        // 景品一覧を描画
+        function renderInventoryItems() {
+            if (!inventoryData) return;
+
+            const statusFilter = document.getElementById('inventoryStatusFilter').value;
+            const searchText = document.getElementById('inventorySearchText').value.toLowerCase();
+
+            // 発送依頼中の景品を描画
+            const container = document.getElementById('inventoryItemsContainer');
+            container.innerHTML = '';
+
+            let filteredItems = inventoryData.shipping_pending || inventoryData.shipping_requested || [];
+
+            // フィルタリング
+            filteredItems = filteredItems.filter(item => {
+                const itemStatus = inventoryItemStatuses[item.name]?.status || 'needs_procurement';
+
+                // ステータスフィルター
+                if (statusFilter !== 'all') {
+                    if (itemStatus !== statusFilter) return false;
+                }
+
+                // テキスト検索
+                if (searchText && !item.name.toLowerCase().includes(searchText)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            if (filteredItems.length === 0) {
+                container.innerHTML = '<p style="color: var(--sf-gray); text-align: center; padding: 40px 0;">該当する景品がありません</p>';
+            } else {
+                filteredItems.forEach(item => {
+                    const card = createInventoryItemCard(item);
+                    container.appendChild(card);
+                });
+            }
+
+            // 発送済み景品を描画
+            const shippedContainer = document.getElementById('shippedItemsContainer');
+            shippedContainer.innerHTML = '';
+
+            let shippedItems = inventoryData.shipped || [];
+
+            // テキスト検索のみ適用
+            shippedItems = shippedItems.filter(item => {
+                if (searchText && !item.name.toLowerCase().includes(searchText)) {
+                    return false;
+                }
+                return true;
+            });
+
+            if (shippedItems.length === 0) {
+                shippedContainer.innerHTML = '<p style="color: var(--sf-gray); text-align: center; padding: 40px 0;">該当する景品がありません</p>';
+            } else {
+                shippedItems.forEach(item => {
+                    const card = createShippedItemCard(item);
+                    shippedContainer.appendChild(card);
+                });
+            }
+
+            document.getElementById('shippedItemsList').style.display = 'block';
+
+            // 仕入れ履歴を描画
+            renderProcurementHistory();
+        }
+
+        // 発送依頼中の景品カードを作成
+        function createInventoryItemCard(item) {
+            const card = document.createElement('div');
+            const itemStatus = inventoryItemStatuses[item.name] || { status: 'needs_procurement', masterStock: 0 };
+            const masterItem = findPrizeMasterItem(item.name);
+
+            const statusColors = {
+                'needs_procurement': { bg: 'rgba(255, 59, 48, 0.1)', text: '#FF3B30', label: '仕入れ必要' },
+                'procuring': { bg: 'rgba(255, 204, 0, 0.1)', text: '#FFCC00', label: '仕入れ中' },
+                'ready_to_ship': { bg: 'rgba(52, 199, 89, 0.1)', text: '#34C759', label: '発送Ready' }
+            };
+            const statusInfo = statusColors[itemStatus.status] || statusColors['needs_procurement'];
+
+            card.style.cssText = `
+                background: white;
+                border-radius: var(--radius-md);
+                padding: 16px;
+                box-shadow: var(--shadow-sm);
+                border-left: 4px solid ${statusInfo.text};
+            `;
+
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <div style="font-weight: 700; font-size: 15px; color: var(--sf-black); margin-bottom: 8px;">
+                            ${escapeHtml(item.name)}
+                        </div>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--sf-gray);">
+                            <span>📦 発送依頼: <strong style="color: var(--sf-orange);">${item.count}個</strong></span>
+                            <span>🏢 マスター在庫: <strong style="color: ${masterItem?.stock > 0 ? 'var(--sf-green)' : 'var(--sf-red)'};">${masterItem?.stock ?? 0}個</strong></span>
+                            <span>👥 ユーザー: ${item.user_ids?.length || 0}人</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="background: ${statusInfo.bg}; color: ${statusInfo.text}; padding: 6px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600;">
+                            ${statusInfo.label}
+                        </span>
+                        <select onchange="changeInventoryItemStatus('${escapeHtml(item.name).replace(/'/g, "\\'")}', this.value)" style="padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(0, 0, 0, 0.1); background: white; font-size: 13px; cursor: pointer;">
+                            <option value="needs_procurement" ${itemStatus.status === 'needs_procurement' ? 'selected' : ''}>仕入れ必要</option>
+                            <option value="procuring" ${itemStatus.status === 'procuring' ? 'selected' : ''}>仕入れ中</option>
+                            <option value="ready_to_ship" ${itemStatus.status === 'ready_to_ship' ? 'selected' : ''}>発送Ready</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // 発送済み景品カードを作成
+        function createShippedItemCard(item) {
+            const card = document.createElement('div');
+
+            card.style.cssText = `
+                background: white;
+                border-radius: var(--radius-md);
+                padding: 16px;
+                box-shadow: var(--shadow-sm);
+                border-left: 4px solid var(--sf-green);
+                opacity: 0.8;
+            `;
+
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <div style="font-weight: 700; font-size: 15px; color: var(--sf-black); margin-bottom: 8px;">
+                            ${escapeHtml(item.name)}
+                        </div>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--sf-gray);">
+                            <span>✅ 発送済み: <strong style="color: var(--sf-green);">${item.count}個</strong></span>
+                            <span>📋 注文: ${item.order_ids?.length || 0}件</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="background: rgba(52, 199, 89, 0.1); color: var(--sf-green); padding: 6px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600;">
+                            発送済み
+                        </span>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // 在庫フィルター
+        function filterInventoryItems() {
+            renderInventoryItems();
+        }
+
+        // ステータスを変更
+        function changeInventoryItemStatus(itemName, newStatus) {
+            const oldStatus = inventoryItemStatuses[itemName]?.status;
+
+            inventoryItemStatuses[itemName] = {
+                ...inventoryItemStatuses[itemName],
+                status: newStatus,
+                lastUpdated: new Date().toISOString()
+            };
+
+            // 仕入れ履歴に追加
+            if (oldStatus === 'needs_procurement' && newStatus === 'procuring') {
+                addProcurementHistoryEntry(itemName, 'start', '仕入れ開始');
+            } else if (oldStatus === 'procuring' && newStatus === 'ready_to_ship') {
+                addProcurementHistoryEntry(itemName, 'complete', '仕入れ完了・在庫追加');
+            }
+
+            saveInventoryStatuses();
+            renderInventoryItems();
+        }
+
+        // 仕入れ履歴エントリを追加
+        function addProcurementHistoryEntry(itemName, type, note) {
+            procurementHistory.unshift({
+                id: Date.now(),
+                itemName: itemName,
+                type: type,
+                note: note,
+                timestamp: new Date().toISOString()
+            });
+
+            // 最大100件まで保持
+            if (procurementHistory.length > 100) {
+                procurementHistory = procurementHistory.slice(0, 100);
+            }
+
+            saveProcurementHistory();
+        }
+
+        // 仕入れ履歴を描画
+        function renderProcurementHistory() {
+            const container = document.getElementById('procurementHistoryContainer');
+            const countSpan = document.getElementById('procurementHistoryCount');
+
+            countSpan.textContent = `(${procurementHistory.length}件)`;
+
+            if (procurementHistory.length === 0) {
+                container.innerHTML = '<p style="color: var(--sf-gray); text-align: center; padding: 20px 0;">仕入れ履歴がありません</p>';
+                return;
+            }
+
+            let html = '<div style="max-height: 400px; overflow-y: auto;">';
+
+            procurementHistory.slice(0, 50).forEach(entry => {
+                const date = new Date(entry.timestamp).toLocaleString('ja-JP');
+                const typeColors = {
+                    'start': { icon: '🚀', color: 'var(--sf-orange)' },
+                    'complete': { icon: '✅', color: 'var(--sf-green)' }
+                };
+                const typeInfo = typeColors[entry.type] || { icon: '📝', color: 'var(--sf-gray)' };
+
+                html += `
+                    <div style="padding: 12px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.05); display: flex; align-items: flex-start; gap: 12px;">
+                        <span style="font-size: 20px;">${typeInfo.icon}</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 14px; color: var(--sf-black);">${escapeHtml(entry.itemName)}</div>
+                            <div style="font-size: 12px; color: ${typeInfo.color}; margin-top: 2px;">${escapeHtml(entry.note)}</div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--sf-gray);">${date}</div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // ステータスをローカルストレージに保存
+        function saveInventoryStatuses() {
+            localStorage.setItem('inventoryItemStatuses', JSON.stringify(inventoryItemStatuses));
+        }
+
+        // 仕入れ履歴をローカルストレージに保存
+        function saveProcurementHistory() {
+            localStorage.setItem('procurementHistory', JSON.stringify(procurementHistory));
+        }
+
+        // HTMLエスケープ（既存の関数がない場合用）
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 
 <!-- Firebase SDK -->
