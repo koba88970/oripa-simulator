@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>オリパシミュレーターオンラインUltra v1.0</title>
+    <title>オリパシミュレーターユニコーン v1.0</title>
     <style>
         :root {
             /* 最新のiOS風カラーパレット */
@@ -1387,7 +1387,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>オリパシミュレーターオンラインUltra <span class="version-badge">v1.0</span></h1>
+        <h1>オリパシミュレーターユニコーン <span class="version-badge">v1.0</span></h1>
 
         <!-- タブナビゲーション -->
         <div class="tab-navigation">
@@ -2093,10 +2093,42 @@
                     <div id="shippingCsvStatus" style="margin-top: 12px; font-size: 14px;"></div>
                 </div>
 
-                <!-- 読み込み結果サマリー -->
+                <!-- ステップ1: 注文選択 -->
+                <div id="orderSelectionStep" style="display: none; background: white; padding: 20px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                        <h3 style="font-size: 16px; font-weight: 700; color: var(--sf-black); margin: 0;">
+                            📋 ステップ1: 取り込む注文を選択
+                        </h3>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span id="orderSelectedCount" style="font-size: 13px; color: var(--sf-blue); font-weight: 600;"></span>
+                            <button onclick="selectAllOrders()" style="padding: 6px 12px; background: var(--sf-blue); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600;">
+                                ✓ 全選択
+                            </button>
+                            <button onclick="deselectAllOrders()" style="padding: 6px 12px; background: rgba(0,0,0,0.1); color: var(--sf-gray); border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600;">
+                                ✗ 全解除
+                            </button>
+                        </div>
+                    </div>
+                    <p style="font-size: 13px; color: var(--sf-gray); margin-bottom: 16px;">
+                        💡 既に処理済みの注文はチェックを外してください。選択した注文のみが在庫減少の対象になります。
+                    </p>
+                    <div id="orderSelectionContainer" style="display: grid; gap: 8px; max-height: 400px; overflow-y: auto; margin-bottom: 16px;">
+                        <!-- 注文リストがここに表示される -->
+                    </div>
+                    <div style="display: flex; gap: 12px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 16px;">
+                        <button class="btn btn-primary" onclick="confirmOrderSelection()" style="padding: 12px 24px;">
+                            ✅ 選択した注文を取り込む
+                        </button>
+                        <button class="btn" onclick="resetOrderSelection()" style="padding: 12px 24px;">
+                            🔄 リセット
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ステップ2: 読み込み結果サマリー -->
                 <div id="shippingCsvSummary" style="display: none; background: white; padding: 20px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 24px;">
                     <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--sf-black);">
-                        📊 読み込み結果
+                        📊 ステップ2: 選択した注文の景品一覧
                     </h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
                         <div style="background: rgba(52, 199, 89, 0.1); padding: 16px; border-radius: var(--radius-md);">
@@ -2109,7 +2141,7 @@
                         </div>
                         <div style="background: rgba(175, 82, 222, 0.1); padding: 16px; border-radius: var(--radius-md); cursor: pointer;" onclick="openRandomPackModal()">
                             <div style="font-size: 12px; color: var(--sf-purple); margin-bottom: 4px;">なにかのパック 📦</div>
-                            <div id="csvSummaryRandomPack" style="font-size: 24px; font-weight: 700; color: var(--sf-black);">0 件</div>
+                            <div id="csvSummaryRandomPack" style="font-size: 24px; font-weight: 700; color: var(--sf-black);">0 枚</div>
                             <div style="font-size: 11px; color: var(--sf-purple); margin-top: 4px;">クリックして在庫調整</div>
                         </div>
                     </div>
@@ -2132,31 +2164,20 @@
                         <button class="btn" onclick="openRandomPackModal()" style="padding: 12px 24px; background: var(--sf-purple); color: white;">
                             📦 なにかのパック在庫調整
                         </button>
+                        <button class="btn" onclick="backToOrderSelection()" style="padding: 12px 24px;">
+                            ← 注文選択に戻る
+                        </button>
                     </div>
                 </div>
 
-                <!-- 発送済み一覧 -->
+                <!-- 発送済み一覧（景品グループ） -->
                 <div id="shippedOrdersList" style="display: none; margin-bottom: 24px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-                        <h3 style="font-size: 16px; font-weight: 700; color: var(--sf-black); display: flex; align-items: center; gap: 8px; margin: 0;">
-                            ✅ 発送済み注文
-                            <span id="shippedOrdersCount" style="font-size: 12px; font-weight: 500; color: var(--sf-gray);"></span>
-                        </h3>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <span id="shippedSelectedCount" style="font-size: 13px; color: var(--sf-blue); font-weight: 600;"></span>
-                            <button onclick="selectAllShipped()" style="padding: 6px 12px; background: var(--sf-blue); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600;">
-                                ✓ 全選択
-                            </button>
-                            <button onclick="deselectAllShipped()" style="padding: 6px 12px; background: rgba(0,0,0,0.1); color: var(--sf-gray); border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600;">
-                                ✗ 全解除
-                            </button>
-                        </div>
-                    </div>
-                    <p style="font-size: 12px; color: var(--sf-gray); margin-bottom: 12px;">
-                        💡 既に処理済みの発送は除外して在庫を減少できます。チェックを外すと除外されます。
-                    </p>
+                    <h3 style="font-size: 16px; font-weight: 700; color: var(--sf-black); display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                        ✅ 発送済み景品（グループ）
+                        <span id="shippedOrdersCount" style="font-size: 12px; font-weight: 500; color: var(--sf-gray);"></span>
+                    </h3>
                     <div id="shippedOrdersContainer" style="display: grid; gap: 12px; max-height: 400px; overflow-y: auto;">
-                        <!-- 発送済み注文カードがここに動的に追加される -->
+                        <!-- 発送済み景品カードがここに動的に追加される -->
                     </div>
                 </div>
 
@@ -2205,26 +2226,6 @@
                     </div>
                 </div>
 
-                <!-- 入庫予定リスト -->
-                <div style="padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.1);">
-                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--sf-black); display: flex; align-items: center; gap: 8px;">
-                        📋 入庫予定リスト
-                        <span id="registerListCount" style="font-size: 12px; font-weight: 500; color: var(--sf-gray);">(0件)</span>
-                    </h3>
-                    <div id="registerListContainer" style="min-height: 100px;">
-                        <p id="registerListEmpty" style="color: var(--sf-gray); text-align: center; padding: 40px 0;">
-                            景品を検索して入庫予定リストに追加してください
-                        </p>
-                    </div>
-                    <div id="registerActions" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0, 0, 0, 0.1);">
-                        <button class="btn btn-primary" onclick="applyInventoryRegister()" style="padding: 12px 24px; background: var(--sf-green);">
-                            ✅ 入庫を確定
-                        </button>
-                        <button class="btn" onclick="clearRegisterList()" style="padding: 12px 24px; margin-left: 12px;">
-                            クリア
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <!-- ========== 在庫増減確認セクション ========== -->
@@ -2289,7 +2290,7 @@
                 🎁 なにかのパックの内容を選択
             </h3>
             <p style="font-size: 13px; color: var(--sf-gray); margin-bottom: 16px;">
-                実際に発送したパックを選択してください（<span id="randomPackCount">0</span>点）
+                実際に発送したパックを選択してください（<span id="randomPackCount">0</span>枚）
             </p>
             <div id="randomPackPrizeList" style="max-height: 400px; overflow-y: auto; margin-bottom: 16px;">
                 <!-- パック一覧がここに表示される -->
@@ -6730,13 +6731,35 @@
         // ==================================================
 
         // 在庫調整データ
-        let shippingCsvData = [];  // CSVから読み込んだ発送データ
+        let shippingCsvData = [];  // CSVから読み込んだ発送データ（全データ）
+        let filteredShippingData = []; // 選択された注文のデータのみ
         let pendingOrders = [];    // 未発送注文リスト
-        let registerList = [];     // 入庫予定リスト
         let inventoryHistory = []; // 在庫増減履歴
         let randomPackCount = 0;   // なにかのパックの数
         let randomPackSelections = {}; // なにかのパック選択状態
-        let selectedShippedItems = new Set(); // 選択された発送済みアイテム（景品名）
+        let csvOrdersList = [];    // CSVから読み込んだ注文リスト（注文ID単位）
+        let selectedOrderIds = new Set(); // 選択された注文ID
+
+        // 景品名の正規化（マッチング用）
+        // _ と - を統一、() と [] を統一
+        function normalizePrizeName(name) {
+            if (!name) return '';
+            return name
+                .replace(/_/g, '-')      // _ を - に統一
+                .replace(/\[/g, '(')     // [ を ( に統一
+                .replace(/\]/g, ')')     // ] を ) に統一
+                .trim();
+        }
+
+        // 正規化した名前で景品マスターを検索
+        function findPrizeByNormalizedName(prizeName) {
+            const normalizedSearch = normalizePrizeName(prizeName);
+            // まず完全一致を試す
+            let found = prizeMaster.find(p => p.name === prizeName);
+            if (found) return found;
+            // 正規化した名前で検索
+            return prizeMaster.find(p => normalizePrizeName(p.name) === normalizedSearch);
+        }
 
         // サブタブ切り替え
         function switchInventorySubTab(tabName, btn) {
@@ -6772,9 +6795,6 @@
         function loadShippingCsv(event) {
             const file = event.target.files[0];
             if (!file) return;
-
-            // 選択状態をリセット（新しいCSVなので全選択にするため）
-            selectedShippedItems.clear();
 
             document.getElementById('shippingCsvFileName').textContent = file.name;
 
@@ -6919,6 +6939,10 @@
 
         // アイテムが除外対象かチェック
         function isExcludedItem(name) {
+            // 「なにかのパック」は除外しない（コイン表記が含まれていても）
+            if (name.includes('なにかのパック')) {
+                return false;
+            }
             return EXCLUDED_ITEM_PATTERNS.some(pattern => name.includes(pattern));
         }
 
@@ -6940,6 +6964,7 @@
             // 2行目は日本語ヘッダーなのでスキップ
 
             // カラムインデックスを特定
+            const idIdx = headers.indexOf('id');  // 発送ID
             const orderIdIdx = headers.indexOf('order_id');
             const itemNamesIdx = headers.indexOf('item_names');
             const userIdIdx = headers.indexOf('user_id');
@@ -6956,6 +6981,9 @@
 
             // データ行を解析（3行目から）
             shippingCsvData = [];
+            filteredShippingData = [];
+            csvOrdersList = [];
+            selectedOrderIds = new Set();
             let shippedCount = 0;
             let pendingCount = 0;
             let randomPackTotal = 0;
@@ -6965,6 +6993,7 @@
                 const row = records[i];
                 if (row.length <= Math.max(orderIdIdx, itemNamesIdx, statusIdx)) continue;
 
+                const id = row[idIdx] || '';  // 発送ID
                 const orderId = row[orderIdIdx] || '';
                 const itemNamesRaw = row[itemNamesIdx] || '';
                 const userId = parseInt(row[userIdIdx]) || 0;
@@ -6989,20 +7018,38 @@
                 // item_names を改行で分割して各アイテムを処理
                 const items = itemNamesRaw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
 
+                console.log(`注文 ${orderId} (ID:${id}): item_names生値=`, JSON.stringify(itemNamesRaw));
+                console.log(`  → 分割後: ${items.length}件`, items);
+
                 items.forEach(prizeName => {
                     // 除外アイテムをスキップ
                     if (isExcludedItem(prizeName)) {
+                        console.log(`  除外: ${prizeName}`);
                         return;
                     }
 
                     const isRandomPack = prizeName.includes('なにかのパック');
+                    if (isRandomPack) {
+                        console.log(`  なにかのパック検出: ${prizeName}`);
+                    }
+
+                    // なにかのパックの枚数を抽出（例: "なにかのパック6枚セット" → 6）
+                    let randomPackQty = 1;
+                    if (isRandomPack) {
+                        const packMatch = prizeName.match(/なにかのパック(\d+)枚/);
+                        if (packMatch) {
+                            randomPackQty = parseInt(packMatch[1]) || 1;
+                        }
+                    }
 
                     shippingCsvData.push({
+                        id: id,  // 発送ID
                         orderId: orderId,
                         prizeName: prizeName,
                         status: isShipped ? 'shipped' : 'pending',
                         quantity: 1,
                         isRandomPack: isRandomPack,
+                        randomPackQty: randomPackQty,  // パックの枚数
                         userId: userId,
                         createdAt: createdAt,
                         customerName: customerName.trim()
@@ -7011,7 +7058,7 @@
                     if (isShipped) {
                         shippedCount++;
                         if (isRandomPack) {
-                            randomPackTotal++;
+                            randomPackTotal += randomPackQty;  // 枚数分を加算
                         }
                     } else {
                         pendingCount++;
@@ -7019,22 +7066,61 @@
                 });
             }
 
-            // サマリーを更新
-            document.getElementById('csvSummaryShipped').textContent = shippedCount + ' 件';
-            document.getElementById('csvSummaryPending').textContent = pendingCount + ' 件';
-            document.getElementById('csvSummaryRandomPack').textContent = randomPackTotal + ' 件';
-
             randomPackCount = randomPackTotal;
 
-            // UIを表示
-            document.getElementById('shippingCsvSummary').style.display = 'block';
+            // 注文IDでグループ化してリストを作成
+            const orderMap = {};
+            shippingCsvData.forEach(item => {
+                if (!orderMap[item.orderId]) {
+                    orderMap[item.orderId] = {
+                        orderId: item.orderId,
+                        ids: [],  // 発送IDリスト
+                        status: item.status,
+                        customerName: item.customerName || '',
+                        createdAt: item.createdAt || '',
+                        items: [],
+                        itemCount: 0,
+                        randomPackQty: 0  // なにかのパック枚数
+                    };
+                }
+                // 発送IDを追加（重複を避ける）
+                if (item.id && !orderMap[item.orderId].ids.includes(item.id)) {
+                    orderMap[item.orderId].ids.push(item.id);
+                }
+                orderMap[item.orderId].items.push(item.prizeName);
+                orderMap[item.orderId].itemCount++;
+                // なにかのパック枚数を加算
+                if (item.isRandomPack) {
+                    orderMap[item.orderId].randomPackQty += (item.randomPackQty || 1);
+                }
+            });
+
+            console.log('注文グループ:', Object.values(orderMap).map(o => ({
+                orderId: o.orderId,
+                itemCount: o.itemCount,
+                randomPackQty: o.randomPackQty,
+                items: o.items
+            })));
+            csvOrdersList = Object.values(orderMap);
+
+            // 全注文を選択状態にする
+            selectedOrderIds.clear();
+            csvOrdersList.forEach(order => selectedOrderIds.add(order.orderId));
+
+            // ステータス表示
             document.getElementById('shippingCsvStatus').innerHTML =
-                `<span style="color: var(--sf-green);">CSV読み込み完了！（除外: ${excludedCount}件）</span>`;
+                `<span style="color: var(--sf-green);">CSV読み込み完了！（${csvOrdersList.length}件の注文、除外: ${excludedCount}件）</span>`;
 
-            // 注文リストを描画
-            renderShippingOrders();
+            // 注文選択ステップを表示
+            document.getElementById('orderSelectionStep').style.display = 'block';
+            document.getElementById('shippingCsvSummary').style.display = 'none';
+            document.getElementById('shippedOrdersList').style.display = 'none';
+            document.getElementById('pendingOrdersList').style.display = 'none';
 
-            console.log('CSV解析結果:', shippingCsvData);
+            // 注文選択リストを描画
+            renderOrderSelectionList();
+
+            console.log('CSV解析結果:', shippingCsvData, '注文リスト:', csvOrdersList);
         }
 
         // 複数行フィールドを含むCSVをパース
@@ -7108,13 +7194,147 @@
             return result;
         }
 
+        // ========== 注文選択機能 ==========
+
+        // 注文選択リストを描画
+        function renderOrderSelectionList() {
+            const container = document.getElementById('orderSelectionContainer');
+            if (!container) return;
+
+            // 発送ID順でソート（数値として比較、最小のIDを使用）
+            const sortedOrders = [...csvOrdersList].sort((a, b) => {
+                const idA = a.ids.length > 0 ? parseInt(a.ids[0]) || 0 : 0;
+                const idB = b.ids.length > 0 ? parseInt(b.ids[0]) || 0 : 0;
+                return idA - idB;
+            });
+
+            container.innerHTML = sortedOrders.map(order => {
+                const isSelected = selectedOrderIds.has(order.orderId);
+                const isShipped = order.status === 'shipped';
+                const statusColor = isShipped ? 'var(--sf-green)' : 'var(--sf-orange)';
+                const statusText = isShipped ? '発送済み' : '未発送';
+                // 発送IDの表示（複数ある場合はカンマ区切り）
+                const idDisplay = order.ids.length > 0 ? order.ids.join(', ') : '不明';
+                // なにかのパックの枚数を計算
+                const randomPackQtyTotal = order.randomPackQty || 0;
+
+                // 全アイテムを表示（同じアイテムは個数をまとめる）
+                const itemCounts = {};
+                order.items.forEach(item => {
+                    itemCounts[item] = (itemCounts[item] || 0) + 1;
+                });
+                const itemsList = Object.entries(itemCounts).map(([name, count]) =>
+                    count > 1 ? `${name} ×${count}` : name
+                ).join(' / ');
+
+                return `
+                    <div onclick="toggleOrderSelection('${order.orderId}')" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: ${isSelected ? 'white' : 'rgba(0,0,0,0.03)'}; border-radius: 8px; border: 1px solid ${isSelected ? 'var(--sf-blue)' : 'rgba(0,0,0,0.05)'}; cursor: pointer; opacity: ${isSelected ? '1' : '0.6'}; transition: all 0.2s;">
+                        <input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleOrderSelection('${order.orderId}')" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--sf-blue); margin-top: 2px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-weight: 700; font-size: 15px; color: var(--sf-blue);">ID: ${idDisplay}</span>
+                                <span style="font-size: 12px; color: var(--sf-gray);">注文#${order.orderId}</span>
+                                <span style="padding: 2px 8px; background: ${isShipped ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 149, 0, 0.1)'}; color: ${statusColor}; border-radius: 10px; font-size: 11px; font-weight: 600;">${statusText}</span>
+                                <span style="font-size: 12px; color: var(--sf-gray);">${order.itemCount}点</span>
+                                ${randomPackQtyTotal > 0 ? `<span style="padding: 2px 8px; background: rgba(175, 82, 222, 0.1); color: var(--sf-purple); border-radius: 10px; font-size: 11px; font-weight: 600;">パック${randomPackQtyTotal}枚</span>` : ''}
+                            </div>
+                            <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px; word-break: break-all;">
+                                ${escapeHtml(itemsList)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            updateOrderSelectedCount();
+        }
+
+        // 注文の選択をトグル
+        function toggleOrderSelection(orderId) {
+            if (selectedOrderIds.has(orderId)) {
+                selectedOrderIds.delete(orderId);
+            } else {
+                selectedOrderIds.add(orderId);
+            }
+            renderOrderSelectionList();
+        }
+
+        // 全注文を選択
+        function selectAllOrders() {
+            csvOrdersList.forEach(order => selectedOrderIds.add(order.orderId));
+            renderOrderSelectionList();
+        }
+
+        // 全注文の選択を解除
+        function deselectAllOrders() {
+            selectedOrderIds.clear();
+            renderOrderSelectionList();
+        }
+
+        // 選択数を更新
+        function updateOrderSelectedCount() {
+            const countSpan = document.getElementById('orderSelectedCount');
+            if (countSpan) {
+                const shippedSelected = csvOrdersList.filter(o => o.status === 'shipped' && selectedOrderIds.has(o.orderId)).length;
+                const pendingSelected = csvOrdersList.filter(o => o.status === 'pending' && selectedOrderIds.has(o.orderId)).length;
+                countSpan.textContent = `${selectedOrderIds.size}/${csvOrdersList.length}件選択中（発送済み: ${shippedSelected}, 未発送: ${pendingSelected}）`;
+            }
+        }
+
+        // 注文選択を確定して次のステップへ
+        function confirmOrderSelection() {
+            if (selectedOrderIds.size === 0) {
+                alert('少なくとも1つの注文を選択してください');
+                return;
+            }
+
+            // 選択された注文のデータのみをフィルター
+            filteredShippingData = shippingCsvData.filter(d => selectedOrderIds.has(d.orderId));
+
+            // サマリーを計算
+            const shippedCount = filteredShippingData.filter(d => d.status === 'shipped' && !d.isRandomPack).length;
+            const pendingCount = filteredShippingData.filter(d => d.status === 'pending').length;
+            // なにかのパックは枚数（randomPackQty）を合計する
+            const randomPackTotal = filteredShippingData
+                .filter(d => d.status === 'shipped' && d.isRandomPack)
+                .reduce((sum, d) => sum + (d.randomPackQty || 1), 0);
+
+            document.getElementById('csvSummaryShipped').textContent = shippedCount + ' 件';
+            document.getElementById('csvSummaryPending').textContent = pendingCount + ' 件';
+            document.getElementById('csvSummaryRandomPack').textContent = randomPackTotal + ' 枚';
+
+            randomPackCount = randomPackTotal;
+
+            // UIを切り替え
+            document.getElementById('orderSelectionStep').style.display = 'none';
+            document.getElementById('shippingCsvSummary').style.display = 'block';
+
+            // 景品リストを描画
+            renderShippingOrders();
+        }
+
+        // 注文選択に戻る
+        function backToOrderSelection() {
+            document.getElementById('shippingCsvSummary').style.display = 'none';
+            document.getElementById('shippedOrdersList').style.display = 'none';
+            document.getElementById('pendingOrdersList').style.display = 'none';
+            document.getElementById('orderSelectionStep').style.display = 'block';
+            renderOrderSelectionList();
+        }
+
+        // 注文選択をリセット
+        function resetOrderSelection() {
+            csvOrdersList.forEach(order => selectedOrderIds.add(order.orderId));
+            renderOrderSelectionList();
+        }
+
         // マッチングできなかった景品を保持
         let unmatchedCsvItems = [];
 
-        // 発送注文リストを描画
+        // 発送注文リストを描画（選択された注文のみ）
         function renderShippingOrders() {
-            // 発送済みアイテムを景品名でグループ化
-            const shippedItems = shippingCsvData.filter(d => d.status === 'shipped' && !d.isRandomPack);
+            // 選択されたデータを使用
+            const shippedItems = filteredShippingData.filter(d => d.status === 'shipped' && !d.isRandomPack);
             const shippedGrouped = {};
             unmatchedCsvItems = []; // リセット
 
@@ -7125,8 +7345,8 @@
                 shippedGrouped[item.prizeName].count += item.quantity;
                 shippedGrouped[item.prizeName].orders.push(item.orderId);
 
-                // マッチング確認
-                const masterItem = prizeMaster.find(p => p.name === item.prizeName);
+                // マッチング確認（正規化して検索）
+                const masterItem = findPrizeByNormalizedName(item.prizeName);
                 if (!masterItem && !unmatchedCsvItems.find(u => u.csvName === item.prizeName)) {
                     unmatchedCsvItems.push({
                         csvName: item.prizeName,
@@ -7145,64 +7365,50 @@
             const shippedContainer = document.getElementById('shippedOrdersContainer');
             const shippedGroupedArray = Object.entries(shippedGrouped).sort((a, b) => b[1].count - a[1].count);
 
-            // 初回読み込み時は全てを選択状態にする
-            if (selectedShippedItems.size === 0 && shippedGroupedArray.length > 0) {
-                shippedGroupedArray.forEach(([prizeName]) => {
-                    selectedShippedItems.add(prizeName);
-                });
-            }
-
             if (shippedGroupedArray.length > 0) {
                 document.getElementById('shippedOrdersList').style.display = 'block';
                 document.getElementById('shippedOrdersCount').textContent = `(${shippedItems.length}件 / ${shippedGroupedArray.length}種類)`;
 
                 shippedContainer.innerHTML = shippedGroupedArray.map(([prizeName, data]) => {
                     const isMatched = prizeMaster.some(p => p.name === prizeName);
-                    const isSelected = selectedShippedItems.has(prizeName);
-                    const escapedName = escapeHtml(prizeName).replace(/'/g, "\\'").replace(/"/g, "&quot;");
                     return `
-                    <div style="background: ${isSelected ? 'white' : 'rgba(0,0,0,0.03)'}; padding: 12px 16px; border-radius: var(--radius-md); border-left: 4px solid ${isSelected ? (isMatched ? 'var(--sf-green)' : 'var(--sf-red)') : 'var(--sf-gray)'}; opacity: ${isSelected ? '1' : '0.6'}; transition: all 0.2s;">
+                    <div style="background: white; padding: 12px 16px; border-radius: var(--radius-md); border-left: 4px solid ${isMatched ? 'var(--sf-green)' : 'var(--sf-red)'};">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleShippedSelection('${escapedName}')" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--sf-blue);">
-                                <div style="flex: 1;">
-                                    <div style="font-weight: 600; font-size: 14px; color: var(--sf-black);">${escapeHtml(prizeName)}</div>
-                                    ${!isMatched ? '<div style="font-size: 11px; color: var(--sf-red); margin-top: 2px;">⚠️ マスター未登録</div>' : ''}
-                                </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 14px; color: var(--sf-black);">${escapeHtml(prizeName)}</div>
+                                ${!isMatched ? '<div style="font-size: 11px; color: var(--sf-red); margin-top: 2px;">⚠️ マスター未登録</div>' : ''}
                             </div>
                             <span style="background: ${isMatched ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)'}; color: ${isMatched ? 'var(--sf-green)' : 'var(--sf-red)'}; padding: 4px 12px; border-radius: var(--radius-full); font-size: 13px; font-weight: 700;">
                                 ${data.count}個
                             </span>
                         </div>
-                        <div style="font-size: 11px; color: var(--sf-gray); margin-top: 4px; margin-left: 32px;">
+                        <div style="font-size: 11px; color: var(--sf-gray); margin-top: 4px;">
                             注文: ${data.orders.slice(0, 3).join(', ')}${data.orders.length > 3 ? ` 他${data.orders.length - 3}件` : ''}
                         </div>
                     </div>
                     `;
                 }).join('');
-
-                updateShippedSelectedCount();
             } else {
                 document.getElementById('shippedOrdersList').style.display = 'none';
             }
 
-            // CSVから新規の未発送をpendingOrdersにマージ
-            const newPendingFromCsv = shippingCsvData.filter(d => d.status === 'pending');
+            // 選択されたCSVから未発送を取得（まだ保存しない）
+            const newPendingFromCsv = filteredShippingData.filter(d => d.status === 'pending');
+
+            // 表示用に既存のpendingOrdersと新規CSV分をマージ（保存はしない）
+            const displayPendingOrders = [...pendingOrders];
             newPendingFromCsv.forEach(newItem => {
-                const exists = pendingOrders.some(existing =>
+                const exists = displayPendingOrders.some(existing =>
                     existing.orderId === newItem.orderId && existing.prizeName === newItem.prizeName
                 );
                 if (!exists) {
-                    pendingOrders.push(newItem);
+                    displayPendingOrders.push(newItem);
                 }
             });
 
-            // クラウドに保存
-            savePendingOrdersToCloud();
-
-            // pendingOrders全体（保存済み + 新規CSV分）をグループ化して表示
+            // 表示用のpendingOrdersをグループ化
             const pendingGrouped = {};
-            pendingOrders.forEach(item => {
+            displayPendingOrders.forEach(item => {
                 if (!pendingGrouped[item.prizeName]) {
                     pendingGrouped[item.prizeName] = { count: 0, orders: [], customers: [] };
                 }
@@ -7230,8 +7436,8 @@
                 document.getElementById('pendingOrdersCount').textContent = `(${totalCount}件 / ${pendingGroupedArray.length}種類)`;
 
                 pendingContainer.innerHTML = pendingGroupedArray.map(([prizeName, data]) => {
-                    // 景品マスターから在庫を取得
-                    const masterItem = prizeMaster.find(p => p.name === prizeName);
+                    // 景品マスターから在庫を取得（正規化マッチング）
+                    const masterItem = findPrizeByNormalizedName(prizeName);
                     const currentStock = masterItem ? (masterItem.stock || masterItem.count || 0) : 0;
                     const needToPurchase = data.count > currentStock;
                     const escapedName = escapeHtml(prizeName).replace(/'/g, "\\'").replace(/"/g, "&quot;");
@@ -7248,7 +7454,7 @@
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <button onclick="markGroupedPendingAsShipped('${escapedName}')" style="background: var(--sf-green); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-weight: 600;">
-                                    📦 発送済み
+                                    📦 発送済みにする
                                 </button>
                                 <span style="background: ${needToPurchase ? 'rgba(255, 59, 48, 0.1)' : 'rgba(255, 149, 0, 0.1)'}; color: ${needToPurchase ? 'var(--sf-red)' : 'var(--sf-orange)'}; padding: 4px 12px; border-radius: var(--radius-full); font-size: 13px; font-weight: 700;">
                                     ${data.count}個
@@ -7266,12 +7472,47 @@
             }
         }
 
+        // 未発送からのパック選択用の状態
+        let pendingRandomPackContext = null;
+
         // グループ化された未発送を発送済みに変更
         function markGroupedPendingAsShipped(prizeName) {
-            // 該当する全ての未発送を検索
-            const itemsToShip = pendingOrders.filter(p => p.prizeName === prizeName);
+            console.log('markGroupedPendingAsShipped called:', prizeName);
+            console.log('pendingOrders:', pendingOrders);
+
+            // 該当する全ての未発送を検索（保存済み + CSVから読み込んだもの）
+            let itemsToShip = pendingOrders.filter(p => p.prizeName === prizeName);
+
+            // CSVから読み込んだ未発送も検索（まだ保存されていないもの）
+            const csvPendingItems = (filteredShippingData || []).filter(d => d.status === 'pending' && d.prizeName === prizeName);
+            csvPendingItems.forEach(csvItem => {
+                const exists = itemsToShip.some(existing =>
+                    existing.orderId === csvItem.orderId && existing.prizeName === csvItem.prizeName
+                );
+                if (!exists) {
+                    itemsToShip.push(csvItem);
+                }
+            });
+
+            console.log('itemsToShip:', itemsToShip);
+
             if (itemsToShip.length === 0) {
                 alert('該当する未発送が見つかりません');
+                return;
+            }
+
+            // なにかのパックの場合は特別処理
+            if (prizeName.includes('なにかのパック')) {
+                console.log('なにかのパック detected, opening modal');
+                // 合計枚数を計算（randomPackQtyを使用）
+                const totalPackQty = itemsToShip.reduce((sum, item) => sum + (item.randomPackQty || 1), 0);
+                console.log('totalPackQty:', totalPackQty);
+                pendingRandomPackContext = {
+                    prizeName: prizeName,
+                    items: itemsToShip,
+                    totalPackQty: totalPackQty
+                };
+                openPendingRandomPackModal(totalPackQty);
                 return;
             }
 
@@ -7281,8 +7522,8 @@
                 return;
             }
 
-            // 景品マスターから検索して在庫を減少
-            const masterItem = prizeMaster.find(p => p.name === prizeName);
+            // 景品マスターから検索して在庫を減少（正規化マッチング）
+            const masterItem = findPrizeByNormalizedName(prizeName);
             if (masterItem) {
                 const stockKey = 'stock' in masterItem ? 'stock' : 'count';
                 const oldStock = masterItem[stockKey] ?? 0;
@@ -7292,7 +7533,7 @@
                 // 履歴に追加
                 saveInventoryHistoryEntries([{
                     type: 'decrease',
-                    prizeName: prizeName,
+                    prizeName: masterItem.name,
                     quantity: totalQty,
                     oldStock: oldStock,
                     newStock: newStock,
@@ -7312,9 +7553,32 @@
             pendingOrders = pendingOrders.filter(p => p.prizeName !== prizeName);
             savePendingOrdersToCloud();
 
-            // 再描画
+            // CSVデータからも削除（表示用）
+            if (filteredShippingData) {
+                filteredShippingData = filteredShippingData.filter(d => !(d.status === 'pending' && d.prizeName === prizeName));
+            }
+
+            refreshPendingOrdersDisplay();
+        }
+
+        // 未発送リストの表示を更新
+        function refreshPendingOrdersDisplay() {
+            // 保存済み + CSVから読み込んだ未発送を統合
+            const displayPendingOrders = [...pendingOrders];
+            if (filteredShippingData) {
+                const csvPendingItems = filteredShippingData.filter(d => d.status === 'pending');
+                csvPendingItems.forEach(csvItem => {
+                    const exists = displayPendingOrders.some(existing =>
+                        existing.orderId === csvItem.orderId && existing.prizeName === csvItem.prizeName
+                    );
+                    if (!exists) {
+                        displayPendingOrders.push(csvItem);
+                    }
+                });
+            }
+
             const pendingGrouped = {};
-            pendingOrders.forEach(item => {
+            displayPendingOrders.forEach(item => {
                 if (!pendingGrouped[item.prizeName]) {
                     pendingGrouped[item.prizeName] = { count: 0, orders: [], customers: [] };
                 }
@@ -7327,6 +7591,66 @@
                 }
             });
             renderPendingOrdersGrouped(pendingGrouped);
+        }
+
+        // 未発送のなにかのパック選択モーダルを開く
+        function openPendingRandomPackModal(totalPackQty) {
+            document.getElementById('randomPackCount').textContent = totalPackQty;
+
+            // パック・ボックス系の景品を一覧表示（在庫があるもの）
+            const packPrizes = prizeMaster.filter(p => {
+                const stock = p.stock ?? p.count ?? 0;
+                if (stock <= 0) return false;
+                const type = p.type || '';
+                return type === 'パック' || type === 'ボックス' ||
+                       p.name.includes('パック') || p.name.includes('ボックス');
+            });
+
+            packPrizes.sort((a, b) => (b.stock ?? b.count ?? 0) - (a.stock ?? a.count ?? 0));
+
+            randomPackSelections = {};
+
+            const container = document.getElementById('randomPackPrizeList');
+
+            if (packPrizes.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: var(--sf-gray);">
+                        <div style="font-size: 48px; margin-bottom: 12px;">📦</div>
+                        <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">パック・ボックスの在庫がありません</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = packPrizes.map(p => {
+                    const stock = p.stock ?? p.count ?? 0;
+                    const typeLabel = p.type || '不明';
+                    const imageHtml = p.image
+                        ? `<img src="${p.image}" alt="" style="width: 50px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">`
+                        : `<div style="width: 50px; height: 70px; background: rgba(0,0,0,0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">📦</div>`;
+
+                    return `
+                    <div style="display: flex; align-items: center; gap: 16px; padding: 16px; border-bottom: 1px solid rgba(0, 0, 0, 0.08); background: white;">
+                        ${imageHtml}
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; font-size: 15px; color: var(--sf-black); word-break: break-all;">${escapeHtml(p.name)}</div>
+                            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                <span style="padding: 3px 10px; background: rgba(175, 82, 222, 0.1); color: var(--sf-purple); border-radius: 12px; font-size: 12px; font-weight: 600;">${typeLabel}</span>
+                                <span style="padding: 3px 10px; background: rgba(52, 199, 89, 0.1); color: var(--sf-green); border-radius: 12px; font-size: 12px; font-weight: 600;">在庫: ${stock}個</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <button onclick="adjustRandomPackQty('${p.id}', -1)" style="width: 44px; height: 44px; border: 2px solid rgba(0,0,0,0.15); border-radius: 10px; background: white; cursor: pointer; font-size: 24px; font-weight: 600; color: var(--sf-blue); display: flex; align-items: center; justify-content: center;">−</button>
+                            <span id="randompack-qty-${p.id}" style="min-width: 50px; text-align: center; font-weight: 700; font-size: 20px; color: var(--sf-black);">0</span>
+                            <button onclick="adjustRandomPackQty('${p.id}', 1)" style="width: 44px; height: 44px; border: 2px solid rgba(0,0,0,0.15); border-radius: 10px; background: white; cursor: pointer; font-size: 24px; font-weight: 600; color: var(--sf-blue); display: flex; align-items: center; justify-content: center;">+</button>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+            }
+
+            // randomPackCountを更新（モーダル共有のため）
+            randomPackCount = totalPackQty;
+
+            document.getElementById('randomPackModal').style.display = 'flex';
         }
 
         // 未発送を発送済みに変更（CSV読込時用）
@@ -7355,13 +7679,16 @@
 
         // サマリーを更新
         function updateCsvSummary() {
-            const shippedCount = shippingCsvData.filter(d => d.status === 'shipped' && !d.isRandomPack).reduce((sum, d) => sum + d.quantity, 0);
-            const pendingCount = shippingCsvData.filter(d => d.status === 'pending').reduce((sum, d) => sum + d.quantity, 0);
-            const randomPackTotal = shippingCsvData.filter(d => d.status === 'shipped' && d.isRandomPack).reduce((sum, d) => sum + d.quantity, 0);
+            const shippedCount = filteredShippingData.filter(d => d.status === 'shipped' && !d.isRandomPack).reduce((sum, d) => sum + d.quantity, 0);
+            const pendingCount = filteredShippingData.filter(d => d.status === 'pending').reduce((sum, d) => sum + d.quantity, 0);
+            // なにかのパックは枚数（randomPackQty）を合計する
+            const randomPackTotal = filteredShippingData
+                .filter(d => d.status === 'shipped' && d.isRandomPack)
+                .reduce((sum, d) => sum + (d.randomPackQty || 1), 0);
 
             document.getElementById('csvSummaryShipped').textContent = shippedCount + ' 件';
             document.getElementById('csvSummaryPending').textContent = pendingCount + ' 件';
-            document.getElementById('csvSummaryRandomPack').textContent = randomPackTotal + ' 件';
+            document.getElementById('csvSummaryRandomPack').textContent = randomPackTotal + ' 枚';
 
             randomPackCount = randomPackTotal;
         }
@@ -7568,53 +7895,22 @@
             selectedUnmatchedIndex = null;
         }
 
-        // 発送済み選択操作
-        function toggleShippedSelection(prizeName) {
-            if (selectedShippedItems.has(prizeName)) {
-                selectedShippedItems.delete(prizeName);
-            } else {
-                selectedShippedItems.add(prizeName);
-            }
-            renderShippingOrders();
-        }
-
-        function selectAllShipped() {
-            const shippedItems = shippingCsvData.filter(d => d.status === 'shipped' && !d.isRandomPack);
-            const prizeNames = [...new Set(shippedItems.map(d => d.prizeName))];
-            prizeNames.forEach(name => selectedShippedItems.add(name));
-            renderShippingOrders();
-        }
-
-        function deselectAllShipped() {
-            selectedShippedItems.clear();
-            renderShippingOrders();
-        }
-
-        function updateShippedSelectedCount() {
-            const shippedItems = shippingCsvData.filter(d => d.status === 'shipped' && !d.isRandomPack);
-            const allPrizeNames = [...new Set(shippedItems.map(d => d.prizeName))];
-            const selectedCount = allPrizeNames.filter(name => selectedShippedItems.has(name)).length;
-
-            // 選択されたアイテムの合計数量を計算
-            const selectedQty = shippedItems
-                .filter(d => selectedShippedItems.has(d.prizeName))
-                .reduce((sum, d) => sum + d.quantity, 0);
-
-            const countSpan = document.getElementById('shippedSelectedCount');
-            if (countSpan) {
-                countSpan.textContent = `${selectedCount}/${allPrizeNames.length}種類選択中 (${selectedQty}件)`;
-            }
-        }
-
         // 確認ダイアログを表示してから在庫減少を実行
         function confirmAndApplyShippedDecrease() {
-            // 選択されたアイテムのみをフィルター
-            const shippedItems = shippingCsvData.filter(d =>
-                d.status === 'shipped' && !d.isRandomPack && selectedShippedItems.has(d.prizeName)
-            );
+            // 選択された注文の発送済みアイテムを取得
+            const shippedItems = filteredShippingData.filter(d => d.status === 'shipped' && !d.isRandomPack);
+            const pendingItems = filteredShippingData.filter(d => d.status === 'pending');
 
+            if (shippedItems.length === 0 && pendingItems.length === 0) {
+                alert('取り込む注文がありません');
+                return;
+            }
+
+            // 発送済みがない場合は未発送のみ保存
             if (shippedItems.length === 0) {
-                alert('発送済みの景品が選択されていません\n\nチェックボックスで処理する景品を選択してください');
+                if (confirm(`未発送 ${pendingItems.length}件を登録しますか？`)) {
+                    savePendingFromCsv();
+                }
                 return;
             }
 
@@ -7623,14 +7919,16 @@
             const unmatchedItems = [];
 
             shippedItems.forEach(item => {
-                const masterItem = prizeMaster.find(p => p.name === item.prizeName);
+                // 正規化マッチングで景品マスターを検索
+                const masterItem = findPrizeByNormalizedName(item.prizeName);
                 if (!grouped[item.prizeName]) {
                     // stock または count のどちらかを使用
                     const currentStock = masterItem ? (masterItem.stock ?? masterItem.count ?? 0) : 0;
                     grouped[item.prizeName] = {
                         count: 0,
                         matched: !!masterItem,
-                        currentStock: currentStock
+                        currentStock: currentStock,
+                        masterName: masterItem ? masterItem.name : null
                     };
                 }
                 grouped[item.prizeName].count += item.quantity;
@@ -7663,6 +7961,11 @@
                 }
             }
 
+            // 未発送がある場合はその旨も表示
+            if (pendingItems.length > 0) {
+                confirmMessage += `\n📋 未発送 ${pendingItems.length}件も登録されます\n`;
+            }
+
             if (confirm(confirmMessage)) {
                 applyShippedInventoryDecrease();
             }
@@ -7670,13 +7973,11 @@
 
         // 発送済みを在庫から減少
         function applyShippedInventoryDecrease() {
-            // 選択されたアイテムのみをフィルター
-            const shippedItems = shippingCsvData.filter(d =>
-                d.status === 'shipped' && !d.isRandomPack && selectedShippedItems.has(d.prizeName)
-            );
+            // 選択された注文の発送済みアイテムを取得
+            const shippedItems = filteredShippingData.filter(d => d.status === 'shipped' && !d.isRandomPack);
 
             if (shippedItems.length === 0) {
-                alert('発送済みの景品が選択されていません');
+                alert('発送済みの景品がありません');
                 return;
             }
 
@@ -7685,8 +7986,8 @@
             const historyEntries = [];
 
             shippedItems.forEach(item => {
-                // 景品マスターから検索
-                const masterItem = prizeMaster.find(p => p.name === item.prizeName);
+                // 正規化マッチングで景品マスターを検索
+                const masterItem = findPrizeByNormalizedName(item.prizeName);
                 if (masterItem) {
                     // stock または count のどちらかを使用
                     const stockKey = 'stock' in masterItem ? 'stock' : 'count';
@@ -7697,7 +7998,7 @@
 
                     historyEntries.push({
                         type: 'decrease',
-                        prizeName: item.prizeName,
+                        prizeName: masterItem.name,
                         quantity: item.quantity,
                         oldStock: oldStock,
                         newStock: newStock,
@@ -7705,7 +8006,7 @@
                         timestamp: new Date().toISOString()
                     });
 
-                    console.log(`📦 在庫減少: ${item.prizeName} ${oldStock} → ${newStock}`);
+                    console.log(`📦 在庫減少: ${masterItem.name} ${oldStock} → ${newStock}`);
                 } else {
                     failCount += item.quantity;
                     console.warn('景品マスターに見つかりません:', item.prizeName);
@@ -7719,12 +8020,57 @@
             // 履歴を保存
             saveInventoryHistoryEntries(historyEntries);
 
+            // CSVから読み込んだ未発送をpendingOrdersにマージして保存
+            const newPendingFromCsv = filteredShippingData.filter(d => d.status === 'pending');
+            let pendingAddedCount = 0;
+            newPendingFromCsv.forEach(newItem => {
+                const exists = pendingOrders.some(existing =>
+                    existing.orderId === newItem.orderId && existing.prizeName === newItem.prizeName
+                );
+                if (!exists) {
+                    pendingOrders.push(newItem);
+                    pendingAddedCount++;
+                }
+            });
+            if (pendingAddedCount > 0) {
+                savePendingOrdersToCloud();
+                console.log(`📋 未発送 ${pendingAddedCount}件をクラウドに保存`);
+                // 未発送リストを更新
+                renderPendingOrdersOnly();
+            }
+
             // なにかのパックがある場合はモーダルを表示
             if (randomPackCount > 0) {
                 openRandomPackModal();
             }
 
-            alert(`在庫減少完了\n成功: ${successCount}件\n未登録: ${failCount}件`);
+            alert(`在庫減少完了\n成功: ${successCount}件\n未登録: ${failCount}件${pendingAddedCount > 0 ? `\n\n未発送: ${pendingAddedCount}件を登録` : ''}`);
+        }
+
+        // CSVから読み込んだ未発送のみを保存（発送済みがない場合用）
+        function savePendingFromCsv() {
+            const newPendingFromCsv = filteredShippingData.filter(d => d.status === 'pending');
+            let pendingAddedCount = 0;
+
+            newPendingFromCsv.forEach(newItem => {
+                const exists = pendingOrders.some(existing =>
+                    existing.orderId === newItem.orderId && existing.prizeName === newItem.prizeName
+                );
+                if (!exists) {
+                    pendingOrders.push(newItem);
+                    pendingAddedCount++;
+                }
+            });
+
+            if (pendingAddedCount > 0) {
+                savePendingOrdersToCloud();
+                alert(`未発送 ${pendingAddedCount}件を登録しました`);
+            } else {
+                alert('新規の未発送はありませんでした（既に登録済み）');
+            }
+
+            // 未発送リストを更新
+            renderPendingOrdersOnly();
         }
 
         // ========== なにかのパック選択モーダル ==========
@@ -7814,17 +8160,21 @@
 
         function closeRandomPackModal() {
             document.getElementById('randomPackModal').style.display = 'none';
+            // 未発送コンテキストをリセット
+            pendingRandomPackContext = null;
         }
 
         function confirmRandomPackSelection() {
             const totalSelected = Object.values(randomPackSelections).reduce((sum, qty) => sum + qty, 0);
 
             if (totalSelected !== randomPackCount) {
-                alert(`選択数が一致しません。\n必要: ${randomPackCount}個\n選択: ${totalSelected}個`);
+                alert(`選択数が一致しません。\n必要: ${randomPackCount}枚\n選択: ${totalSelected}枚`);
                 return;
             }
 
             const historyEntries = [];
+            const isPendingContext = pendingRandomPackContext !== null;
+            const reason = isPendingContext ? 'なにかのパック発送（未発送から）' : 'なにかのパック発送';
 
             // 選択した分だけ在庫を減少
             Object.entries(randomPackSelections).forEach(([prizeId, qty]) => {
@@ -7843,7 +8193,7 @@
                             quantity: qty,
                             oldStock: oldStock,
                             newStock: prize[stockKey],
-                            reason: 'なにかのパック発送',
+                            reason: reason,
                             timestamp: new Date().toISOString()
                         });
                     }
@@ -7853,6 +8203,21 @@
             savePrizeMaster();
             updatePrizeMasterList();
             saveInventoryHistoryEntries(historyEntries);
+
+            // 未発送からの場合は、pendingOrdersから該当アイテムを削除
+            if (isPendingContext) {
+                const prizeName = pendingRandomPackContext.prizeName;
+                pendingOrders = pendingOrders.filter(p => p.prizeName !== prizeName);
+                savePendingOrdersToCloud();
+
+                // CSVデータからも削除（表示用）
+                if (filteredShippingData) {
+                    filteredShippingData = filteredShippingData.filter(d => !(d.status === 'pending' && d.prizeName === prizeName));
+                }
+
+                refreshPendingOrdersDisplay();
+                pendingRandomPackContext = null;
+            }
 
             closeRandomPackModal();
             alert('なにかのパックの在庫減少が完了しました');
@@ -7868,9 +8233,13 @@
 
             if (!section || !container) return;
 
-            // 未発送注文を景品名でグループ化
+            // 未発送注文を景品名でグループ化（なにかのパックは除外）
             const pendingByPrize = {};
             pendingOrders.forEach(order => {
+                // なにかのパックは要入荷リストに表示しない
+                if (order.prizeName.includes('なにかのパック')) {
+                    return;
+                }
                 if (!pendingByPrize[order.prizeName]) {
                     pendingByPrize[order.prizeName] = {
                         prizeName: order.prizeName,
@@ -7885,7 +8254,8 @@
             // 在庫0のものだけ抽出
             const needRestock = [];
             Object.values(pendingByPrize).forEach(item => {
-                const masterItem = prizeMaster.find(p => p.name === item.prizeName);
+                // 正規化マッチングで景品マスターを検索
+                const masterItem = findPrizeByNormalizedName(item.prizeName);
                 const currentStock = masterItem ? (masterItem.stock ?? masterItem.count ?? 0) : 0;
 
                 if (currentStock === 0) {
@@ -7933,7 +8303,7 @@
             }).join('');
         }
 
-        // 要入荷リストから直接入庫予定に追加
+        // 要入荷リストから直接在庫を増やす
         function quickAddToRegister(prizeId, prizeName) {
             const qtyInput = document.getElementById('restockQty_' + prizeId);
             const quantity = parseInt(qtyInput?.value) || 1;
@@ -7941,9 +8311,9 @@
             // 景品マスターから検索
             let masterItem = prizeMaster.find(p => String(p.id) === String(prizeId));
 
-            // IDで見つからない場合は名前で検索
+            // IDで見つからない場合は正規化マッチングで検索
             if (!masterItem) {
-                masterItem = prizeMaster.find(p => p.name === prizeName);
+                masterItem = findPrizeByNormalizedName(prizeName);
             }
 
             if (!masterItem) {
@@ -7951,26 +8321,28 @@
                 return;
             }
 
-            // 既存のエントリを確認
-            const existing = registerList.find(r => String(r.prizeId) === String(masterItem.id));
-            if (existing) {
-                existing.quantity += quantity;
-            } else {
-                registerList.push({
-                    prizeId: masterItem.id,
-                    name: masterItem.name,
-                    image: masterItem.image || '',
-                    quantity: quantity,
-                    purchasePrice: masterItem.purchasePrice || 0,
-                    type: masterItem.type || 'PSA10'
-                });
-            }
+            // 直接在庫を増やす
+            const stockKey = 'stock' in masterItem ? 'stock' : 'count';
+            const oldStock = masterItem[stockKey] || 0;
+            masterItem[stockKey] = oldStock + quantity;
 
-            saveRegisterListToCloud();
-            renderRegisterList();
+            // 履歴に追加
+            const historyEntry = {
+                type: 'increase',
+                prizeName: masterItem.name,
+                quantity: quantity,
+                oldStock: oldStock,
+                newStock: masterItem[stockKey],
+                reason: '入庫（要入荷リストから）',
+                timestamp: new Date().toISOString()
+            };
+
+            savePrizeMaster();
+            updatePrizeMasterList();
+            saveInventoryHistoryEntries([historyEntry]);
             renderNeedRestockList();
 
-            alert(`${masterItem.name} ${quantity}個を入庫予定リストに追加しました`);
+            alert(`${masterItem.name} ${quantity}個を入庫しました\n在庫: ${oldStock} → ${masterItem[stockKey]}`);
         }
 
         function searchPrizesForRegister() {
@@ -8016,36 +8388,6 @@
             resultsContainer.style.display = 'block';
         }
 
-        function addToRegisterList(prizeId) {
-            // IDの型を統一して比較
-            const prize = prizeMaster.find(p => String(p.id) === String(prizeId));
-            if (!prize) {
-                console.error('景品が見つかりません:', prizeId);
-                return;
-            }
-
-            // 既にリストにあるか確認
-            const existing = registerList.find(r => String(r.prizeId) === String(prizeId));
-            if (existing) {
-                existing.quantity++;
-            } else {
-                // 現在の平均仕入れ値を取得（履歴がある場合）
-                const avgPurchasePrice = calculateAveragePurchasePrice(prize);
-                registerList.push({
-                    prizeId: prizeId,
-                    prizeName: prize.name,
-                    quantity: 1,
-                    currentStock: prize.stock || 0,
-                    purchasePrice: avgPurchasePrice || prize.purchasePrice || 0
-                });
-            }
-
-            renderRegisterList();
-            saveRegisterListToCloud();
-            document.getElementById('registerPrizeSearch').value = '';
-            document.getElementById('registerPrizeResults').style.display = 'none';
-        }
-
         // 加重平均仕入れ値を計算
         function calculateAveragePurchasePrice(prize) {
             if (!prize.purchasePriceHistory || prize.purchasePriceHistory.length === 0) {
@@ -8062,136 +8404,6 @@
 
             if (totalQuantity === 0) return prize.purchasePrice || 0;
             return Math.round(totalValue / totalQuantity);
-        }
-
-        function renderRegisterList() {
-            const container = document.getElementById('registerListContainer');
-            const countSpan = document.getElementById('registerListCount');
-            const emptyMsg = document.getElementById('registerListEmpty');
-            const actions = document.getElementById('registerActions');
-
-            countSpan.textContent = `(${registerList.length}件)`;
-
-            if (registerList.length === 0) {
-                emptyMsg.style.display = 'block';
-                actions.style.display = 'none';
-                return;
-            }
-
-            emptyMsg.style.display = 'none';
-            actions.style.display = 'block';
-
-            container.innerHTML = registerList.map((item, idx) => `
-                <div style="padding: 12px; background: rgba(52, 199, 89, 0.05); border-radius: var(--radius-md); margin-bottom: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <div>
-                            <div style="font-weight: 600; font-size: 14px;">${escapeHtml(item.prizeName)}</div>
-                            <div style="font-size: 12px; color: var(--sf-gray);">現在庫: ${item.currentStock}個 → ${item.currentStock + item.quantity}個</div>
-                        </div>
-                        <button onclick="removeFromRegisterList(${idx})" style="color: var(--sf-red); background: none; border: none; cursor: pointer; font-size: 18px;">✕</button>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 12px; color: var(--sf-gray);">数量:</span>
-                            <button onclick="adjustRegisterQty(${idx}, -1)" style="width: 28px; height: 28px; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; background: white; cursor: pointer;">-</button>
-                            <span style="min-width: 30px; text-align: center; font-weight: 600;">${item.quantity}</span>
-                            <button onclick="adjustRegisterQty(${idx}, 1)" style="width: 28px; height: 28px; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; background: white; cursor: pointer;">+</button>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 12px; color: var(--sf-gray);">仕入れ値(税込):</span>
-                            <input type="text" value="${item.purchasePrice?.toLocaleString() || 0}"
-                                   onchange="updateRegisterPurchasePrice(${idx}, this.value)"
-                                   style="width: 100px; padding: 6px 10px; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; text-align: right; font-size: 14px;">
-                            <span style="font-size: 12px; color: var(--sf-gray);">円</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // 入庫予定の仕入れ値を更新
-        function updateRegisterPurchasePrice(idx, value) {
-            if (registerList[idx]) {
-                // カンマを除去して数値に変換
-                const price = parseInt(value.replace(/,/g, '')) || 0;
-                registerList[idx].purchasePrice = price;
-                saveRegisterListToCloud();
-            }
-        }
-
-        function adjustRegisterQty(idx, delta) {
-            if (registerList[idx]) {
-                registerList[idx].quantity = Math.max(1, registerList[idx].quantity + delta);
-                renderRegisterList();
-                saveRegisterListToCloud();
-            }
-        }
-
-        function removeFromRegisterList(idx) {
-            registerList.splice(idx, 1);
-            renderRegisterList();
-            saveRegisterListToCloud();
-        }
-
-        function clearRegisterList() {
-            registerList = [];
-            renderRegisterList();
-            saveRegisterListToCloud();
-        }
-
-        function applyInventoryRegister() {
-            if (registerList.length === 0) {
-                alert('入庫する景品がありません');
-                return;
-            }
-
-            const historyEntries = [];
-            const now = new Date().toISOString();
-
-            registerList.forEach(item => {
-                // IDの型を統一して比較
-                const prize = prizeMaster.find(p => String(p.id) === String(item.prizeId));
-                if (prize) {
-                    // stock または count のどちらかを使用
-                    const stockKey = 'stock' in prize ? 'stock' : 'count';
-                    const oldStock = prize[stockKey] || 0;
-                    prize[stockKey] = oldStock + item.quantity;
-
-                    // 仕入れ履歴を追加
-                    if (!prize.purchasePriceHistory) {
-                        prize.purchasePriceHistory = [];
-                    }
-                    prize.purchasePriceHistory.push({
-                        price: item.purchasePrice || 0,
-                        quantity: item.quantity,
-                        date: now
-                    });
-
-                    // 加重平均仕入れ値を再計算して更新
-                    prize.purchasePrice = calculateAveragePurchasePrice(prize);
-
-                    historyEntries.push({
-                        type: 'increase',
-                        prizeName: prize.name,
-                        quantity: item.quantity,
-                        oldStock: oldStock,
-                        newStock: prize[stockKey],
-                        purchasePrice: item.purchasePrice || 0,
-                        reason: '入庫',
-                        timestamp: now
-                    });
-                }
-            });
-
-            savePrizeMaster();
-            updatePrizeMasterList();
-            saveInventoryHistoryEntries(historyEntries);
-
-            const totalQty = registerList.reduce((sum, r) => sum + r.quantity, 0);
-            alert(`入庫完了: ${registerList.length}種類、${totalQty}個`);
-
-            clearRegisterList();
-            renderNeedRestockList(); // 在庫が増えたので要入荷リストを更新
         }
 
         // ========== 在庫増減履歴機能 ==========
@@ -8309,8 +8521,8 @@
             });
 
             container.innerHTML = sortedGroups.map(group => {
-                // 景品マスターから画像を取得
-                const masterItem = prizeMaster.find(p => p.name === group.prizeName);
+                // 景品マスターから画像を取得（正規化マッチング）
+                const masterItem = findPrizeByNormalizedName(group.prizeName);
                 const imageUrl = masterItem?.image || masterItem?.imageUrl || '';
                 const currentStock = masterItem ? (masterItem.stock ?? masterItem.count ?? 0) : '?';
 
@@ -8400,8 +8612,8 @@
                 const net = data.increase - data.decrease;
                 if (net === 0) return;
 
-                // 景品マスターから検索
-                const prize = prizeMaster.find(p => p.name === prizeName);
+                // 正規化マッチングで景品マスターを検索
+                const prize = findPrizeByNormalizedName(prizeName);
                 if (prize) {
                     const stockKey = 'stock' in prize ? 'stock' : 'count';
                     const oldStock = prize[stockKey] ?? 0;
@@ -8558,8 +8770,8 @@
 
             const item = pendingOrders[idx];
 
-            // 景品マスターから検索して在庫を減少
-            const masterItem = prizeMaster.find(p => p.name === item.prizeName);
+            // 正規化マッチングで景品マスターを検索して在庫を減少
+            const masterItem = findPrizeByNormalizedName(item.prizeName);
             if (masterItem) {
                 // stock または count プロパティを検出
                 const stockKey = 'stock' in masterItem ? 'stock' : 'count';
@@ -8570,7 +8782,7 @@
                 // 履歴に追加
                 saveInventoryHistoryEntries([{
                     type: 'decrease',
-                    prizeName: item.prizeName,
+                    prizeName: masterItem.name,
                     quantity: item.quantity,
                     oldStock: oldStock,
                     newStock: newStock,
@@ -8603,49 +8815,9 @@
             }
         }
 
-        // ========== 入庫予定リストのクラウド管理 ==========
-
-        function saveRegisterListToCloud() {
-            const saveToCloud = () => {
-                database.ref('registerList').set(registerList).then(() => {
-                    console.log('📤 入庫予定リストをクラウドに保存:', registerList.length + '件');
-                }).catch(err => {
-                    console.error('入庫予定リストの保存に失敗:', err);
-                });
-            };
-
-            if (typeof database !== 'undefined' && isAuthReady) {
-                saveToCloud();
-            } else {
-                waitForAuth(saveToCloud);
-            }
-        }
-
-        function loadRegisterListFromCloud() {
-            const loadFromCloud = () => {
-                database.ref('registerList').once('value').then(snapshot => {
-                    const data = snapshot.val();
-                    if (data && Array.isArray(data)) {
-                        registerList = data;
-                        renderRegisterList();
-                        console.log('📥 入庫予定リストをクラウドから読込:', registerList.length + '件');
-                    }
-                }).catch(err => {
-                    console.error('入庫予定リストの読込に失敗:', err);
-                });
-            };
-
-            if (typeof database !== 'undefined' && isAuthReady) {
-                loadFromCloud();
-            } else {
-                waitForAuth(loadFromCloud);
-            }
-        }
-
         // 在庫調整データの初期読み込み
         function loadInventoryAdjustmentData() {
             loadPendingOrdersFromCloud();
-            loadRegisterListFromCloud();
         }
 
         // HTMLエスケープ
@@ -8682,6 +8854,12 @@ const database = firebase.database();
 let isAuthReady = false;
 let authCallbacks = []; // 認証完了後に実行するコールバック
 let authInitialized = false; // 初期化済みフラグ
+
+// Firebase接続状態のインジケーターを更新（スタブ関数）
+function updateFirebaseStatusIndicator() {
+    // 現在は何もしない（将来的にステータスバーなどに表示可能）
+    console.log('Firebase認証状態:', isAuthReady ? '認証済み' : '未認証');
+}
 
 // 認証状態の変化を監視
 auth.onAuthStateChanged((user) => {
