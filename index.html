@@ -7159,18 +7159,36 @@
                         }
                     }
 
-                    shippingCsvData.push({
-                        id: id,  // 発送ID
-                        orderId: orderId,
-                        prizeName: prizeName,
-                        status: isShipped ? 'shipped' : 'pending',
-                        quantity: 1,
-                        isRandomPack: isRandomPack,
-                        randomPackQty: randomPackQty,  // パックの枚数
-                        userId: userId,
-                        createdAt: createdAt,
-                        customerName: customerName.trim()
-                    });
+                    // 同じID + 景品名の既存アイテムを検索（同一行内で重複する場合に統合）
+                    const existingItem = shippingCsvData.find(item =>
+                        item.id === id &&
+                        item.orderId === orderId &&
+                        item.prizeName === prizeName &&
+                        item.status === (isShipped ? 'shipped' : 'pending')
+                    );
+
+                    if (existingItem) {
+                        // 既存アイテムがあれば数量を増やす
+                        existingItem.quantity = (existingItem.quantity || 1) + 1;
+                        if (isRandomPack) {
+                            existingItem.randomPackQty = (existingItem.randomPackQty || 0) + randomPackQty;
+                        }
+                        console.log(`  📦 重複景品を統合: ${prizeName} → ${existingItem.quantity}個`);
+                    } else {
+                        // 新規アイテムとして追加
+                        shippingCsvData.push({
+                            id: id,  // 発送ID
+                            orderId: orderId,
+                            prizeName: prizeName,
+                            status: isShipped ? 'shipped' : 'pending',
+                            quantity: 1,
+                            isRandomPack: isRandomPack,
+                            randomPackQty: randomPackQty,  // パックの枚数
+                            userId: userId,
+                            createdAt: createdAt,
+                            customerName: customerName.trim()
+                        });
+                    }
 
                     if (isShipped) {
                         shippedCount++;
@@ -8388,10 +8406,18 @@
             const newPendingFromCsv = filteredShippingData.filter(d => d.status === 'pending');
             let pendingAddedCount = 0;
             newPendingFromCsv.forEach(newItem => {
-                const exists = pendingOrders.some(existing =>
-                    existing.orderId === newItem.orderId && existing.prizeName === newItem.prizeName
+                // 同じID + orderId + prizeName の既存アイテムを検索
+                const existingItem = pendingOrders.find(existing =>
+                    existing.id === newItem.id &&
+                    existing.orderId === newItem.orderId &&
+                    existing.prizeName === newItem.prizeName
                 );
-                if (!exists) {
+                if (existingItem) {
+                    // 既存アイテムがあれば数量を増やす
+                    existingItem.quantity = (existingItem.quantity || 1) + (newItem.quantity || 1);
+                    console.log(`📦 既存アイテムの数量を増加: ${newItem.prizeName} → ${existingItem.quantity}個`);
+                } else {
+                    // 新規アイテムとして追加
                     pendingOrders.push(newItem);
                     pendingAddedCount++;
                 }
@@ -8417,10 +8443,17 @@
             let pendingAddedCount = 0;
 
             newPendingFromCsv.forEach(newItem => {
-                const exists = pendingOrders.some(existing =>
-                    existing.orderId === newItem.orderId && existing.prizeName === newItem.prizeName
+                // 同じID + orderId + prizeName の既存アイテムを検索
+                const existingItem = pendingOrders.find(existing =>
+                    existing.id === newItem.id &&
+                    existing.orderId === newItem.orderId &&
+                    existing.prizeName === newItem.prizeName
                 );
-                if (!exists) {
+                if (existingItem) {
+                    // 既存アイテムがあれば数量を増やす
+                    existingItem.quantity = (existingItem.quantity || 1) + (newItem.quantity || 1);
+                } else {
+                    // 新規アイテムとして追加
                     pendingOrders.push(newItem);
                     pendingAddedCount++;
                 }
