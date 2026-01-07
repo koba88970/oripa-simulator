@@ -1839,6 +1839,28 @@
                         </button>
                     </div>
 
+                    <!-- バックアップ・復元セクション -->
+                    <div style="background: rgba(255, 149, 0, 0.1); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid rgba(255, 149, 0, 0.3); margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <div style="font-size: 12px; color: var(--sf-gray); margin-bottom: 4px;">💾 バックアップ・復元</div>
+                                <div style="font-size: 13px; color: var(--sf-orange);">万が一に備えて定期的にバックアップを取りましょう</div>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button onclick="exportPrizeMasterJson()" style="padding: 8px 16px; background: var(--sf-blue); color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;">
+                                    📥 JSONエクスポート
+                                </button>
+                                <label style="padding: 8px 16px; background: var(--sf-green); color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;">
+                                    📤 JSONインポート
+                                    <input type="file" accept=".json" onchange="importPrizeMasterJson(event)" style="display: none;">
+                                </label>
+                                <button onclick="openCloudBackupModal()" style="padding: 8px 16px; background: var(--sf-purple); color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;">
+                                    ☁️ クラウドバックアップ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
                         <button class="btn btn-primary" onclick="toggleAddPrizeForm()" style="flex: 1; min-width: 200px;">
                             ➕ 新規景品を登録
@@ -2593,6 +2615,38 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-danger" onclick="closeTemporaryPrizeSelectModal()">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- クラウドバックアップモーダル -->
+    <div id="cloudBackupModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>☁️ クラウドバックアップ管理</h2>
+                <span class="modal-close" onclick="closeCloudBackupModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <p style="font-size: 14px; color: var(--sf-gray); margin-bottom: 12px;">
+                        景品マスターのスナップショットをクラウドに保存します。いつでも過去の状態に戻せます。
+                    </p>
+                    <button onclick="createCloudBackup()" style="padding: 12px 24px; background: var(--sf-blue); color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600;">
+                        📸 今すぐバックアップを作成
+                    </button>
+                </div>
+                <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: 20px;">
+                    <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: var(--sf-black);">
+                        📂 バックアップ履歴
+                        <span id="backupCount" style="font-size: 12px; font-weight: 500; color: var(--sf-gray);"></span>
+                    </h3>
+                    <div id="cloudBackupList" style="max-height: 400px; overflow-y: auto;">
+                        <p style="color: var(--sf-gray); text-align: center; padding: 40px 0;">読み込み中...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeCloudBackupModal()">閉じる</button>
             </div>
         </div>
     </div>
@@ -5382,6 +5436,239 @@
 
                 alert(alertMsg);
                 updateSyncStatus(errorMsg);
+            });
+        }
+
+        // ========== バックアップ・復元機能 ==========
+
+        // JSONエクスポート
+        function exportPrizeMasterJson() {
+            const exportData = {
+                exportedAt: new Date().toISOString(),
+                version: '1.0',
+                prizeMasterCount: prizeMaster.length,
+                prizeMaster: prizeMaster
+            };
+
+            const jsonStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const dateStr = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+            const filename = `prizeMaster_backup_${dateStr}.json`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert(`✅ バックアップを保存しました\n\nファイル名: ${filename}\n景品数: ${prizeMaster.length}件`);
+        }
+
+        // JSONインポート
+        function importPrizeMasterJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    // バリデーション
+                    if (!data.prizeMaster || !Array.isArray(data.prizeMaster)) {
+                        throw new Error('無効なバックアップファイルです');
+                    }
+
+                    const exportedAt = data.exportedAt ? new Date(data.exportedAt).toLocaleString('ja-JP') : '不明';
+                    const count = data.prizeMaster.length;
+
+                    if (!confirm(`⚠️ 景品マスターを復元しますか？\n\n` +
+                        `バックアップ日時: ${exportedAt}\n` +
+                        `景品数: ${count}件\n\n` +
+                        `現在の景品マスター（${prizeMaster.length}件）は上書きされます。\n` +
+                        `この操作は取り消せません。`)) {
+                        return;
+                    }
+
+                    // 現在のデータをローカルに退避
+                    try {
+                        localStorage.setItem('prizeMaster_beforeRestore', JSON.stringify(prizeMaster));
+                    } catch (err) {
+                        console.warn('退避用バックアップの保存に失敗:', err);
+                    }
+
+                    // 復元
+                    prizeMaster = data.prizeMaster;
+                    savePrizeMaster();
+                    savePrizeMasterToCloud();
+                    updatePrizeMasterList();
+
+                    alert(`✅ 復元が完了しました\n\n景品数: ${prizeMaster.length}件`);
+                } catch (err) {
+                    console.error('インポートエラー:', err);
+                    alert(`❌ インポートに失敗しました\n\n${err.message}`);
+                }
+            };
+
+            reader.onerror = function() {
+                alert('❌ ファイルの読み込みに失敗しました');
+            };
+
+            reader.readAsText(file);
+            event.target.value = ''; // リセット
+        }
+
+        // クラウドバックアップモーダルを開く
+        function openCloudBackupModal() {
+            document.getElementById('cloudBackupModal').style.display = 'flex';
+            loadCloudBackups();
+        }
+
+        // クラウドバックアップモーダルを閉じる
+        function closeCloudBackupModal() {
+            document.getElementById('cloudBackupModal').style.display = 'none';
+        }
+
+        // クラウドバックアップ一覧を読み込む
+        function loadCloudBackups() {
+            const listContainer = document.getElementById('cloudBackupList');
+            const countSpan = document.getElementById('backupCount');
+
+            if (typeof database === 'undefined' || !isAuthReady) {
+                listContainer.innerHTML = '<p style="color: var(--sf-red); text-align: center; padding: 20px;">Firebaseに接続されていません</p>';
+                return;
+            }
+
+            listContainer.innerHTML = '<p style="color: var(--sf-gray); text-align: center; padding: 20px;">読み込み中...</p>';
+
+            database.ref('prizeMasterBackups').orderByChild('createdAt').limitToLast(20).once('value').then(snapshot => {
+                const data = snapshot.val();
+
+                if (!data) {
+                    listContainer.innerHTML = '<p style="color: var(--sf-gray); text-align: center; padding: 40px 0;">バックアップはありません</p>';
+                    countSpan.textContent = '(0件)';
+                    return;
+                }
+
+                const backups = Object.entries(data).map(([key, value]) => ({
+                    id: key,
+                    ...value
+                })).sort((a, b) => b.createdAt - a.createdAt);
+
+                countSpan.textContent = `(${backups.length}件)`;
+
+                listContainer.innerHTML = backups.map(backup => {
+                    const date = new Date(backup.createdAt);
+                    const dateStr = date.toLocaleString('ja-JP');
+                    const count = backup.prizeMasterCount || '?';
+
+                    return `
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 8px; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid rgba(0,0,0,0.05);">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 14px; color: var(--sf-black);">📅 ${dateStr}</div>
+                                <div style="font-size: 12px; color: var(--sf-gray); margin-top: 2px;">景品数: ${count}件</div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="restoreCloudBackup('${backup.id}')" style="padding: 6px 12px; background: var(--sf-green); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600;">
+                                    復元
+                                </button>
+                                <button onclick="deleteCloudBackup('${backup.id}')" style="padding: 6px 12px; background: var(--sf-red); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600;">
+                                    削除
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }).catch(err => {
+                console.error('バックアップ一覧の読み込みに失敗:', err);
+                listContainer.innerHTML = '<p style="color: var(--sf-red); text-align: center; padding: 20px;">読み込みに失敗しました</p>';
+            });
+        }
+
+        // クラウドバックアップを作成
+        function createCloudBackup() {
+            if (typeof database === 'undefined' || !isAuthReady) {
+                alert('Firebaseに接続されていません');
+                return;
+            }
+
+            const backupData = {
+                createdAt: Date.now(),
+                prizeMasterCount: prizeMaster.length,
+                prizeMaster: prizeMaster
+            };
+
+            database.ref('prizeMasterBackups').push(backupData).then(() => {
+                alert(`✅ クラウドバックアップを作成しました\n\n景品数: ${prizeMaster.length}件`);
+                loadCloudBackups();
+            }).catch(err => {
+                console.error('バックアップ作成エラー:', err);
+                alert(`❌ バックアップの作成に失敗しました\n\n${err.message}`);
+            });
+        }
+
+        // クラウドバックアップから復元
+        function restoreCloudBackup(backupId) {
+            if (typeof database === 'undefined' || !isAuthReady) {
+                alert('Firebaseに接続されていません');
+                return;
+            }
+
+            database.ref('prizeMasterBackups/' + backupId).once('value').then(snapshot => {
+                const data = snapshot.val();
+
+                if (!data || !data.prizeMaster) {
+                    alert('❌ バックアップデータが見つかりません');
+                    return;
+                }
+
+                const date = new Date(data.createdAt).toLocaleString('ja-JP');
+                const count = data.prizeMaster.length;
+
+                if (!confirm(`⚠️ このバックアップから復元しますか？\n\n` +
+                    `バックアップ日時: ${date}\n` +
+                    `景品数: ${count}件\n\n` +
+                    `現在の景品マスター（${prizeMaster.length}件）は上書きされます。`)) {
+                    return;
+                }
+
+                // 現在のデータをローカルに退避
+                try {
+                    localStorage.setItem('prizeMaster_beforeRestore', JSON.stringify(prizeMaster));
+                } catch (err) {
+                    console.warn('退避用バックアップの保存に失敗:', err);
+                }
+
+                // 復元
+                prizeMaster = data.prizeMaster;
+                savePrizeMaster();
+                savePrizeMasterToCloud();
+                updatePrizeMasterList();
+
+                alert(`✅ 復元が完了しました\n\n景品数: ${prizeMaster.length}件`);
+                closeCloudBackupModal();
+            }).catch(err => {
+                console.error('復元エラー:', err);
+                alert(`❌ 復元に失敗しました\n\n${err.message}`);
+            });
+        }
+
+        // クラウドバックアップを削除
+        function deleteCloudBackup(backupId) {
+            if (!confirm('このバックアップを削除しますか？\n\nこの操作は取り消せません。')) {
+                return;
+            }
+
+            database.ref('prizeMasterBackups/' + backupId).remove().then(() => {
+                alert('✅ バックアップを削除しました');
+                loadCloudBackups();
+            }).catch(err => {
+                console.error('削除エラー:', err);
+                alert(`❌ 削除に失敗しました\n\n${err.message}`);
             });
         }
 
