@@ -2379,6 +2379,39 @@
         </div>
     </div>
 
+    <!-- 重複注文ID警告モーダル -->
+    <div id="duplicateOrderModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: var(--radius-lg); padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-2xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 18px; font-weight: 700; color: var(--sf-orange); margin: 0;">
+                    ⚠️ 重複する注文IDがあります
+                </h3>
+                <button onclick="closeDuplicateOrderModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--sf-gray);">&times;</button>
+            </div>
+
+            <div style="background: rgba(255, 149, 0, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                <div style="font-size: 13px; color: var(--sf-gray); margin-bottom: 8px;">以下の注文IDは既に未発送リストに登録されています:</div>
+                <div id="duplicateOrderIds" style="font-size: 14px; color: var(--sf-black); font-weight: 600; max-height: 150px; overflow-y: auto;"></div>
+            </div>
+
+            <p style="font-size: 13px; color: var(--sf-gray); margin-bottom: 20px;">
+                これらの注文をどのように処理しますか？
+            </p>
+
+            <div style="display: grid; gap: 12px;">
+                <button onclick="handleDuplicateOrders('overwrite')" style="width: 100%; padding: 14px; background: var(--sf-orange); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">
+                    🔄 上書きする（既存を削除して新しいデータで置換）
+                </button>
+                <button onclick="handleDuplicateOrders('exclude')" style="width: 100%; padding: 14px; background: var(--sf-blue); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">
+                    ⏭️ 除外する（重複IDはスキップして新規のみ取り込む）
+                </button>
+                <button onclick="closeDuplicateOrderModal()" style="width: 100%; padding: 14px; background: rgba(0,0,0,0.1); color: var(--sf-gray); border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">
+                    キャンセル
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 未登録景品処理モーダル -->
     <div id="unregisteredPrizeModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10000; align-items: center; justify-content: center;">
         <div style="background: white; border-radius: var(--radius-lg); padding: 24px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-2xl);">
@@ -3783,6 +3816,9 @@
 
             // 景品マスターの表示も更新（モーダルを閉じた後に反映されるように）
             updatePrizeMasterList();
+
+            // 在庫減少タブの未発送リストも更新（在庫状況が変わるため）
+            renderPendingOrdersOnly();
         }
 
         // 置き換えモードフラグ
@@ -7361,6 +7397,10 @@
             }
         }
 
+        // 重複チェック用の状態
+        let duplicateOrderIdsFound = [];
+        let duplicateHandleMode = null;
+
         // 注文選択を確定して次のステップへ
         function confirmOrderSelection() {
             if (selectedOrderIds.size === 0) {
@@ -7371,6 +7411,62 @@
             // 選択された注文のデータのみをフィルター
             filteredShippingData = shippingCsvData.filter(d => selectedOrderIds.has(d.orderId));
 
+            // 既存のpendingOrdersと重複するIDをチェック
+            const csvPendingIds = new Set();
+            filteredShippingData.filter(d => d.status === 'pending').forEach(d => {
+                csvPendingIds.add(String(d.id));
+            });
+
+            const existingIds = new Set();
+            pendingOrders.forEach(p => {
+                existingIds.add(String(p.id));
+            });
+
+            // 重複IDを検出
+            duplicateOrderIdsFound = [...csvPendingIds].filter(id => existingIds.has(id));
+
+            if (duplicateOrderIdsFound.length > 0) {
+                // 重複がある場合はモーダルを表示
+                document.getElementById('duplicateOrderIds').innerHTML = duplicateOrderIdsFound
+                    .map(id => `<span style="display: inline-block; background: rgba(255,149,0,0.2); padding: 2px 8px; border-radius: 4px; margin: 2px;">ID: ${id}</span>`)
+                    .join(' ');
+                document.getElementById('duplicateOrderModal').style.display = 'flex';
+                return;
+            }
+
+            // 重複がなければそのまま進む
+            proceedWithOrderConfirmation();
+        }
+
+        // 重複モーダルを閉じる
+        function closeDuplicateOrderModal() {
+            document.getElementById('duplicateOrderModal').style.display = 'none';
+            duplicateOrderIdsFound = [];
+        }
+
+        // 重複の処理方法を選択
+        function handleDuplicateOrders(mode) {
+            duplicateHandleMode = mode;
+            closeDuplicateOrderModal();
+
+            if (mode === 'overwrite') {
+                // 既存の重複IDを削除
+                pendingOrders = pendingOrders.filter(p => !duplicateOrderIdsFound.includes(String(p.id)));
+                savePendingOrdersToCloud();
+                console.log(`🔄 重複ID ${duplicateOrderIdsFound.length}件を上書きモードで削除`);
+            } else if (mode === 'exclude') {
+                // CSVから重複IDを除外
+                filteredShippingData = filteredShippingData.filter(d =>
+                    d.status !== 'pending' || !duplicateOrderIdsFound.includes(String(d.id))
+                );
+                console.log(`⏭️ 重複ID ${duplicateOrderIdsFound.length}件を除外`);
+            }
+
+            proceedWithOrderConfirmation();
+        }
+
+        // 確認処理を続行
+        function proceedWithOrderConfirmation() {
             // サマリーを計算
             const shippedCount = filteredShippingData.filter(d => d.status === 'shipped' && !d.isRandomPack).length;
             const pendingCount = filteredShippingData.filter(d => d.status === 'pending').length;
@@ -8727,6 +8823,9 @@
             saveInventoryHistoryEntries([historyEntry]);
             renderNeedRestockList();
 
+            // 在庫減少タブの未発送リストも更新（在庫状況が変わるため）
+            renderPendingOrdersOnly();
+
             alert(`${masterItem.name} ${quantity}個を入庫しました\n在庫: ${oldStock} → ${masterItem[stockKey]}`);
         }
 
@@ -9221,6 +9320,9 @@
             inventoryHistory = [];
             renderInventoryHistory();
 
+            // 在庫減少タブの未発送リストも更新（在庫状況が変わるため）
+            renderPendingOrdersOnly();
+
             alert(`${dateStr} の在庫変動をリセットしました\n${resetCount}件の景品の在庫を調整しました`);
         }
 
@@ -9292,6 +9394,9 @@
 
             // 表示を更新
             renderInventoryHistory();
+
+            // 在庫減少タブの未発送リストも更新（在庫状況が変わるため）
+            renderPendingOrdersOnly();
 
             alert(`変動を取り消しました\n${prizeName}: ${type === 'decrease' ? '+' : '-'}${quantity}個`);
         }
