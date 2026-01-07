@@ -9652,27 +9652,13 @@
         // ========== 発送済みIDの管理（重複発送防止） ==========
 
         function saveShippedOrderIds() {
-            // ローカルストレージに保存
+            // ローカルストレージに保存（メイン保存先）
             localStorage.setItem('shippedOrderIds', JSON.stringify([...shippedOrderIds]));
-
-            // Firebaseに保存
-            const saveToCloud = () => {
-                database.ref('shippedOrderIds').set([...shippedOrderIds]).then(() => {
-                    console.log('📤 発送済みIDをクラウドに保存:', shippedOrderIds.size + '件');
-                }).catch(err => {
-                    console.error('発送済みIDの保存に失敗:', err);
-                });
-            };
-
-            if (typeof database !== 'undefined' && isAuthReady) {
-                saveToCloud();
-            } else {
-                waitForAuth(saveToCloud);
-            }
+            console.log('📤 発送済みIDをローカルに保存:', shippedOrderIds.size + '件');
         }
 
         function loadShippedOrderIds() {
-            // まずローカルストレージから読み込み
+            // ローカルストレージから読み込み
             const localData = localStorage.getItem('shippedOrderIds');
             if (localData) {
                 try {
@@ -9684,27 +9670,6 @@
                 } catch (e) {
                     console.error('発送済みIDの解析に失敗:', e);
                 }
-            }
-
-            // Firebaseからも読み込み（優先）
-            const loadFromCloud = () => {
-                database.ref('shippedOrderIds').once('value').then(snapshot => {
-                    const data = snapshot.val();
-                    if (data && Array.isArray(data)) {
-                        shippedOrderIds = new Set(data.map(id => String(id)));
-                        // ローカルストレージも更新
-                        localStorage.setItem('shippedOrderIds', JSON.stringify([...shippedOrderIds]));
-                        console.log('📥 発送済みIDをクラウドから読込:', shippedOrderIds.size + '件');
-                    }
-                }).catch(err => {
-                    console.error('発送済みIDの読込に失敗:', err);
-                });
-            };
-
-            if (typeof database !== 'undefined' && isAuthReady) {
-                loadFromCloud();
-            } else {
-                waitForAuth(loadFromCloud);
             }
         }
 
