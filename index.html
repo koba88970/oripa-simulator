@@ -4874,10 +4874,28 @@
         function generateGachaPool() {
             gachaPool = [];
 
+            // 総口数の上限チェック（メモリ保護）
+            const MAX_POOL_SIZE = 100000;
+            const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
+            if (totalPacks > MAX_POOL_SIZE) {
+                console.warn(`⚠️ 総口数(${totalPacks})が上限(${MAX_POOL_SIZE})を超えているため、ガチャプールの生成をスキップします`);
+                return;
+            }
+
             // 通常景品のみを追加（ラストワン賞とキリ番賞は除外）
             const normalPrizes = prizes.filter(p => !p.prizeType || p.prizeType === 'normal');
+
+            // 景品総数チェック（メモリ保護）
+            const prizesTotalCountCheck = normalPrizes.reduce((sum, prize) => sum + (prize.count || 0), 0);
+            if (prizesTotalCountCheck > MAX_POOL_SIZE) {
+                console.warn(`⚠️ 景品総数(${prizesTotalCountCheck})が上限(${MAX_POOL_SIZE})を超えているため、ガチャプールの生成をスキップします`);
+                return;
+            }
+
             normalPrizes.forEach(prize => {
-                for (let i = 0; i < prize.count; i++) {
+                // 個別の景品数チェック
+                const safeCount = Math.min(Math.max(0, prize.count || 0), MAX_POOL_SIZE);
+                for (let i = 0; i < safeCount; i++) {
                     gachaPool.push({
                         type: 'prize',
                         item: prize
@@ -4885,8 +4903,7 @@
                 }
             });
 
-            // 現在の設定でハズレを計算
-            const totalPacks = parseInt(document.getElementById('totalPacks').value) || 0;
+            // 現在の設定でハズレを計算（既にtotalPacksは上で定義済み）
             const minGuaranteeValue = parseFloat(document.getElementById('minGuaranteeValue').value) || 0;
 
             if (totalPacks > 0) {
@@ -4901,12 +4918,14 @@
 
                 // 手動ハズレが設定されている場合
                 if (losses.length > 0) {
-                    const manualLossCount = losses.reduce((sum, loss) => sum + loss.count, 0);
+                    const manualLossCount = losses.reduce((sum, loss) => sum + (loss.count || 0), 0);
                     console.log('手動ハズレ追加:', { count: manualLossCount });
 
                     losses.forEach(loss => {
-                        console.log(`${loss.name} 生成:`, { count: loss.count, value: loss.value });
-                        for (let j = 0; j < loss.count; j++) {
+                        // 安全チェック付きでループ
+                        const safeLossCount = Math.min(Math.max(0, loss.count || 0), MAX_POOL_SIZE);
+                        console.log(`${loss.name} 生成:`, { count: safeLossCount, value: loss.value });
+                        for (let j = 0; j < safeLossCount; j++) {
                             gachaPool.push({
                                 type: 'loss',
                                 item: {
@@ -4930,9 +4949,11 @@
 
                 if (remainingSlots > 0 && shouldFillWithMinGuarantee) {
                     const adjustedMinValue = Math.max(1, Math.round(minGuaranteeValue));
-                    console.log(`最低保証でハズレを自動生成: ${remainingSlots}個 (価値: ${adjustedMinValue}円)`);
+                    // 安全チェック付きでループ
+                    const safeRemainingSlots = Math.min(Math.max(0, remainingSlots), MAX_POOL_SIZE);
+                    console.log(`最低保証でハズレを自動生成: ${safeRemainingSlots}個 (価値: ${adjustedMinValue}円)`);
 
-                    for (let j = 0; j < remainingSlots; j++) {
+                    for (let j = 0; j < safeRemainingSlots; j++) {
                         gachaPool.push({
                             type: 'loss',
                             item: {
