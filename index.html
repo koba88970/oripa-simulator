@@ -2137,10 +2137,24 @@
 
                 <!-- 発送済み一覧 -->
                 <div id="shippedOrdersList" style="display: none; margin-bottom: 24px;">
-                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--sf-black); display: flex; align-items: center; gap: 8px;">
-                        ✅ 発送済み注文
-                        <span id="shippedOrdersCount" style="font-size: 12px; font-weight: 500; color: var(--sf-gray);"></span>
-                    </h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                        <h3 style="font-size: 16px; font-weight: 700; color: var(--sf-black); display: flex; align-items: center; gap: 8px; margin: 0;">
+                            ✅ 発送済み注文
+                            <span id="shippedOrdersCount" style="font-size: 12px; font-weight: 500; color: var(--sf-gray);"></span>
+                        </h3>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span id="shippedSelectedCount" style="font-size: 13px; color: var(--sf-blue); font-weight: 600;"></span>
+                            <button onclick="selectAllShipped()" style="padding: 6px 12px; background: var(--sf-blue); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600;">
+                                ✓ 全選択
+                            </button>
+                            <button onclick="deselectAllShipped()" style="padding: 6px 12px; background: rgba(0,0,0,0.1); color: var(--sf-gray); border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600;">
+                                ✗ 全解除
+                            </button>
+                        </div>
+                    </div>
+                    <p style="font-size: 12px; color: var(--sf-gray); margin-bottom: 12px;">
+                        💡 既に処理済みの発送は除外して在庫を減少できます。チェックを外すと除外されます。
+                    </p>
                     <div id="shippedOrdersContainer" style="display: grid; gap: 12px; max-height: 400px; overflow-y: auto;">
                         <!-- 発送済み注文カードがここに動的に追加される -->
                     </div>
@@ -6722,6 +6736,7 @@
         let inventoryHistory = []; // 在庫増減履歴
         let randomPackCount = 0;   // なにかのパックの数
         let randomPackSelections = {}; // なにかのパック選択状態
+        let selectedShippedItems = new Set(); // 選択された発送済みアイテム（景品名）
 
         // サブタブ切り替え
         function switchInventorySubTab(tabName, btn) {
@@ -6757,6 +6772,9 @@
         function loadShippingCsv(event) {
             const file = event.target.files[0];
             if (!file) return;
+
+            // 選択状態をリセット（新しいCSVなので全選択にするため）
+            selectedShippedItems.clear();
 
             document.getElementById('shippingCsvFileName').textContent = file.name;
 
@@ -7127,29 +7145,43 @@
             const shippedContainer = document.getElementById('shippedOrdersContainer');
             const shippedGroupedArray = Object.entries(shippedGrouped).sort((a, b) => b[1].count - a[1].count);
 
+            // 初回読み込み時は全てを選択状態にする
+            if (selectedShippedItems.size === 0 && shippedGroupedArray.length > 0) {
+                shippedGroupedArray.forEach(([prizeName]) => {
+                    selectedShippedItems.add(prizeName);
+                });
+            }
+
             if (shippedGroupedArray.length > 0) {
                 document.getElementById('shippedOrdersList').style.display = 'block';
                 document.getElementById('shippedOrdersCount').textContent = `(${shippedItems.length}件 / ${shippedGroupedArray.length}種類)`;
 
                 shippedContainer.innerHTML = shippedGroupedArray.map(([prizeName, data]) => {
                     const isMatched = prizeMaster.some(p => p.name === prizeName);
+                    const isSelected = selectedShippedItems.has(prizeName);
+                    const escapedName = escapeHtml(prizeName).replace(/'/g, "\\'").replace(/"/g, "&quot;");
                     return `
-                    <div style="background: white; padding: 12px 16px; border-radius: var(--radius-md); border-left: 4px solid ${isMatched ? 'var(--sf-green)' : 'var(--sf-red)'};">
+                    <div style="background: ${isSelected ? 'white' : 'rgba(0,0,0,0.03)'}; padding: 12px 16px; border-radius: var(--radius-md); border-left: 4px solid ${isSelected ? (isMatched ? 'var(--sf-green)' : 'var(--sf-red)') : 'var(--sf-gray)'}; opacity: ${isSelected ? '1' : '0.6'}; transition: all 0.2s;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; font-size: 14px; color: var(--sf-black);">${escapeHtml(prizeName)}</div>
-                                ${!isMatched ? '<div style="font-size: 11px; color: var(--sf-red); margin-top: 2px;">⚠️ マスター未登録</div>' : ''}
+                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleShippedSelection('${escapedName}')" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--sf-blue);">
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 14px; color: var(--sf-black);">${escapeHtml(prizeName)}</div>
+                                    ${!isMatched ? '<div style="font-size: 11px; color: var(--sf-red); margin-top: 2px;">⚠️ マスター未登録</div>' : ''}
+                                </div>
                             </div>
                             <span style="background: ${isMatched ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)'}; color: ${isMatched ? 'var(--sf-green)' : 'var(--sf-red)'}; padding: 4px 12px; border-radius: var(--radius-full); font-size: 13px; font-weight: 700;">
                                 ${data.count}個
                             </span>
                         </div>
-                        <div style="font-size: 11px; color: var(--sf-gray); margin-top: 4px;">
+                        <div style="font-size: 11px; color: var(--sf-gray); margin-top: 4px; margin-left: 32px;">
                             注文: ${data.orders.slice(0, 3).join(', ')}${data.orders.length > 3 ? ` 他${data.orders.length - 3}件` : ''}
                         </div>
                     </div>
                     `;
                 }).join('');
+
+                updateShippedSelectedCount();
             } else {
                 document.getElementById('shippedOrdersList').style.display = 'none';
             }
@@ -7536,12 +7568,53 @@
             selectedUnmatchedIndex = null;
         }
 
+        // 発送済み選択操作
+        function toggleShippedSelection(prizeName) {
+            if (selectedShippedItems.has(prizeName)) {
+                selectedShippedItems.delete(prizeName);
+            } else {
+                selectedShippedItems.add(prizeName);
+            }
+            renderShippingOrders();
+        }
+
+        function selectAllShipped() {
+            const shippedItems = shippingCsvData.filter(d => d.status === 'shipped' && !d.isRandomPack);
+            const prizeNames = [...new Set(shippedItems.map(d => d.prizeName))];
+            prizeNames.forEach(name => selectedShippedItems.add(name));
+            renderShippingOrders();
+        }
+
+        function deselectAllShipped() {
+            selectedShippedItems.clear();
+            renderShippingOrders();
+        }
+
+        function updateShippedSelectedCount() {
+            const shippedItems = shippingCsvData.filter(d => d.status === 'shipped' && !d.isRandomPack);
+            const allPrizeNames = [...new Set(shippedItems.map(d => d.prizeName))];
+            const selectedCount = allPrizeNames.filter(name => selectedShippedItems.has(name)).length;
+
+            // 選択されたアイテムの合計数量を計算
+            const selectedQty = shippedItems
+                .filter(d => selectedShippedItems.has(d.prizeName))
+                .reduce((sum, d) => sum + d.quantity, 0);
+
+            const countSpan = document.getElementById('shippedSelectedCount');
+            if (countSpan) {
+                countSpan.textContent = `${selectedCount}/${allPrizeNames.length}種類選択中 (${selectedQty}件)`;
+            }
+        }
+
         // 確認ダイアログを表示してから在庫減少を実行
         function confirmAndApplyShippedDecrease() {
-            const shippedItems = shippingCsvData.filter(d => d.status === 'shipped' && !d.isRandomPack);
+            // 選択されたアイテムのみをフィルター
+            const shippedItems = shippingCsvData.filter(d =>
+                d.status === 'shipped' && !d.isRandomPack && selectedShippedItems.has(d.prizeName)
+            );
 
             if (shippedItems.length === 0) {
-                alert('発送済みの景品がありません');
+                alert('発送済みの景品が選択されていません\n\nチェックボックスで処理する景品を選択してください');
                 return;
             }
 
@@ -7597,10 +7670,13 @@
 
         // 発送済みを在庫から減少
         function applyShippedInventoryDecrease() {
-            const shippedItems = shippingCsvData.filter(d => d.status === 'shipped' && !d.isRandomPack);
+            // 選択されたアイテムのみをフィルター
+            const shippedItems = shippingCsvData.filter(d =>
+                d.status === 'shipped' && !d.isRandomPack && selectedShippedItems.has(d.prizeName)
+            );
 
             if (shippedItems.length === 0) {
-                alert('発送済みの景品がありません');
+                alert('発送済みの景品が選択されていません');
                 return;
             }
 
