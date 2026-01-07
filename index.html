@@ -9612,40 +9612,26 @@
         // ========== 発送待ちリストのクラウド管理 ==========
 
         function savePendingOrdersToCloud() {
-            const saveToCloud = () => {
-                database.ref('pendingShipments').set(pendingOrders).then(() => {
-                    console.log('📤 発送待ちリストをクラウドに保存:', pendingOrders.length + '件');
-                }).catch(err => {
-                    console.error('発送待ちリストの保存に失敗:', err);
-                });
-            };
-
-            if (typeof database !== 'undefined' && isAuthReady) {
-                saveToCloud();
-            } else {
-                waitForAuth(saveToCloud);
-            }
+            // ローカルストレージに保存
+            localStorage.setItem('pendingShipments', JSON.stringify(pendingOrders));
+            console.log('📤 発送待ちリストをローカルに保存:', pendingOrders.length + '件');
         }
 
         function loadPendingOrdersFromCloud() {
-            const loadFromCloud = () => {
-                database.ref('pendingShipments').once('value').then(snapshot => {
-                    const data = snapshot.val();
-                    if (data && Array.isArray(data)) {
+            // ローカルストレージから読み込み
+            const localData = localStorage.getItem('pendingShipments');
+            if (localData) {
+                try {
+                    const data = JSON.parse(localData);
+                    if (Array.isArray(data)) {
                         pendingOrders = data;
                         renderPendingOrdersOnly();
-                        renderNeedRestockList(); // 要入荷リストも更新
-                        console.log('📥 発送待ちリストをクラウドから読込:', pendingOrders.length + '件');
+                        renderNeedRestockList();
+                        console.log('📥 発送待ちリストをローカルから読込:', pendingOrders.length + '件');
                     }
-                }).catch(err => {
-                    console.error('発送待ちリストの読込に失敗:', err);
-                });
-            };
-
-            if (typeof database !== 'undefined' && isAuthReady) {
-                loadFromCloud();
-            } else {
-                waitForAuth(loadFromCloud);
+                } catch (e) {
+                    console.error('発送待ちリストの解析に失敗:', e);
+                }
             }
         }
 
@@ -10042,6 +10028,8 @@ function loadConfigList() {
     const configs = snapshot.val();
     console.log('保存済み設定:', Object.keys(configs || {}));
     // 必要に応じてUI表示
+  }).catch((error) => {
+    console.warn('設定一覧の読み込みに失敗:', error.message);
   });
 }
 
