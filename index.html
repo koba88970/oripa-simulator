@@ -8823,9 +8823,19 @@
                             <div style="font-size: 12px; color: var(--sf-red); margin-top: 2px;">
                                 在庫: 0個 → 必要: ${item.totalQty}個
                             </div>
+                            ${item.masterItem?.purchasePrice ? `<div style="font-size: 11px; color: var(--sf-gray); margin-top: 1px;">現在の平均仕入れ値: ¥${item.masterItem.purchasePrice.toLocaleString()}</div>` : ''}
                         </div>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <input type="number" id="restockQty_${prizeId}" value="${item.totalQty}" min="1" style="width: 60px; padding: 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); text-align: center; font-size: 14px;">
+                        <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 2px;">
+                                    <span style="font-size: 11px; color: var(--sf-gray);">数量</span>
+                                    <input type="number" id="restockQty_${prizeId}" value="${item.totalQty}" min="1" style="width: 50px; padding: 6px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); text-align: center; font-size: 13px;">
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 2px;">
+                                    <span style="font-size: 11px; color: var(--sf-gray);">単価¥</span>
+                                    <input type="number" id="restockPrice_${prizeId}" value="${item.masterItem?.purchasePrice || ''}" min="0" placeholder="0" style="width: 70px; padding: 6px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); text-align: right; font-size: 13px;">
+                                </div>
+                            </div>
                             <button onclick="quickAddToRegister('${prizeId}', '${escapedName}')" style="background: var(--sf-green); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-weight: 600; white-space: nowrap;">
                                 📥 入庫
                             </button>
@@ -8839,7 +8849,9 @@
         // 要入荷リストから直接在庫を増やす
         function quickAddToRegister(prizeId, prizeName) {
             const qtyInput = document.getElementById('restockQty_' + prizeId);
+            const priceInput = document.getElementById('restockPrice_' + prizeId);
             const quantity = parseInt(qtyInput?.value) || 1;
+            const unitPrice = parseInt(priceInput?.value) || 0;
 
             // 景品マスターから検索
             let masterItem = prizeMaster.find(p => String(p.id) === String(prizeId));
@@ -8854,10 +8866,33 @@
                 return;
             }
 
+            // 仕入れ価格が0の場合は確認
+            if (unitPrice <= 0) {
+                if (!confirm('仕入れ価格が0円です。このまま入庫しますか？')) {
+                    return;
+                }
+            }
+
             // 直接在庫を増やす
             const stockKey = 'stock' in masterItem ? 'stock' : 'count';
             const oldStock = masterItem[stockKey] || 0;
             masterItem[stockKey] = oldStock + quantity;
+
+            // 仕入れ履歴に追加
+            if (!masterItem.purchasePriceHistory) {
+                masterItem.purchasePriceHistory = [];
+            }
+            masterItem.purchasePriceHistory.push({
+                price: unitPrice,
+                quantity: quantity,
+                date: new Date().toISOString(),
+                reason: '入庫（要入荷リストから）'
+            });
+
+            // 加重平均仕入れ値を再計算
+            const newAvgPrice = calculateAveragePurchasePrice(masterItem);
+            const oldPurchasePrice = masterItem.purchasePrice || 0;
+            masterItem.purchasePrice = newAvgPrice;
 
             // 履歴に追加
             const historyEntry = {
@@ -8866,6 +8901,7 @@
                 quantity: quantity,
                 oldStock: oldStock,
                 newStock: masterItem[stockKey],
+                unitPrice: unitPrice,
                 reason: '入庫（要入荷リストから）',
                 timestamp: new Date().toISOString()
             };
@@ -8878,7 +8914,13 @@
             // 在庫減少タブの未発送リストも更新（在庫状況が変わるため）
             renderPendingOrdersOnly();
 
-            alert(`${masterItem.name} ${quantity}個を入庫しました\n在庫: ${oldStock} → ${masterItem[stockKey]}`);
+            let message = `${masterItem.name} ${quantity}個を入庫しました\n`;
+            message += `在庫: ${oldStock} → ${masterItem[stockKey]}\n`;
+            message += `仕入れ単価: ¥${unitPrice.toLocaleString()}\n`;
+            if (oldPurchasePrice !== newAvgPrice) {
+                message += `平均仕入れ値: ¥${oldPurchasePrice.toLocaleString()} → ¥${newAvgPrice.toLocaleString()}`;
+            }
+            alert(message);
         }
 
         // ========== 未登録景品モーダル機能 ==========
