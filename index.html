@@ -2289,8 +2289,11 @@
             <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--sf-black);">
                 🎁 なにかのパックの内容を選択
             </h3>
-            <p style="font-size: 13px; color: var(--sf-gray); margin-bottom: 16px;">
+            <p style="font-size: 13px; color: var(--sf-gray); margin-bottom: 8px;">
                 実際に発送したパックを選択してください（<span id="randomPackCount">0</span>枚）
+            </p>
+            <p id="randomPackStockInfo" style="font-size: 12px; color: var(--sf-orange); margin-bottom: 16px; display: none;">
+                ⚠️ 選択可能な在庫: <span id="randomPackTotalStock">0</span>枚
             </p>
             <div id="randomPackPrizeList" style="max-height: 400px; overflow-y: auto; margin-bottom: 16px;">
                 <!-- パック一覧がここに表示される -->
@@ -2373,6 +2376,83 @@
             <button onclick="closeCustomAlert()" style="width: 100%; padding: 12px; background: var(--sf-blue); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                 OK
             </button>
+        </div>
+    </div>
+
+    <!-- 未登録景品処理モーダル -->
+    <div id="unregisteredPrizeModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: var(--radius-lg); padding: 24px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-2xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 18px; font-weight: 700; color: var(--sf-black); margin: 0;">
+                    ⚠️ 景品マスター未登録
+                </h3>
+                <button onclick="closeUnregisteredPrizeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--sf-gray);">&times;</button>
+            </div>
+
+            <div style="background: rgba(255, 149, 0, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                <div style="font-weight: 600; color: var(--sf-orange); font-size: 14px;">対象の景品名:</div>
+                <div id="unregPrizeName" style="font-size: 15px; color: var(--sf-black); margin-top: 4px; word-break: break-all;"></div>
+                <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">必要数量: <span id="unregNeededQty">0</span>個</div>
+            </div>
+
+            <p style="font-size: 13px; color: var(--sf-gray); margin-bottom: 16px;">
+                この景品は景品マスターに登録されていません。以下から選択してください:
+            </p>
+
+            <!-- タブ切り替え -->
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button id="unregTabNew" onclick="switchUnregTab('new')" style="flex: 1; padding: 10px; border: 2px solid var(--sf-blue); background: var(--sf-blue); color: white; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                    📝 新規登録
+                </button>
+                <button id="unregTabExisting" onclick="switchUnregTab('existing')" style="flex: 1; padding: 10px; border: 2px solid var(--sf-blue); background: white; color: var(--sf-blue); border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                    🔗 既存から参照
+                </button>
+            </div>
+
+            <!-- 新規登録タブ -->
+            <div id="unregContentNew" style="display: block;">
+                <div style="background: rgba(0,0,0,0.02); border-radius: 8px; padding: 16px;">
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--sf-gray); margin-bottom: 4px;">景品名</label>
+                        <input type="text" id="unregNewName" style="width: 100%; padding: 10px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: var(--sf-gray); margin-bottom: 4px;">種類</label>
+                            <select id="unregNewType" style="width: 100%; padding: 10px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                                <option value="PSA10">PSA10</option>
+                                <option value="美品">美品</option>
+                                <option value="パック">パック</option>
+                                <option value="ボックス">ボックス</option>
+                                <option value="その他">その他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: var(--sf-gray); margin-bottom: 4px;">画像URL（任意）</label>
+                            <input type="text" id="unregNewImage" placeholder="https://..." style="width: 100%; padding: 10px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                        </div>
+                    </div>
+                    <button onclick="registerNewPrizeFromModal()" style="width: 100%; padding: 12px; background: var(--sf-blue); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">
+                        📝 景品マスターに登録
+                    </button>
+                    <p style="font-size: 11px; color: var(--sf-gray); margin-top: 8px; text-align: center;">
+                        ※ 在庫の入庫は要入荷リストから行えます
+                    </p>
+                </div>
+            </div>
+
+            <!-- 既存から参照タブ -->
+            <div id="unregContentExisting" style="display: none;">
+                <div style="margin-bottom: 12px;">
+                    <input type="text" id="unregSearchExisting" oninput="searchExistingPrizesForUnreg()" placeholder="景品マスターを検索..." style="width: 100%; padding: 10px 12px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                </div>
+                <div id="unregExistingList" style="max-height: 300px; overflow-y: auto; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px;">
+                    <!-- 検索結果がここに表示される -->
+                </div>
+                <p style="font-size: 11px; color: var(--sf-gray); margin-top: 8px; text-align: center;">
+                    ※ 選択すると未発送と紐付けます（在庫は変わりません）
+                </p>
+            </div>
         </div>
     </div>
 
@@ -7370,7 +7450,8 @@
                 document.getElementById('shippedOrdersCount').textContent = `(${shippedItems.length}件 / ${shippedGroupedArray.length}種類)`;
 
                 shippedContainer.innerHTML = shippedGroupedArray.map(([prizeName, data]) => {
-                    const isMatched = prizeMaster.some(p => p.name === prizeName);
+                    // 正規化マッチングを使用
+                    const isMatched = !!findPrizeByNormalizedName(prizeName);
                     return `
                     <div style="background: white; padding: 12px 16px; border-radius: var(--radius-md); border-left: 4px solid ${isMatched ? 'var(--sf-green)' : 'var(--sf-red)'};">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -7395,75 +7476,102 @@
             // 選択されたCSVから未発送を取得（まだ保存しない）
             const newPendingFromCsv = filteredShippingData.filter(d => d.status === 'pending');
 
-            // 表示用に既存のpendingOrdersと新規CSV分をマージ（保存はしない）
-            const displayPendingOrders = [...pendingOrders];
-            newPendingFromCsv.forEach(newItem => {
-                const exists = displayPendingOrders.some(existing =>
-                    existing.orderId === newItem.orderId && existing.prizeName === newItem.prizeName
-                );
-                if (!exists) {
-                    displayPendingOrders.push(newItem);
-                }
-            });
-
-            // 表示用のpendingOrdersをグループ化
-            const pendingGrouped = {};
-            displayPendingOrders.forEach(item => {
-                if (!pendingGrouped[item.prizeName]) {
-                    pendingGrouped[item.prizeName] = { count: 0, orders: [], customers: [] };
-                }
-                pendingGrouped[item.prizeName].count += (item.quantity || 1);
-                if (item.orderId) {
-                    pendingGrouped[item.prizeName].orders.push(item.orderId);
-                }
-                if (item.customerName) {
-                    pendingGrouped[item.prizeName].customers.push(item.customerName);
-                }
-            });
-
-            // 描画（グループ化バージョン）
-            renderPendingOrdersGrouped(pendingGrouped);
+            // ID別に表示
+            renderPendingOrdersById(newPendingFromCsv);
         }
 
-        // 未発送をグループ化して描画
-        function renderPendingOrdersGrouped(pendingGrouped) {
+        // 未発送をID別にグループ化して描画
+        function renderPendingOrdersById(pendingItems) {
             const pendingContainer = document.getElementById('pendingOrdersContainer');
-            const pendingGroupedArray = Object.entries(pendingGrouped).sort((a, b) => b[1].count - a[1].count);
 
-            if (pendingGroupedArray.length > 0) {
+            // IDでグループ化
+            const groupedById = {};
+            pendingItems.forEach(item => {
+                const itemId = item.id || item.orderId || 'unknown';
+                if (!groupedById[itemId]) {
+                    groupedById[itemId] = {
+                        id: itemId,
+                        items: [],
+                        orderId: item.orderId,
+                        customerName: item.customerName
+                    };
+                }
+                groupedById[itemId].items.push(item);
+            });
+
+            // ID順にソート（数値として）
+            const sortedGroups = Object.values(groupedById).sort((a, b) => {
+                const idA = parseInt(a.id) || 0;
+                const idB = parseInt(b.id) || 0;
+                return idA - idB;
+            });
+
+            if (sortedGroups.length > 0) {
                 document.getElementById('pendingOrdersList').style.display = 'block';
-                const totalCount = pendingGroupedArray.reduce((sum, [, data]) => sum + data.count, 0);
-                document.getElementById('pendingOrdersCount').textContent = `(${totalCount}件 / ${pendingGroupedArray.length}種類)`;
+                const totalItems = pendingItems.length;
+                const totalQty = pendingItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+                document.getElementById('pendingOrdersCount').textContent = `(${sortedGroups.length}件 / ${totalQty}個)`;
 
-                pendingContainer.innerHTML = pendingGroupedArray.map(([prizeName, data]) => {
-                    // 景品マスターから在庫を取得（正規化マッチング）
-                    const masterItem = findPrizeByNormalizedName(prizeName);
-                    const currentStock = masterItem ? (masterItem.stock || masterItem.count || 0) : 0;
-                    const needToPurchase = data.count > currentStock;
-                    const escapedName = escapeHtml(prizeName).replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                pendingContainer.innerHTML = sortedGroups.map(group => {
+                    // グループ内の全景品の在庫状況をチェック
+                    let hasStockIssue = false;
+                    let hasRandomPack = false;
+
+                    const itemsHtml = group.items.map(item => {
+                        // 紐付けされている場合はそのIDで検索
+                        let masterItem = null;
+                        if (item.linkedPrizeId) {
+                            masterItem = prizeMaster.find(p => String(p.id) === String(item.linkedPrizeId));
+                        }
+                        if (!masterItem) {
+                            masterItem = findPrizeByNormalizedName(item.prizeName);
+                        }
+                        const currentStock = masterItem ? (masterItem.stock || masterItem.count || 0) : 0;
+                        const neededQty = item.quantity || 1;
+                        const needToPurchase = neededQty > currentStock;
+                        const isRandomPack = item.prizeName.includes('なにかのパック');
+
+                        if (needToPurchase) hasStockIssue = true;
+                        if (isRandomPack) hasRandomPack = true;
+
+                        const statusColor = needToPurchase ? 'var(--sf-red)' : 'var(--sf-green)';
+                        const statusText = needToPurchase ? '不足' : 'OK';
+                        const stockInfo = masterItem ? `在庫${currentStock}` : '未登録';
+                        const displayName = item.linkedPrizeName || item.prizeName;
+                        const isLinked = item.linkedPrizeName && item.linkedPrizeName !== item.prizeName;
+
+                        return `
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                            <div style="flex: 1; min-width: 0;">
+                                <span style="font-size: 13px; color: var(--sf-black);">${escapeHtml(displayName)}</span>
+                                ${isLinked ? '<span style="font-size: 10px; background: var(--sf-blue); color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">🔗</span>' : ''}
+                                ${isRandomPack ? '<span style="font-size: 10px; background: var(--sf-purple); color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">パック</span>' : ''}
+                            </div>
+                            <span style="font-size: 11px; color: var(--sf-gray);">${neededQty}個</span>
+                            <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: ${needToPurchase ? 'rgba(255,59,48,0.1)' : 'rgba(52,199,89,0.1)'}; color: ${statusColor};">${stockInfo} ${statusText}</span>
+                        </div>
+                        `;
+                    }).join('');
+
+                    const borderColor = hasStockIssue ? 'var(--sf-red)' : 'var(--sf-orange)';
+                    const canShip = !hasStockIssue || hasRandomPack;
 
                     return `
-                    <div style="background: white; padding: 12px 16px; border-radius: var(--radius-md); border-left: 4px solid ${needToPurchase ? 'var(--sf-red)' : 'var(--sf-orange)'};">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; font-size: 14px; color: var(--sf-black);">${escapeHtml(prizeName)}</div>
-                                <div style="font-size: 12px; color: var(--sf-gray); margin-top: 2px;">
-                                    必要: ${data.count}個 / 在庫: ${currentStock}個
-                                    ${needToPurchase ? `<span style="color: var(--sf-red); font-weight: 600;"> → 不足 ${data.count - currentStock}個</span>` : ''}
-                                </div>
+                    <div style="background: white; padding: 14px 16px; border-radius: var(--radius-md); border-left: 4px solid ${borderColor}; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="background: var(--sf-blue); color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700;">ID: ${group.id}</span>
+                                <span style="font-size: 12px; color: var(--sf-gray);">${group.items.length}点</span>
                             </div>
-                            <div style="display: flex; gap: 8px; align-items: center;">
-                                <button onclick="markGroupedPendingAsShipped('${escapedName}')" style="background: var(--sf-green); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-weight: 600;">
-                                    📦 発送済みにする
-                                </button>
-                                <span style="background: ${needToPurchase ? 'rgba(255, 59, 48, 0.1)' : 'rgba(255, 149, 0, 0.1)'}; color: ${needToPurchase ? 'var(--sf-red)' : 'var(--sf-orange)'}; padding: 4px 12px; border-radius: var(--radius-full); font-size: 13px; font-weight: 700;">
-                                    ${data.count}個
-                                </span>
-                            </div>
+                            <button onclick="markIdGroupAsShipped('${group.id}')" style="background: ${hasStockIssue ? 'var(--sf-orange)' : 'var(--sf-green)'}; color: white; border: none; border-radius: 6px; padding: 8px 14px; font-size: 12px; cursor: pointer; font-weight: 600;">
+                                📦 発送済みにする
+                            </button>
                         </div>
-                        <div style="font-size: 11px; color: var(--sf-gray); margin-top: 4px;">
-                            注文: ${data.orders.slice(0, 3).join(', ')}${data.orders.length > 3 ? ` 他${data.orders.length - 3}件` : ''}
+                        <div style="background: rgba(0,0,0,0.02); border-radius: 6px; padding: 8px 10px;">
+                            ${itemsHtml}
                         </div>
+                        ${hasStockIssue && !hasRandomPack ? '<div style="font-size: 11px; color: var(--sf-red); margin-top: 8px;">⚠️ 在庫不足の景品があります</div>' : ''}
+                        ${hasRandomPack ? '<div style="font-size: 11px; color: var(--sf-purple); margin-top: 8px;">🎁 パック選択が必要です</div>' : ''}
                     </div>
                     `;
                 }).join('');
@@ -7475,7 +7583,149 @@
         // 未発送からのパック選択用の状態
         let pendingRandomPackContext = null;
 
-        // グループ化された未発送を発送済みに変更
+        // IDグループ単位で発送済みに変更
+        function markIdGroupAsShipped(groupId) {
+            console.log('markIdGroupAsShipped called:', groupId);
+
+            // CSVデータとpendingOrders両方から該当IDのアイテムを収集
+            const itemsInGroup = [];
+
+            // CSVデータから検索
+            (filteredShippingData || []).forEach(d => {
+                if (d.status === 'pending' && String(d.id) === String(groupId)) {
+                    itemsInGroup.push({ ...d, source: 'csv' });
+                }
+            });
+
+            // pendingOrdersから検索（重複を避ける）
+            pendingOrders.forEach(p => {
+                if (String(p.id) === String(groupId)) {
+                    const exists = itemsInGroup.some(existing =>
+                        existing.orderId === p.orderId && existing.prizeName === p.prizeName
+                    );
+                    if (!exists) {
+                        itemsInGroup.push({ ...p, source: 'pending' });
+                    }
+                }
+            });
+
+            if (itemsInGroup.length === 0) {
+                alert('該当する未発送が見つかりません（ID: ' + groupId + '）');
+                return;
+            }
+
+            // なにかのパックがあるかチェック
+            const randomPackItems = itemsInGroup.filter(item => item.prizeName.includes('なにかのパック'));
+            const normalItems = itemsInGroup.filter(item => !item.prizeName.includes('なにかのパック'));
+
+            // なにかのパックがある場合は先にパック選択モーダルを表示
+            if (randomPackItems.length > 0) {
+                const totalPackQty = randomPackItems.reduce((sum, item) => sum + (item.randomPackQty || 1), 0);
+                pendingRandomPackContext = {
+                    prizeName: 'なにかのパック',
+                    items: randomPackItems,
+                    totalPackQty: totalPackQty,
+                    groupId: groupId,
+                    normalItems: normalItems // パック以外のアイテムも保持
+                };
+                openPendingRandomPackModal(totalPackQty);
+                return;
+            }
+
+            // 確認ダイアログを作成
+            let confirmMsg = `ID: ${groupId} の注文を発送済みにしますか？\n\n【内容】\n`;
+            const historyEntries = [];
+            let hasUnregistered = false;
+
+            normalItems.forEach(item => {
+                // 紐付けされている場合はそのIDで検索
+                let masterItem = null;
+                if (item.linkedPrizeId) {
+                    masterItem = prizeMaster.find(p => String(p.id) === String(item.linkedPrizeId));
+                }
+                if (!masterItem) {
+                    masterItem = findPrizeByNormalizedName(item.prizeName);
+                }
+                const qty = item.quantity || 1;
+                if (masterItem) {
+                    const stockKey = 'stock' in masterItem ? 'stock' : 'count';
+                    const currentStock = masterItem[stockKey] || 0;
+                    const displayName = item.linkedPrizeName || item.prizeName;
+                    confirmMsg += `・${displayName}: ${qty}個 (${currentStock} → ${Math.max(0, currentStock - qty)})\n`;
+                } else {
+                    confirmMsg += `・${item.prizeName}: ${qty}個 (⚠️未登録)\n`;
+                    hasUnregistered = true;
+                }
+            });
+
+            if (hasUnregistered) {
+                confirmMsg += '\n※ 未登録の景品は在庫減少しません';
+            }
+
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+
+            // 在庫を減少
+            normalItems.forEach(item => {
+                // 紐付けされている場合はそのIDで検索
+                let masterItem = null;
+                if (item.linkedPrizeId) {
+                    masterItem = prizeMaster.find(p => String(p.id) === String(item.linkedPrizeId));
+                }
+                if (!masterItem) {
+                    masterItem = findPrizeByNormalizedName(item.prizeName);
+                }
+                if (masterItem) {
+                    const stockKey = 'stock' in masterItem ? 'stock' : 'count';
+                    const oldStock = masterItem[stockKey] || 0;
+                    const qty = item.quantity || 1;
+                    masterItem[stockKey] = Math.max(0, oldStock - qty);
+
+                    historyEntries.push({
+                        type: 'decrease',
+                        prizeName: masterItem.name,
+                        quantity: qty,
+                        oldStock: oldStock,
+                        newStock: masterItem[stockKey],
+                        reason: `発送（ID:${groupId}）`,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            });
+
+            if (historyEntries.length > 0) {
+                savePrizeMaster();
+                updatePrizeMasterList();
+                saveInventoryHistoryEntries(historyEntries);
+            }
+
+            // CSVデータから削除
+            if (filteredShippingData) {
+                filteredShippingData = filteredShippingData.filter(d =>
+                    !(d.status === 'pending' && String(d.id) === String(groupId))
+                );
+            }
+
+            // pendingOrdersからも削除
+            const originalCount = pendingOrders.length;
+            pendingOrders = pendingOrders.filter(p => String(p.id) !== String(groupId));
+            if (pendingOrders.length < originalCount) {
+                savePendingOrdersToCloud();
+            }
+
+            // 表示を更新
+            refreshPendingOrdersDisplay();
+
+            alert(`ID: ${groupId} を発送済みにしました（${normalItems.length}点）`);
+        }
+
+        // 旧関数（互換性のため残す）
+        function markSinglePendingAsShipped(itemId) {
+            markIdGroupAsShipped(itemId);
+        }
+
+        // グループ化された未発送を発送済みに変更（旧バージョン、互換性のため残す）
         function markGroupedPendingAsShipped(prizeName) {
             console.log('markGroupedPendingAsShipped called:', prizeName);
             console.log('pendingOrders:', pendingOrders);
@@ -7561,7 +7811,7 @@
             refreshPendingOrdersDisplay();
         }
 
-        // 未発送リストの表示を更新
+        // 未発送リストの表示を更新（ID別表示）
         function refreshPendingOrdersDisplay() {
             // 保存済み + CSVから読み込んだ未発送を統合
             const displayPendingOrders = [...pendingOrders];
@@ -7577,20 +7827,8 @@
                 });
             }
 
-            const pendingGrouped = {};
-            displayPendingOrders.forEach(item => {
-                if (!pendingGrouped[item.prizeName]) {
-                    pendingGrouped[item.prizeName] = { count: 0, orders: [], customers: [] };
-                }
-                pendingGrouped[item.prizeName].count += (item.quantity || 1);
-                if (item.orderId) {
-                    pendingGrouped[item.prizeName].orders.push(item.orderId);
-                }
-                if (item.customerName) {
-                    pendingGrouped[item.prizeName].customers.push(item.customerName);
-                }
-            });
-            renderPendingOrdersGrouped(pendingGrouped);
+            // ID別表示に変更
+            renderPendingOrdersById(displayPendingOrders);
         }
 
         // 未発送のなにかのパック選択モーダルを開く
@@ -7607,6 +7845,19 @@
             });
 
             packPrizes.sort((a, b) => (b.stock ?? b.count ?? 0) - (a.stock ?? a.count ?? 0));
+
+            // 合計在庫を計算
+            const totalAvailableStock = packPrizes.reduce((sum, p) => sum + (p.stock ?? p.count ?? 0), 0);
+
+            // 在庫不足の警告を表示
+            const stockInfoEl = document.getElementById('randomPackStockInfo');
+            const stockCountEl = document.getElementById('randomPackTotalStock');
+            if (totalAvailableStock < totalPackQty) {
+                stockInfoEl.style.display = 'block';
+                stockCountEl.textContent = totalAvailableStock;
+            } else {
+                stockInfoEl.style.display = 'none';
+            }
 
             randomPackSelections = {};
 
@@ -8076,6 +8327,12 @@
         // ========== なにかのパック選択モーダル ==========
 
         function openRandomPackModal() {
+            // filteredShippingDataから最新の枚数を再計算
+            const recalculatedTotal = (filteredShippingData || [])
+                .filter(d => d.status === 'shipped' && d.isRandomPack)
+                .reduce((sum, d) => sum + (d.randomPackQty || 1), 0);
+            randomPackCount = recalculatedTotal;
+
             document.getElementById('randomPackCount').textContent = randomPackCount;
 
             // パック・ボックス系の景品を一覧表示（在庫があるもの）
@@ -8091,6 +8348,19 @@
 
             // 在庫が多い順にソート
             packPrizes.sort((a, b) => (b.stock ?? b.count ?? 0) - (a.stock ?? a.count ?? 0));
+
+            // 合計在庫を計算
+            const totalAvailableStock = packPrizes.reduce((sum, p) => sum + (p.stock ?? p.count ?? 0), 0);
+
+            // 在庫不足の警告を表示
+            const stockInfoEl = document.getElementById('randomPackStockInfo');
+            const stockCountEl = document.getElementById('randomPackTotalStock');
+            if (totalAvailableStock < randomPackCount) {
+                stockInfoEl.style.display = 'block';
+                stockCountEl.textContent = totalAvailableStock;
+            } else {
+                stockInfoEl.style.display = 'none';
+            }
 
             randomPackSelections = {};
 
@@ -8167,9 +8437,17 @@
         function confirmRandomPackSelection() {
             const totalSelected = Object.values(randomPackSelections).reduce((sum, qty) => sum + qty, 0);
 
-            if (totalSelected !== randomPackCount) {
-                alert(`選択数が一致しません。\n必要: ${randomPackCount}枚\n選択: ${totalSelected}枚`);
+            if (totalSelected === 0) {
+                alert('パックを選択してください');
                 return;
+            }
+
+            // 選択数が必要数と異なる場合は確認
+            if (totalSelected !== randomPackCount) {
+                const shortage = randomPackCount - totalSelected;
+                if (!confirm(`選択数が必要数と異なります。\n\n必要: ${randomPackCount}枚\n選択: ${totalSelected}枚\n不足: ${shortage}枚\n\n${totalSelected}枚分だけ処理しますか？\n（残り${shortage}枚は後で処理できます）`)) {
+                    return;
+                }
             }
 
             const historyEntries = [];
@@ -8206,17 +8484,84 @@
 
             // 未発送からの場合は、pendingOrdersから該当アイテムを削除
             if (isPendingContext) {
-                const prizeName = pendingRandomPackContext.prizeName;
-                pendingOrders = pendingOrders.filter(p => p.prizeName !== prizeName);
-                savePendingOrdersToCloud();
+                const groupId = pendingRandomPackContext.groupId;
+                const normalItems = pendingRandomPackContext.normalItems || [];
 
-                // CSVデータからも削除（表示用）
-                if (filteredShippingData) {
-                    filteredShippingData = filteredShippingData.filter(d => !(d.status === 'pending' && d.prizeName === prizeName));
+                // IDグループ指定の場合
+                if (groupId) {
+                    // 通常アイテムも処理
+                    if (normalItems.length > 0) {
+                        normalItems.forEach(item => {
+                            // 紐付けされている場合はそのIDで検索
+                            let masterItem = null;
+                            if (item.linkedPrizeId) {
+                                masterItem = prizeMaster.find(p => String(p.id) === String(item.linkedPrizeId));
+                            }
+                            if (!masterItem) {
+                                masterItem = findPrizeByNormalizedName(item.prizeName);
+                            }
+                            if (masterItem) {
+                                const stockKey = 'stock' in masterItem ? 'stock' : 'count';
+                                const oldStock = masterItem[stockKey] || 0;
+                                const qty = item.quantity || 1;
+                                masterItem[stockKey] = Math.max(0, oldStock - qty);
+
+                                historyEntries.push({
+                                    type: 'decrease',
+                                    prizeName: masterItem.name,
+                                    quantity: qty,
+                                    oldStock: oldStock,
+                                    newStock: masterItem[stockKey],
+                                    reason: `発送（ID:${groupId}）`,
+                                    timestamp: new Date().toISOString()
+                                });
+                            }
+                        });
+
+                        // 追加の履歴を保存
+                        savePrizeMaster();
+                        updatePrizeMasterList();
+                        saveInventoryHistoryEntries(historyEntries.slice(-normalItems.length));
+                    }
+
+                    // IDグループ全体を削除
+                    pendingOrders = pendingOrders.filter(p => String(p.id) !== String(groupId));
+                    if (filteredShippingData) {
+                        filteredShippingData = filteredShippingData.filter(d =>
+                            !(d.status === 'pending' && String(d.id) === String(groupId))
+                        );
+                    }
+                } else {
+                    // 旧方式（景品名ベース）
+                    const prizeName = pendingRandomPackContext.prizeName;
+                    const singleItemId = pendingRandomPackContext.singleItemId;
+
+                    if (singleItemId) {
+                        pendingOrders = pendingOrders.filter(p => !(p.prizeName === prizeName && String(p.id) === String(singleItemId)));
+                        if (filteredShippingData) {
+                            filteredShippingData = filteredShippingData.filter(d => !(d.status === 'pending' && String(d.id) === String(singleItemId)));
+                        }
+                    } else {
+                        pendingOrders = pendingOrders.filter(p => p.prizeName !== prizeName);
+                        if (filteredShippingData) {
+                            filteredShippingData = filteredShippingData.filter(d => !(d.status === 'pending' && d.prizeName === prizeName));
+                        }
+                    }
                 }
 
+                savePendingOrdersToCloud();
                 refreshPendingOrdersDisplay();
+
+                const alertGroupId = groupId;
                 pendingRandomPackContext = null;
+                closeRandomPackModal();
+
+                if (alertGroupId) {
+                    alert(`ID: ${alertGroupId} を発送済みにしました`);
+                } else {
+                    alert('なにかのパックの在庫減少が完了しました');
+                }
+                return;
             }
 
             closeRandomPackModal();
@@ -8243,9 +8588,16 @@
                 if (!pendingByPrize[order.prizeName]) {
                     pendingByPrize[order.prizeName] = {
                         prizeName: order.prizeName,
+                        linkedPrizeId: order.linkedPrizeId,
+                        linkedPrizeName: order.linkedPrizeName,
                         totalQty: 0,
                         orders: []
                     };
+                }
+                // 紐付け情報があれば更新
+                if (order.linkedPrizeId && !pendingByPrize[order.prizeName].linkedPrizeId) {
+                    pendingByPrize[order.prizeName].linkedPrizeId = order.linkedPrizeId;
+                    pendingByPrize[order.prizeName].linkedPrizeName = order.linkedPrizeName;
                 }
                 pendingByPrize[order.prizeName].totalQty += (order.quantity || 1);
                 pendingByPrize[order.prizeName].orders.push(order);
@@ -8254,8 +8606,14 @@
             // 在庫0のものだけ抽出
             const needRestock = [];
             Object.values(pendingByPrize).forEach(item => {
-                // 正規化マッチングで景品マスターを検索
-                const masterItem = findPrizeByNormalizedName(item.prizeName);
+                // 紐付けされている場合はそのIDで検索、なければ正規化マッチング
+                let masterItem;
+                if (item.linkedPrizeId) {
+                    masterItem = prizeMaster.find(p => String(p.id) === String(item.linkedPrizeId));
+                }
+                if (!masterItem) {
+                    masterItem = findPrizeByNormalizedName(item.prizeName);
+                }
                 const currentStock = masterItem ? (masterItem.stock ?? masterItem.count ?? 0) : 0;
 
                 if (currentStock === 0) {
@@ -8276,18 +8634,44 @@
             }
 
             section.style.display = 'block';
-            countSpan.textContent = `(${needRestock.length}件)`;
+            const registeredCount = needRestock.filter(i => i.masterItem).length;
+            const unregisteredCount = needRestock.filter(i => !i.masterItem).length;
+            countSpan.textContent = `(${needRestock.length}件${unregisteredCount > 0 ? ` / 未登録${unregisteredCount}件` : ''})`;
 
             container.innerHTML = needRestock.map(item => {
                 const imageUrl = item.masterItem?.image || item.masterItem?.imageUrl || '';
                 const prizeId = item.masterItem?.id || '';
                 const escapedName = escapeHtml(item.prizeName).replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                const isUnregistered = !item.masterItem;
 
-                return `
+                if (isUnregistered) {
+                    // 未登録景品の場合
+                    return `
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border-radius: 8px; border-left: 4px solid var(--sf-orange);">
+                        <div style="width: 50px; height: 50px; background: rgba(255, 149, 0, 0.1); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--sf-orange); font-size: 20px;">⚠️</div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.prizeName)}</div>
+                            <div style="font-size: 12px; color: var(--sf-orange); margin-top: 2px;">
+                                ⚠️ マスター未登録 → 必要: ${item.totalQty}個
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button onclick="openUnregisteredPrizeModal('${escapedName}', ${item.totalQty})" style="background: var(--sf-orange); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-weight: 600; white-space: nowrap;">
+                                🔧 登録/参照
+                            </button>
+                        </div>
+                    </div>
+                    `;
+                } else {
+                    // 登録済み景品の場合
+                    const isLinked = item.linkedPrizeId && item.linkedPrizeName && item.linkedPrizeName !== item.prizeName;
+                    const displayName = isLinked ? item.linkedPrizeName : item.prizeName;
+                    return `
                     <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border-radius: 8px; border-left: 4px solid var(--sf-red);">
                         ${imageUrl ? `<img src="${imageUrl}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; background: #f5f5f5;" onerror="this.style.display='none'">` : '<div style="width: 50px; height: 50px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 20px;">📦</div>'}
                         <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.prizeName)}</div>
+                            <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(displayName)}</div>
+                            ${isLinked ? `<div style="font-size: 11px; color: var(--sf-blue); margin-top: 1px;">🔗 ${escapeHtml(item.prizeName)}</div>` : ''}
                             <div style="font-size: 12px; color: var(--sf-red); margin-top: 2px;">
                                 在庫: 0個 → 必要: ${item.totalQty}個
                             </div>
@@ -8299,7 +8683,8 @@
                             </button>
                         </div>
                     </div>
-                `;
+                    `;
+                }
             }).join('');
         }
 
@@ -8343,6 +8728,178 @@
             renderNeedRestockList();
 
             alert(`${masterItem.name} ${quantity}個を入庫しました\n在庫: ${oldStock} → ${masterItem[stockKey]}`);
+        }
+
+        // ========== 未登録景品モーダル機能 ==========
+
+        let unregCurrentPrizeName = '';
+        let unregCurrentNeededQty = 0;
+
+        function openUnregisteredPrizeModal(prizeName, neededQty) {
+            unregCurrentPrizeName = prizeName;
+            unregCurrentNeededQty = neededQty;
+
+            document.getElementById('unregPrizeName').textContent = prizeName;
+            document.getElementById('unregNeededQty').textContent = neededQty;
+            document.getElementById('unregNewName').value = prizeName;
+            document.getElementById('unregNewImage').value = '';
+
+            // タブを「新規登録」にリセット
+            switchUnregTab('new');
+
+            // 既存検索をクリア
+            document.getElementById('unregSearchExisting').value = '';
+            document.getElementById('unregExistingList').innerHTML = '<p style="padding: 20px; color: var(--sf-gray); text-align: center; font-size: 13px;">上の検索ボックスで景品を検索してください</p>';
+
+            document.getElementById('unregisteredPrizeModal').style.display = 'flex';
+        }
+
+        function closeUnregisteredPrizeModal() {
+            document.getElementById('unregisteredPrizeModal').style.display = 'none';
+            unregCurrentPrizeName = '';
+            unregCurrentNeededQty = 0;
+        }
+
+        function switchUnregTab(tabName) {
+            const tabNew = document.getElementById('unregTabNew');
+            const tabExisting = document.getElementById('unregTabExisting');
+            const contentNew = document.getElementById('unregContentNew');
+            const contentExisting = document.getElementById('unregContentExisting');
+
+            if (tabName === 'new') {
+                tabNew.style.background = 'var(--sf-blue)';
+                tabNew.style.color = 'white';
+                tabExisting.style.background = 'white';
+                tabExisting.style.color = 'var(--sf-blue)';
+                contentNew.style.display = 'block';
+                contentExisting.style.display = 'none';
+            } else {
+                tabNew.style.background = 'white';
+                tabNew.style.color = 'var(--sf-blue)';
+                tabExisting.style.background = 'var(--sf-blue)';
+                tabExisting.style.color = 'white';
+                contentNew.style.display = 'none';
+                contentExisting.style.display = 'block';
+
+                // 既存タブを開いた時に検索結果を表示
+                searchExistingPrizesForUnreg();
+            }
+        }
+
+        function searchExistingPrizesForUnreg() {
+            const searchText = document.getElementById('unregSearchExisting').value.toLowerCase().trim();
+            const container = document.getElementById('unregExistingList');
+
+            // 検索テキストがない場合は全件表示（最大30件）
+            let matches;
+            if (searchText.length === 0) {
+                matches = prizeMaster.slice(0, 30);
+            } else {
+                matches = prizeMaster.filter(p =>
+                    p.name.toLowerCase().includes(searchText)
+                ).slice(0, 30);
+            }
+
+            if (matches.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; color: var(--sf-gray); text-align: center; font-size: 13px;">該当する景品がありません</p>';
+                return;
+            }
+
+            container.innerHTML = matches.map(p => {
+                const stock = p.stock ?? p.count ?? 0;
+                const typeLabel = p.type || '不明';
+                const imageHtml = p.image
+                    ? `<img src="${p.image}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 4px; background: #f5f5f5;" onerror="this.style.display='none'">`
+                    : `<div style="width: 40px; height: 40px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 16px;">📦</div>`;
+
+                return `
+                <div onclick="linkToExistingPrize('${p.id}')" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.06); cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='rgba(0, 122, 255, 0.05)'" onmouseout="this.style.background='transparent'">
+                    ${imageHtml}
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.name)}</div>
+                        <div style="display: flex; gap: 6px; margin-top: 3px;">
+                            <span style="font-size: 10px; padding: 2px 6px; background: rgba(175, 82, 222, 0.1); color: var(--sf-purple); border-radius: 4px;">${typeLabel}</span>
+                            <span style="font-size: 10px; padding: 2px 6px; background: ${stock > 0 ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)'}; color: ${stock > 0 ? 'var(--sf-green)' : 'var(--sf-red)'}; border-radius: 4px;">在庫: ${stock}</span>
+                        </div>
+                    </div>
+                    <div style="color: var(--sf-blue); font-size: 18px;">→</div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function registerNewPrizeFromModal() {
+            const name = document.getElementById('unregNewName').value.trim();
+            const type = document.getElementById('unregNewType').value;
+            const image = document.getElementById('unregNewImage').value.trim();
+
+            if (!name) {
+                alert('景品名を入力してください');
+                return;
+            }
+
+            // 既に同名の景品がないかチェック
+            const existingPrize = findPrizeByNormalizedName(name);
+            if (existingPrize) {
+                if (!confirm(`「${existingPrize.name}」という類似の景品が既に存在します。\n新規登録を続行しますか？`)) {
+                    return;
+                }
+            }
+
+            // 新しい景品を作成（在庫0で登録）
+            const newId = Date.now().toString();
+            const newPrize = {
+                id: newId,
+                name: name,
+                type: type,
+                stock: 0,
+                value: 0,
+                purchasePrice: 0
+            };
+
+            if (image) {
+                newPrize.image = image;
+            }
+
+            // 景品マスターに追加
+            prizeMaster.push(newPrize);
+            savePrizeMaster();
+            updatePrizeMasterList();
+
+            // 要入荷リストを更新（マスター登録済みとして表示される）
+            renderNeedRestockList();
+
+            closeUnregisteredPrizeModal();
+            alert(`「${name}」を景品マスターに登録しました\n\n要入荷リストから入庫ボタンで在庫を追加できます`);
+        }
+
+        function linkToExistingPrize(prizeId) {
+            const prize = prizeMaster.find(p => String(p.id) === String(prizeId));
+            if (!prize) {
+                alert('景品が見つかりません');
+                return;
+            }
+
+            const currentStock = prize.stock ?? prize.count ?? 0;
+
+            if (!confirm(`「${unregCurrentPrizeName}」を\n「${prize.name}」として紐付けますか？\n\n現在の在庫: ${currentStock}個\n（在庫は変更されません）`)) {
+                return;
+            }
+
+            // pendingOrdersの該当アイテムの景品名を更新（正規化マッチング用）
+            pendingOrders.forEach(order => {
+                if (order.prizeName === unregCurrentPrizeName) {
+                    order.linkedPrizeName = prize.name;
+                    order.linkedPrizeId = prize.id;
+                }
+            });
+            savePendingOrdersToCloud();
+
+            // 要入荷リストを更新（紐付けられたので登録済みとして表示される）
+            renderNeedRestockList();
+
+            closeUnregisteredPrizeModal();
+            alert(`「${unregCurrentPrizeName}」を「${prize.name}」に紐付けました\n\n要入荷リストから入庫ボタンで在庫を追加できます`);
         }
 
         function searchPrizesForRegister() {
@@ -8440,7 +8997,11 @@
                 database.ref('inventoryHistory/' + dateStr).once('value').then(snapshot => {
                     const data = snapshot.val();
                     if (data) {
-                        inventoryHistory = Object.values(data);
+                        // Firebaseキーを保持して配列に変換
+                        inventoryHistory = Object.entries(data).map(([key, value]) => ({
+                            ...value,
+                            _firebaseKey: key
+                        }));
                         console.log('☁️ Firebaseから履歴を読み込み:', dateStr, inventoryHistory.length + '件');
                     } else {
                         // Firebaseにデータがない場合、ローカルストレージを確認
@@ -8532,12 +9093,20 @@
 
                 // 履歴の詳細（時間順）
                 const sortedEntries = [...group.entries].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                const detailsHtml = sortedEntries.map(entry => {
+                const detailsHtml = sortedEntries.map((entry, idx) => {
                     const time = new Date(entry.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
                     const isDecrease = entry.type === 'decrease';
                     const color = isDecrease ? 'var(--sf-red)' : 'var(--sf-green)';
                     const sign = isDecrease ? '-' : '+';
-                    return `<span style="color: ${color}; font-size: 11px; margin-right: 8px;">${sign}${entry.quantity} (${entry.reason || ''})</span>`;
+                    const entryId = (entry._firebaseKey || entry.timestamp || '').replace(/'/g, "\\'");
+                    const escapedPrizeName = escapeHtml(entry.prizeName).replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                    return `
+                        <span style="display: inline-flex; align-items: center; margin-right: 8px; margin-bottom: 4px; background: rgba(0,0,0,0.03); padding: 4px 8px; border-radius: 6px;">
+                            <span style="color: ${color}; font-size: 11px;">${time} ${sign}${entry.quantity} (${entry.reason || ''})</span>
+                            <button onclick="cancelSingleHistoryEntry('${entryId}', '${escapedPrizeName}', '${entry.type}', ${entry.quantity})"
+                                style="margin-left: 6px; background: rgba(255,59,48,0.1); border: none; color: var(--sf-red); cursor: pointer; font-size: 10px; padding: 2px 6px; border-radius: 4px;"
+                                title="この変動を取り消し">取消</button>
+                        </span>`;
                 }).join('');
 
                 return `
@@ -8550,7 +9119,7 @@
                                 ${group.totalDecrease > 0 ? `<span style="color: var(--sf-red); margin-left: 8px;">出庫 -${group.totalDecrease}</span>` : ''}
                                 ${group.totalIncrease > 0 ? `<span style="color: var(--sf-green); margin-left: 8px;">入庫 +${group.totalIncrease}</span>` : ''}
                             </div>
-                            <div style="margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${detailsHtml}</div>
+                            <div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">${detailsHtml}</div>
                         </div>
                         <div style="text-align: right; flex-shrink: 0;">
                             <div style="font-weight: 700; font-size: 18px; color: ${netColor};">${netSign}${netChange}</div>
@@ -8642,9 +9211,10 @@
             // 履歴を削除（Firebaseとローカルストレージ）
             clearDayHistory(dateStr);
 
-            // リセット履歴を今日の日付で保存
+            // リセット操作自体は履歴に残さない（ユーザーが混乱するため）
+            // 代わりにコンソールにログを出力
             if (resetEntries.length > 0) {
-                saveInventoryHistoryEntries(resetEntries);
+                console.log('🔄 リセット操作:', resetEntries);
             }
 
             // 表示をリフレッシュ
@@ -8667,6 +9237,63 @@
                     console.error('履歴の削除に失敗:', err);
                 });
             }
+        }
+
+        // 個別の履歴エントリを取り消し
+        function cancelSingleHistoryEntry(entryId, prizeName, type, quantity) {
+            if (!confirm(`この変動を取り消しますか？\n\n${prizeName}\n${type === 'decrease' ? '出庫' : '入庫'}: ${quantity}個\n\n※在庫が${type === 'decrease' ? '増加' : '減少'}します`)) {
+                return;
+            }
+
+            const dateStr = document.getElementById('historyDatePicker').value;
+
+            // 景品マスターの在庫を逆方向に調整
+            const prize = findPrizeByNormalizedName(prizeName);
+            if (prize) {
+                const stockKey = 'stock' in prize ? 'stock' : 'count';
+                const oldStock = prize[stockKey] ?? 0;
+
+                if (type === 'decrease') {
+                    // 出庫を取り消し → 在庫を増やす
+                    prize[stockKey] = oldStock + quantity;
+                } else {
+                    // 入庫を取り消し → 在庫を減らす
+                    prize[stockKey] = Math.max(0, oldStock - quantity);
+                }
+
+                savePrizeMaster();
+                updatePrizeMasterList();
+                console.log(`🔄 在庫調整: ${prizeName} ${oldStock} → ${prize[stockKey]}`);
+            }
+
+            // Firebaseから該当エントリを削除
+            if (typeof database !== 'undefined' && isAuthReady && entryId && !entryId.includes('T')) {
+                // entryIdがFirebaseキーの場合（タイムスタンプ形式でない場合）
+                database.ref('inventoryHistory/' + dateStr + '/' + entryId).remove().then(() => {
+                    console.log('🗑️ 履歴エントリを削除:', entryId);
+                }).catch(err => {
+                    console.error('履歴エントリの削除に失敗:', err);
+                });
+            }
+
+            // ローカルストレージからも削除
+            const localKey = 'inventoryHistory_' + dateStr;
+            const localHistory = JSON.parse(localStorage.getItem(localKey) || '[]');
+            const updatedLocalHistory = localHistory.filter(entry => {
+                // timestampまたは_firebaseKeyで一致するものを除外
+                return entry.timestamp !== entryId && entry._firebaseKey !== entryId;
+            });
+            localStorage.setItem(localKey, JSON.stringify(updatedLocalHistory));
+
+            // メモリ上の履歴からも削除
+            inventoryHistory = inventoryHistory.filter(entry => {
+                return entry.timestamp !== entryId && entry._firebaseKey !== entryId;
+            });
+
+            // 表示を更新
+            renderInventoryHistory();
+
+            alert(`変動を取り消しました\n${prizeName}: ${type === 'decrease' ? '+' : '-'}${quantity}個`);
         }
 
         function saveInventoryHistoryEntries(entries) {
@@ -8735,33 +9362,8 @@
         }
 
         function renderPendingOrdersOnly() {
-            const pendingContainer = document.getElementById('pendingOrdersContainer');
-            if (!pendingContainer) return;
-
-            if (pendingOrders.length > 0) {
-                document.getElementById('pendingOrdersList').style.display = 'block';
-                document.getElementById('pendingOrdersCount').textContent = `(${pendingOrders.length}件)`;
-
-                pendingContainer.innerHTML = pendingOrders.map((item, idx) => `
-                    <div style="background: white; padding: 12px 16px; border-radius: var(--radius-md); border-left: 4px solid var(--sf-orange); display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight: 600; font-size: 14px; color: var(--sf-black);">${escapeHtml(item.prizeName)}</div>
-                            <div style="font-size: 12px; color: var(--sf-gray);">注文: ${escapeHtml(item.orderId)} / 数量: ${item.quantity}</div>
-                        </div>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <span style="background: rgba(255, 149, 0, 0.1); color: var(--sf-orange); padding: 4px 10px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600;">
-                                発送待ち
-                            </span>
-                            <button onclick="markPendingAsShipped(${idx})" class="btn" style="padding: 6px 12px; font-size: 12px;">
-                                発送済みに変更
-                            </button>
-                            <button onclick="removePendingOrder(${idx})" style="background: none; border: none; color: var(--sf-red); cursor: pointer; font-size: 16px; padding: 4px;">✕</button>
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                document.getElementById('pendingOrdersList').style.display = 'none';
-            }
+            // ID別グループ表示を使用
+            renderPendingOrdersById(pendingOrders);
         }
 
         // 発送待ちを発送済みに変更（クラウド対応）
