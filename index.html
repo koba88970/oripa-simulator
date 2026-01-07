@@ -7683,9 +7683,14 @@
                                 ${alreadyShipped ? '<span style="font-size: 10px; background: rgba(255,59,48,0.15); color: var(--sf-red); padding: 2px 6px; border-radius: 4px; font-weight: 600;">⚠️ 発送済み</span>' : ''}
                                 <span style="font-size: 12px; color: var(--sf-gray);">${group.items.length}点</span>
                             </div>
-                            <button onclick="markIdGroupAsShipped('${group.id}')" style="background: ${buttonColor}; color: white; border: none; border-radius: 6px; padding: 8px 14px; font-size: 12px; cursor: pointer; font-weight: 600;">
-                                📦 発送済みにする
-                            </button>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="deleteIdGroup('${group.id}')" style="background: rgba(255,59,48,0.1); color: var(--sf-red); border: 1px solid var(--sf-red); border-radius: 6px; padding: 8px 12px; font-size: 12px; cursor: pointer; font-weight: 600;">
+                                    🗑️ 削除
+                                </button>
+                                <button onclick="markIdGroupAsShipped('${group.id}')" style="background: ${buttonColor}; color: white; border: none; border-radius: 6px; padding: 8px 14px; font-size: 12px; cursor: pointer; font-weight: 600;">
+                                    📦 発送済みにする
+                                </button>
+                            </div>
                         </div>
                         <div style="background: rgba(0,0,0,0.02); border-radius: 6px; padding: 8px 10px;">
                             ${itemsHtml}
@@ -7849,6 +7854,69 @@
             recordShippedOrderId(groupId);
 
             alert(`ID: ${groupId} を発送済みにしました（${normalItems.length}点）`);
+        }
+
+        // IDグループを削除（在庫は減少しない）
+        function deleteIdGroup(groupId) {
+            // CSVデータとpendingOrders両方から該当IDのアイテムを収集
+            const itemsInGroup = [];
+
+            // CSVデータから検索
+            (filteredShippingData || []).forEach(d => {
+                if (d.status === 'pending' && String(d.id) === String(groupId)) {
+                    itemsInGroup.push(d);
+                }
+            });
+
+            // pendingOrdersから検索
+            pendingOrders.forEach(p => {
+                if (String(p.id) === String(groupId)) {
+                    const exists = itemsInGroup.some(existing =>
+                        existing.orderId === p.orderId && existing.prizeName === p.prizeName
+                    );
+                    if (!exists) {
+                        itemsInGroup.push(p);
+                    }
+                }
+            });
+
+            if (itemsInGroup.length === 0) {
+                alert('該当する未発送が見つかりません（ID: ' + groupId + '）');
+                return;
+            }
+
+            // 確認ダイアログ
+            let confirmMsg = `ID: ${groupId} の注文を削除しますか？\n\n`;
+            confirmMsg += `【内容】（${itemsInGroup.length}点）\n`;
+            itemsInGroup.forEach(item => {
+                const qty = item.quantity || 1;
+                confirmMsg += `・${item.prizeName}: ${qty}個\n`;
+            });
+            confirmMsg += '\n⚠️ 在庫は変更されません（発送不要の場合のみ使用）';
+
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+
+            // CSVデータから削除
+            if (filteredShippingData) {
+                filteredShippingData = filteredShippingData.filter(d =>
+                    !(d.status === 'pending' && String(d.id) === String(groupId))
+                );
+            }
+
+            // pendingOrdersからも削除
+            const originalCount = pendingOrders.length;
+            pendingOrders = pendingOrders.filter(p => String(p.id) !== String(groupId));
+            if (pendingOrders.length < originalCount) {
+                savePendingOrdersToCloud();
+            }
+
+            // 表示を更新
+            refreshPendingOrdersDisplay();
+            renderNeedRestockList();
+
+            alert(`ID: ${groupId} を削除しました（${itemsInGroup.length}点）\n※在庫は変更されていません`);
         }
 
         // 旧関数（互換性のため残す）
