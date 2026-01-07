@@ -6850,6 +6850,7 @@
         let shippingCsvData = [];  // CSVから読み込んだ発送データ（全データ）
         let filteredShippingData = []; // 選択された注文のデータのみ
         let pendingOrders = [];    // 未発送注文リスト
+        let shippedOrderIds = new Set(); // 発送済み注文IDセット（重複防止用）
         let inventoryHistory = []; // 在庫増減履歴
         let randomPackCount = 0;   // なにかのパックの数
         let randomPackSelections = {}; // なにかのパック選択状態
@@ -7612,6 +7613,7 @@
                     // グループ内の全景品の在庫状況をチェック
                     let hasStockIssue = false;
                     let hasRandomPack = false;
+                    const alreadyShipped = isAlreadyShipped(group.id);
 
                     const itemsHtml = group.items.map(item => {
                         // 紐付けされている場合はそのIDで検索
@@ -7652,21 +7654,26 @@
                     const borderColor = hasStockIssue ? 'var(--sf-red)' : 'var(--sf-orange)';
                     const canShip = !hasStockIssue || hasRandomPack;
 
+                    const idBadgeColor = alreadyShipped ? 'var(--sf-red)' : 'var(--sf-blue)';
+                    const buttonColor = alreadyShipped ? 'var(--sf-gray)' : (hasStockIssue ? 'var(--sf-orange)' : 'var(--sf-green)');
+
                     return `
-                    <div style="background: white; padding: 14px 16px; border-radius: var(--radius-md); border-left: 4px solid ${borderColor}; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="background: white; padding: 14px 16px; border-radius: var(--radius-md); border-left: 4px solid ${borderColor}; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); ${alreadyShipped ? 'opacity: 0.7;' : ''}">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="background: var(--sf-blue); color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700;">ID: ${group.id}</span>
+                                <span style="background: ${idBadgeColor}; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700;">ID: ${group.id}</span>
+                                ${alreadyShipped ? '<span style="font-size: 10px; background: rgba(255,59,48,0.15); color: var(--sf-red); padding: 2px 6px; border-radius: 4px; font-weight: 600;">⚠️ 発送済み</span>' : ''}
                                 <span style="font-size: 12px; color: var(--sf-gray);">${group.items.length}点</span>
                             </div>
-                            <button onclick="markIdGroupAsShipped('${group.id}')" style="background: ${hasStockIssue ? 'var(--sf-orange)' : 'var(--sf-green)'}; color: white; border: none; border-radius: 6px; padding: 8px 14px; font-size: 12px; cursor: pointer; font-weight: 600;">
+                            <button onclick="markIdGroupAsShipped('${group.id}')" style="background: ${buttonColor}; color: white; border: none; border-radius: 6px; padding: 8px 14px; font-size: 12px; cursor: pointer; font-weight: 600;">
                                 📦 発送済みにする
                             </button>
                         </div>
                         <div style="background: rgba(0,0,0,0.02); border-radius: 6px; padding: 8px 10px;">
                             ${itemsHtml}
                         </div>
-                        ${hasStockIssue && !hasRandomPack ? '<div style="font-size: 11px; color: var(--sf-red); margin-top: 8px;">⚠️ 在庫不足の景品があります</div>' : ''}
+                        ${alreadyShipped ? '<div style="font-size: 11px; color: var(--sf-red); margin-top: 8px;">⚠️ このIDは既に発送済みとして記録されています</div>' : ''}
+                        ${hasStockIssue && !hasRandomPack && !alreadyShipped ? '<div style="font-size: 11px; color: var(--sf-red); margin-top: 8px;">⚠️ 在庫不足の景品があります</div>' : ''}
                         ${hasRandomPack ? '<div style="font-size: 11px; color: var(--sf-purple); margin-top: 8px;">🎁 パック選択が必要です</div>' : ''}
                     </div>
                     `;
@@ -7682,6 +7689,13 @@
         // IDグループ単位で発送済みに変更
         function markIdGroupAsShipped(groupId) {
             console.log('markIdGroupAsShipped called:', groupId);
+
+            // 既に発送済みのIDかチェック
+            if (isAlreadyShipped(groupId)) {
+                if (!confirm(`⚠️ このID (${groupId}) は既に発送済みとして処理されています。\n\n本当にもう一度発送処理を行いますか？\n（在庫が二重に減少します）`)) {
+                    return;
+                }
+            }
 
             // CSVデータとpendingOrders両方から該当IDのアイテムを収集
             const itemsInGroup = [];
@@ -7812,6 +7826,9 @@
 
             // 表示を更新
             refreshPendingOrdersDisplay();
+
+            // 発送済みIDとして記録（重複発送防止）
+            recordShippedOrderId(groupId);
 
             alert(`ID: ${groupId} を発送済みにしました（${normalItems.length}点）`);
         }
@@ -8653,6 +8670,8 @@
                 closeRandomPackModal();
 
                 if (alertGroupId) {
+                    // 発送済みIDとして記録（重複発送防止）
+                    recordShippedOrderId(alertGroupId);
                     alert(`ID: ${alertGroupId} を発送済みにしました`);
                 } else {
                     alert('なにかのパックの在庫減少が完了しました');
@@ -9466,6 +9485,76 @@
             }
         }
 
+        // ========== 発送済みIDの管理（重複発送防止） ==========
+
+        function saveShippedOrderIds() {
+            // ローカルストレージに保存
+            localStorage.setItem('shippedOrderIds', JSON.stringify([...shippedOrderIds]));
+
+            // Firebaseに保存
+            const saveToCloud = () => {
+                database.ref('shippedOrderIds').set([...shippedOrderIds]).then(() => {
+                    console.log('📤 発送済みIDをクラウドに保存:', shippedOrderIds.size + '件');
+                }).catch(err => {
+                    console.error('発送済みIDの保存に失敗:', err);
+                });
+            };
+
+            if (typeof database !== 'undefined' && isAuthReady) {
+                saveToCloud();
+            } else {
+                waitForAuth(saveToCloud);
+            }
+        }
+
+        function loadShippedOrderIds() {
+            // まずローカルストレージから読み込み
+            const localData = localStorage.getItem('shippedOrderIds');
+            if (localData) {
+                try {
+                    const ids = JSON.parse(localData);
+                    if (Array.isArray(ids)) {
+                        shippedOrderIds = new Set(ids.map(id => String(id)));
+                        console.log('📥 発送済みIDをローカルから読込:', shippedOrderIds.size + '件');
+                    }
+                } catch (e) {
+                    console.error('発送済みIDの解析に失敗:', e);
+                }
+            }
+
+            // Firebaseからも読み込み（優先）
+            const loadFromCloud = () => {
+                database.ref('shippedOrderIds').once('value').then(snapshot => {
+                    const data = snapshot.val();
+                    if (data && Array.isArray(data)) {
+                        shippedOrderIds = new Set(data.map(id => String(id)));
+                        // ローカルストレージも更新
+                        localStorage.setItem('shippedOrderIds', JSON.stringify([...shippedOrderIds]));
+                        console.log('📥 発送済みIDをクラウドから読込:', shippedOrderIds.size + '件');
+                    }
+                }).catch(err => {
+                    console.error('発送済みIDの読込に失敗:', err);
+                });
+            };
+
+            if (typeof database !== 'undefined' && isAuthReady) {
+                loadFromCloud();
+            } else {
+                waitForAuth(loadFromCloud);
+            }
+        }
+
+        // 発送済みIDをチェック
+        function isAlreadyShipped(orderId) {
+            return shippedOrderIds.has(String(orderId));
+        }
+
+        // 発送済みIDを記録
+        function recordShippedOrderId(orderId) {
+            shippedOrderIds.add(String(orderId));
+            saveShippedOrderIds();
+        }
+
         function renderPendingOrdersOnly() {
             // ID別グループ表示を使用
             renderPendingOrdersById(pendingOrders);
@@ -9525,6 +9614,7 @@
         // 在庫調整データの初期読み込み
         function loadInventoryAdjustmentData() {
             loadPendingOrdersFromCloud();
+            loadShippedOrderIds();
         }
 
         // HTMLエスケープ
