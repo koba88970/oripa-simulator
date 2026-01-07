@@ -2138,6 +2138,20 @@
 
             <!-- ========== 在庫登録セクション ========== -->
             <div id="inv-subtab-register" class="inv-subtab-content" style="display: none;">
+                <!-- 要入荷リスト（未発送で在庫0のもの） -->
+                <div id="needRestockSection" style="margin-bottom: 24px; display: none;">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--sf-red); display: flex; align-items: center; gap: 8px;">
+                        🚨 要入荷リスト
+                        <span id="needRestockCount" style="font-size: 12px; font-weight: 500; color: var(--sf-red);">(0件)</span>
+                    </h3>
+                    <p style="font-size: 13px; color: var(--sf-gray); margin-bottom: 12px;">
+                        未発送注文があり在庫が0の景品です。入荷したらすぐに登録できます。
+                    </p>
+                    <div id="needRestockContainer" style="display: grid; gap: 8px; max-height: 400px; overflow-y: auto;">
+                        <!-- 要入荷リストがここに表示される -->
+                    </div>
+                </div>
+
                 <!-- 景品検索・選択 -->
                 <div style="margin-bottom: 24px;">
                     <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--sf-black);">
@@ -6443,6 +6457,11 @@
             if (tabName === 'history') {
                 setHistoryDateToday();
             }
+
+            // 在庫登録タブの場合は要入荷リストを更新
+            if (tabName === 'register') {
+                renderNeedRestockList();
+            }
         }
 
         // ========== 在庫減少機能 ==========
@@ -6848,21 +6867,7 @@
                 document.getElementById('shippedOrdersList').style.display = 'none';
             }
 
-            // 未発送アイテムを景品名でグループ化
-            const pendingItems = shippingCsvData.filter(d => d.status === 'pending');
-            const pendingGrouped = {};
-            pendingItems.forEach(item => {
-                if (!pendingGrouped[item.prizeName]) {
-                    pendingGrouped[item.prizeName] = { count: 0, orders: [], customers: [] };
-                }
-                pendingGrouped[item.prizeName].count += item.quantity;
-                pendingGrouped[item.prizeName].orders.push(item.orderId);
-                if (item.customerName) {
-                    pendingGrouped[item.prizeName].customers.push(item.customerName);
-                }
-            });
-
-            // 未発送をpendingOrdersに追加（グループ化されたデータ）
+            // CSVから新規の未発送をpendingOrdersにマージ
             const newPendingFromCsv = shippingCsvData.filter(d => d.status === 'pending');
             newPendingFromCsv.forEach(newItem => {
                 const exists = pendingOrders.some(existing =>
@@ -6875,6 +6880,21 @@
 
             // クラウドに保存
             savePendingOrdersToCloud();
+
+            // pendingOrders全体（保存済み + 新規CSV分）をグループ化して表示
+            const pendingGrouped = {};
+            pendingOrders.forEach(item => {
+                if (!pendingGrouped[item.prizeName]) {
+                    pendingGrouped[item.prizeName] = { count: 0, orders: [], customers: [] };
+                }
+                pendingGrouped[item.prizeName].count += (item.quantity || 1);
+                if (item.orderId) {
+                    pendingGrouped[item.prizeName].orders.push(item.orderId);
+                }
+                if (item.customerName) {
+                    pendingGrouped[item.prizeName].customers.push(item.customerName);
+                }
+            });
 
             // 描画（グループ化バージョン）
             renderPendingOrdersGrouped(pendingGrouped);
@@ -6895,6 +6915,7 @@
                     const masterItem = prizeMaster.find(p => p.name === prizeName);
                     const currentStock = masterItem ? (masterItem.stock || masterItem.count || 0) : 0;
                     const needToPurchase = data.count > currentStock;
+                    const escapedName = escapeHtml(prizeName).replace(/'/g, "\\'").replace(/"/g, "&quot;");
 
                     return `
                     <div style="background: white; padding: 12px 16px; border-radius: var(--radius-md); border-left: 4px solid ${needToPurchase ? 'var(--sf-red)' : 'var(--sf-orange)'};">
@@ -6906,9 +6927,14 @@
                                     ${needToPurchase ? `<span style="color: var(--sf-red); font-weight: 600;"> → 不足 ${data.count - currentStock}個</span>` : ''}
                                 </div>
                             </div>
-                            <span style="background: ${needToPurchase ? 'rgba(255, 59, 48, 0.1)' : 'rgba(255, 149, 0, 0.1)'}; color: ${needToPurchase ? 'var(--sf-red)' : 'var(--sf-orange)'}; padding: 4px 12px; border-radius: var(--radius-full); font-size: 13px; font-weight: 700;">
-                                ${data.count}個
-                            </span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <button onclick="markGroupedPendingAsShipped('${escapedName}')" style="background: var(--sf-green); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-weight: 600;">
+                                    📦 発送済み
+                                </button>
+                                <span style="background: ${needToPurchase ? 'rgba(255, 59, 48, 0.1)' : 'rgba(255, 149, 0, 0.1)'}; color: ${needToPurchase ? 'var(--sf-red)' : 'var(--sf-orange)'}; padding: 4px 12px; border-radius: var(--radius-full); font-size: 13px; font-weight: 700;">
+                                    ${data.count}個
+                                </span>
+                            </div>
                         </div>
                         <div style="font-size: 11px; color: var(--sf-gray); margin-top: 4px;">
                             注文: ${data.orders.slice(0, 3).join(', ')}${data.orders.length > 3 ? ` 他${data.orders.length - 3}件` : ''}
@@ -6919,6 +6945,69 @@
             } else {
                 document.getElementById('pendingOrdersList').style.display = 'none';
             }
+        }
+
+        // グループ化された未発送を発送済みに変更
+        function markGroupedPendingAsShipped(prizeName) {
+            // 該当する全ての未発送を検索
+            const itemsToShip = pendingOrders.filter(p => p.prizeName === prizeName);
+            if (itemsToShip.length === 0) {
+                alert('該当する未発送が見つかりません');
+                return;
+            }
+
+            const totalQty = itemsToShip.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+            if (!confirm(`「${prizeName}」${totalQty}個を発送済みにしますか？\n在庫から減少します。`)) {
+                return;
+            }
+
+            // 景品マスターから検索して在庫を減少
+            const masterItem = prizeMaster.find(p => p.name === prizeName);
+            if (masterItem) {
+                const stockKey = 'stock' in masterItem ? 'stock' : 'count';
+                const oldStock = masterItem[stockKey] ?? 0;
+                const newStock = Math.max(0, oldStock - totalQty);
+                masterItem[stockKey] = newStock;
+
+                // 履歴に追加
+                saveInventoryHistoryEntries([{
+                    type: 'decrease',
+                    prizeName: prizeName,
+                    quantity: totalQty,
+                    oldStock: oldStock,
+                    newStock: newStock,
+                    reason: '発送（未発送から一括）',
+                    timestamp: new Date().toISOString()
+                }]);
+
+                savePrizeMaster();
+                updatePrizeMasterList();
+
+                alert(`${prizeName} ${totalQty}個を発送済みにしました\n在庫: ${oldStock} → ${newStock}`);
+            } else {
+                alert('景品マスターに登録されていないため、在庫は変更されません\n未発送リストからは削除します');
+            }
+
+            // pendingOrdersから該当アイテムを削除
+            pendingOrders = pendingOrders.filter(p => p.prizeName !== prizeName);
+            savePendingOrdersToCloud();
+
+            // 再描画
+            const pendingGrouped = {};
+            pendingOrders.forEach(item => {
+                if (!pendingGrouped[item.prizeName]) {
+                    pendingGrouped[item.prizeName] = { count: 0, orders: [], customers: [] };
+                }
+                pendingGrouped[item.prizeName].count += (item.quantity || 1);
+                if (item.orderId) {
+                    pendingGrouped[item.prizeName].orders.push(item.orderId);
+                }
+                if (item.customerName) {
+                    pendingGrouped[item.prizeName].customers.push(item.customerName);
+                }
+            });
+            renderPendingOrdersGrouped(pendingGrouped);
         }
 
         // 未発送を発送済みに変更（CSV読込時用）
@@ -7408,6 +7497,119 @@
 
         // ========== 在庫登録機能 ==========
 
+        // 要入荷リストを表示（未発送で在庫0の景品）
+        function renderNeedRestockList() {
+            const section = document.getElementById('needRestockSection');
+            const container = document.getElementById('needRestockContainer');
+            const countSpan = document.getElementById('needRestockCount');
+
+            if (!section || !container) return;
+
+            // 未発送注文を景品名でグループ化
+            const pendingByPrize = {};
+            pendingOrders.forEach(order => {
+                if (!pendingByPrize[order.prizeName]) {
+                    pendingByPrize[order.prizeName] = {
+                        prizeName: order.prizeName,
+                        totalQty: 0,
+                        orders: []
+                    };
+                }
+                pendingByPrize[order.prizeName].totalQty += (order.quantity || 1);
+                pendingByPrize[order.prizeName].orders.push(order);
+            });
+
+            // 在庫0のものだけ抽出
+            const needRestock = [];
+            Object.values(pendingByPrize).forEach(item => {
+                const masterItem = prizeMaster.find(p => p.name === item.prizeName);
+                const currentStock = masterItem ? (masterItem.stock ?? masterItem.count ?? 0) : 0;
+
+                if (currentStock === 0) {
+                    needRestock.push({
+                        ...item,
+                        masterItem: masterItem,
+                        currentStock: currentStock
+                    });
+                }
+            });
+
+            // 必要数量の多い順にソート
+            needRestock.sort((a, b) => b.totalQty - a.totalQty);
+
+            if (needRestock.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            countSpan.textContent = `(${needRestock.length}件)`;
+
+            container.innerHTML = needRestock.map(item => {
+                const imageUrl = item.masterItem?.image || item.masterItem?.imageUrl || '';
+                const prizeId = item.masterItem?.id || '';
+                const escapedName = escapeHtml(item.prizeName).replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
+                return `
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border-radius: 8px; border-left: 4px solid var(--sf-red);">
+                        ${imageUrl ? `<img src="${imageUrl}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; background: #f5f5f5;" onerror="this.style.display='none'">` : '<div style="width: 50px; height: 50px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 20px;">📦</div>'}
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.prizeName)}</div>
+                            <div style="font-size: 12px; color: var(--sf-red); margin-top: 2px;">
+                                在庫: 0個 → 必要: ${item.totalQty}個
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="number" id="restockQty_${prizeId}" value="${item.totalQty}" min="1" style="width: 60px; padding: 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); text-align: center; font-size: 14px;">
+                            <button onclick="quickAddToRegister('${prizeId}', '${escapedName}')" style="background: var(--sf-green); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-weight: 600; white-space: nowrap;">
+                                📥 入庫
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 要入荷リストから直接入庫予定に追加
+        function quickAddToRegister(prizeId, prizeName) {
+            const qtyInput = document.getElementById('restockQty_' + prizeId);
+            const quantity = parseInt(qtyInput?.value) || 1;
+
+            // 景品マスターから検索
+            let masterItem = prizeMaster.find(p => String(p.id) === String(prizeId));
+
+            // IDで見つからない場合は名前で検索
+            if (!masterItem) {
+                masterItem = prizeMaster.find(p => p.name === prizeName);
+            }
+
+            if (!masterItem) {
+                alert('景品マスターに登録されていません');
+                return;
+            }
+
+            // 既存のエントリを確認
+            const existing = registerList.find(r => String(r.prizeId) === String(masterItem.id));
+            if (existing) {
+                existing.quantity += quantity;
+            } else {
+                registerList.push({
+                    prizeId: masterItem.id,
+                    name: masterItem.name,
+                    image: masterItem.image || '',
+                    quantity: quantity,
+                    purchasePrice: masterItem.purchasePrice || 0,
+                    type: masterItem.type || 'PSA10'
+                });
+            }
+
+            saveRegisterListToCloud();
+            renderRegisterList();
+            renderNeedRestockList();
+
+            alert(`${masterItem.name} ${quantity}個を入庫予定リストに追加しました`);
+        }
+
         function searchPrizesForRegister() {
             const searchText = document.getElementById('registerPrizeSearch').value.toLowerCase().trim();
             const resultsContainer = document.getElementById('registerPrizeResults');
@@ -7626,6 +7828,7 @@
             alert(`入庫完了: ${registerList.length}種類、${totalQty}個`);
 
             clearRegisterList();
+            renderNeedRestockList(); // 在庫が増えたので要入荷リストを更新
         }
 
         // ========== 在庫増減履歴機能 ==========
@@ -7716,28 +7919,67 @@
                 return;
             }
 
-            // 時間順にソート（新しい順）
-            const sorted = [...inventoryHistory].sort((a, b) =>
-                new Date(b.timestamp) - new Date(a.timestamp)
-            );
+            // 景品ごとにグループ化
+            const groupedByPrize = {};
+            inventoryHistory.forEach(entry => {
+                if (!groupedByPrize[entry.prizeName]) {
+                    groupedByPrize[entry.prizeName] = {
+                        prizeName: entry.prizeName,
+                        totalIncrease: 0,
+                        totalDecrease: 0,
+                        entries: []
+                    };
+                }
+                groupedByPrize[entry.prizeName].entries.push(entry);
+                if (entry.type === 'decrease') {
+                    groupedByPrize[entry.prizeName].totalDecrease += entry.quantity;
+                } else if (entry.type === 'increase') {
+                    groupedByPrize[entry.prizeName].totalIncrease += entry.quantity;
+                }
+            });
 
-            container.innerHTML = sorted.map(entry => {
-                const time = new Date(entry.timestamp).toLocaleTimeString('ja-JP');
-                const isDecrease = entry.type === 'decrease';
-                const color = isDecrease ? 'var(--sf-red)' : 'var(--sf-green)';
-                const icon = isDecrease ? '📤' : '📥';
-                const sign = isDecrease ? '-' : '+';
+            // 変動数量の多い順にソート
+            const sortedGroups = Object.values(groupedByPrize).sort((a, b) => {
+                const aTotal = a.totalIncrease + a.totalDecrease;
+                const bTotal = b.totalIncrease + b.totalDecrease;
+                return bTotal - aTotal;
+            });
+
+            container.innerHTML = sortedGroups.map(group => {
+                // 景品マスターから画像を取得
+                const masterItem = prizeMaster.find(p => p.name === group.prizeName);
+                const imageUrl = masterItem?.image || masterItem?.imageUrl || '';
+                const currentStock = masterItem ? (masterItem.stock ?? masterItem.count ?? 0) : '?';
+
+                const netChange = group.totalIncrease - group.totalDecrease;
+                const netColor = netChange > 0 ? 'var(--sf-green)' : netChange < 0 ? 'var(--sf-red)' : 'var(--sf-gray)';
+                const netSign = netChange > 0 ? '+' : '';
+
+                // 履歴の詳細（時間順）
+                const sortedEntries = [...group.entries].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                const detailsHtml = sortedEntries.map(entry => {
+                    const time = new Date(entry.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+                    const isDecrease = entry.type === 'decrease';
+                    const color = isDecrease ? 'var(--sf-red)' : 'var(--sf-green)';
+                    const sign = isDecrease ? '-' : '+';
+                    return `<span style="color: ${color}; font-size: 11px; margin-right: 8px;">${sign}${entry.quantity} (${entry.reason || ''})</span>`;
+                }).join('');
 
                 return `
-                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                        <span style="font-size: 20px;">${icon}</span>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 14px;">${escapeHtml(entry.prizeName)}</div>
-                            <div style="font-size: 12px; color: var(--sf-gray);">${entry.reason || ''} / ${entry.oldStock}→${entry.newStock}</div>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 8px; background: white; border-radius: 8px; border-left: 4px solid ${netColor};">
+                        ${imageUrl ? `<img src="${imageUrl}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; background: #f5f5f5;" onerror="this.style.display='none'">` : '<div style="width: 50px; height: 50px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 20px;">📦</div>'}
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(group.prizeName)}</div>
+                            <div style="font-size: 12px; color: var(--sf-gray); margin-top: 2px;">
+                                現在庫: ${currentStock}個
+                                ${group.totalDecrease > 0 ? `<span style="color: var(--sf-red); margin-left: 8px;">出庫 -${group.totalDecrease}</span>` : ''}
+                                ${group.totalIncrease > 0 ? `<span style="color: var(--sf-green); margin-left: 8px;">入庫 +${group.totalIncrease}</span>` : ''}
+                            </div>
+                            <div style="margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${detailsHtml}</div>
                         </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: 700; color: ${color};">${sign}${entry.quantity}</div>
-                            <div style="font-size: 11px; color: var(--sf-gray);">${time}</div>
+                        <div style="text-align: right; flex-shrink: 0;">
+                            <div style="font-weight: 700; font-size: 18px; color: ${netColor};">${netSign}${netChange}</div>
+                            <div style="font-size: 11px; color: var(--sf-gray);">${group.entries.length}件</div>
                         </div>
                     </div>
                 `;
@@ -7902,6 +8144,7 @@
                     if (data && Array.isArray(data)) {
                         pendingOrders = data;
                         renderPendingOrdersOnly();
+                        renderNeedRestockList(); // 要入荷リストも更新
                         console.log('📥 発送待ちリストをクラウドから読込:', pendingOrders.length + '件');
                     }
                 }).catch(err => {
@@ -7955,8 +8198,11 @@
             // 景品マスターから検索して在庫を減少
             const masterItem = prizeMaster.find(p => p.name === item.prizeName);
             if (masterItem) {
-                const oldStock = masterItem.stock;
-                masterItem.stock = Math.max(0, masterItem.stock - item.quantity);
+                // stock または count プロパティを検出
+                const stockKey = 'stock' in masterItem ? 'stock' : 'count';
+                const oldStock = masterItem[stockKey] ?? 0;
+                const newStock = Math.max(0, oldStock - item.quantity);
+                masterItem[stockKey] = newStock;
 
                 // 履歴に追加
                 saveInventoryHistoryEntries([{
@@ -7964,7 +8210,7 @@
                     prizeName: item.prizeName,
                     quantity: item.quantity,
                     oldStock: oldStock,
-                    newStock: masterItem.stock,
+                    newStock: newStock,
                     reason: '発送（発送待ちから）',
                     timestamp: new Date().toISOString()
                 }]);
@@ -7972,7 +8218,7 @@
                 savePrizeMaster();
                 updatePrizeMasterList();
 
-                alert(`${item.prizeName} を発送済みにしました\n在庫: ${oldStock} → ${masterItem.stock}`);
+                alert(`${item.prizeName} を発送済みにしました\n在庫: ${oldStock} → ${newStock}`);
             } else {
                 alert('景品マスターに登録されていないため、在庫は変更されません');
             }
