@@ -437,43 +437,38 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            max-height: 300px;
+            max-height: 600px;
             overflow-y: auto;
         }
 
         .prize-item {
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            border-radius: var(--radius-md);
+            background: #FFFFFF;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
             padding: 16px;
-            position: relative;
-            transition: all 0.3s var(--transition-smooth);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
         }
 
         .prize-item:hover {
-            border-color: var(--sf-blue);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            border-color: #007AFF;
         }
 
         .prize-rank {
             display: inline-block;
-            background: var(--sf-blue);
-            color: var(--sf-white);
+            background: #007AFF;
+            color: #FFFFFF;
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 11px;
             font-weight: 600;
-            margin-bottom: 4px;
         }
 
-        .prize-rank.rank-1 { background: #FFD700; color: var(--sf-black); }
-        .prize-rank.rank-2 { background: #C0C0C0; color: var(--sf-black); }
-        .prize-rank.rank-3 { background: #CD7F32; color: var(--sf-white); }
-        .prize-rank.rank-4 { background: var(--sf-green); }
-        .prize-rank.rank-5 { background: var(--sf-blue); }
+        .prize-rank.rank-1 { background: #FFD700; color: #000000; }
+        .prize-rank.rank-2 { background: #C0C0C0; color: #000000; }
+        .prize-rank.rank-3 { background: #CD7F32; color: #FFFFFF; }
+        .prize-rank.rank-4 { background: #34C759; color: #FFFFFF; }
+        .prize-rank.rank-5 { background: #007AFF; color: #FFFFFF; }
 
         .prize-content {
             margin-top: 8px;
@@ -481,14 +476,14 @@
 
         .prize-name {
             font-weight: 500;
-            color: var(--sf-black);
+            color: #000000;
             word-break: break-word;
             margin-bottom: 8px;
         }
 
         .prize-value, .prize-count, .prize-purchase {
             font-size: 12px;
-            color: var(--sf-gray);
+            color: #666666;
             white-space: nowrap;
         }
 
@@ -3803,26 +3798,24 @@
                 // 景品タイプのバッジ
                 let prizeTypeBadge = '';
                 if (prize.prizeType === 'lastOne') {
-                    prizeTypeBadge = '<span style="display: inline-block; background: var(--sf-blue); color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">🎯 ラストワン賞</span>';
+                    prizeTypeBadge = '<span style="display: inline-block; background: #007AFF; color: #FFFFFF; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">🎯 ラストワン賞</span>';
                 } else if (prize.prizeType === 'milestone') {
-                    prizeTypeBadge = '<span style="display: inline-block; background: var(--sf-purple); color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">🎊 キリ番賞</span>';
+                    prizeTypeBadge = '<span style="display: inline-block; background: #AF52DE; color: #FFFFFF; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">🎊 キリ番賞</span>';
                 }
 
                 return `
-                <div class="prize-item" style="display: flex; align-items: flex-start; gap: 12px;">
+                <div class="prize-item" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px;">
                     ${imageHtml}
                     <div style="flex: 1; min-width: 0;">
-                        <div class="prize-rank rank-${prize.rank}">${prize.rank}等</div>
-                        <div class="prize-content">
-                            <div class="prize-name">${prize.name}${stockBadge}${prizeTypeBadge}</div>
-                            <div class="prize-info" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                                <span class="prize-purchase">仕入¥${formatNumber(prize.purchasePrice)}</span>
-                                <span class="prize-value">還元¥${formatNumber(prize.value)}</span>
-                                <span class="prize-count">${formatNumber(prize.count)}枚</span>
-                                <div style="display: flex; gap: 8px; margin-left: auto;">
-                                    <button class="btn btn-primary btn-sm" onclick="editPrize(${prize.id})">編集</button>
-                                    <button class="btn btn-danger btn-sm" onclick="removePrize(${prize.id})">削除</button>
-                                </div>
+                        <div class="prize-rank rank-${prize.rank}" style="color: #FFFFFF;">${prize.rank}等</div>
+                        <div style="margin-top: 4px; color: #000000; font-weight: 500; word-break: break-word;">${prize.name}${stockBadge}${prizeTypeBadge}</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px;">
+                            <span style="font-size: 12px; color: #666666;">仕入¥${formatNumber(prize.purchasePrice)}</span>
+                            <span style="font-size: 12px; color: #666666;">還元¥${formatNumber(prize.value)}</span>
+                            <span style="font-size: 12px; color: #666666;">${formatNumber(prize.count)}枚</span>
+                            <div style="display: flex; gap: 6px; margin-left: auto;">
+                                <button class="btn btn-primary btn-sm" onclick="editPrize(${prize.id})" style="padding: 6px 12px; font-size: 12px;">編集</button>
+                                <button class="btn btn-danger btn-sm" onclick="removePrize(${prize.id})" style="padding: 6px 12px; font-size: 12px;">削除</button>
                             </div>
                         </div>
                     </div>
