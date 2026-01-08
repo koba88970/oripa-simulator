@@ -449,6 +449,7 @@
             position: relative;
             transition: all 0.3s var(--transition-smooth);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
         }
 
         .prize-item:hover {
@@ -458,15 +459,14 @@
         }
 
         .prize-rank {
-            position: absolute;
-            top: -8px;
-            left: 12px;
+            display: inline-block;
             background: var(--sf-blue);
             color: var(--sf-white);
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 11px;
             font-weight: 600;
+            margin-bottom: 4px;
         }
 
         .prize-rank.rank-1 { background: #FFD700; color: var(--sf-black); }
@@ -477,21 +477,19 @@
 
         .prize-content {
             margin-top: 8px;
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr auto;
-            gap: 8px;
-            align-items: center;
         }
 
         .prize-name {
             font-weight: 500;
             color: var(--sf-black);
+            word-break: break-word;
+            margin-bottom: 8px;
         }
 
         .prize-value, .prize-count, .prize-purchase {
             font-size: 12px;
             color: var(--sf-gray);
-            text-align: center;
+            white-space: nowrap;
         }
 
         /* ボタン - シンプルなiOS風 */
@@ -506,6 +504,11 @@
             letter-spacing: -0.01em;
             position: relative;
             overflow: hidden;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
         }
 
         .btn-primary {
@@ -1394,7 +1397,6 @@
             <button class="tab-button active" onclick="switchTab('main', event)">メイン</button>
             <button class="tab-button" onclick="switchTab('prize-list', event)">景品マスター</button>
             <button class="tab-button" onclick="switchTab('inventory-adjustment', event)">📦 在庫調整</button>
-            <button class="tab-button" onclick="switchTab('temporary-prize-list', event)" style="display: none;">📝 仮装景品</button>
         </div>
 
         <!-- メインタブコンテンツ -->
@@ -1556,9 +1558,6 @@
                                 <button class="btn btn-primary" onclick="selectFromPrizeMasterForMain()" style="flex: 1; white-space: nowrap;">
                                     📋 マスターから選択
                                 </button>
-                                <button class="btn btn-accent" onclick="selectFromTemporaryPrizeMaster()" style="flex: 1; white-space: nowrap; background: var(--sf-orange);">
-                                    📝 仮装景品から選択
-                                </button>
                             </div>
                         </div>
 
@@ -1576,15 +1575,6 @@
                                     </div>
                                     <div id="prizePurchasePriceHint" style="font-size: 11px; color: var(--sf-gray); margin-top: 4px;"></div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- 仮装景品用の仕入れ価格入力フィールド -->
-                        <div id="temporaryPrizePurchasePrice" style="display: none;" class="form-group">
-                            <label>仕入れ価格（仮装景品）</label>
-                            <input type="text" id="tempPrizePurchasePrice" placeholder="例: 50,000" oninput="formatPrizeValue(this)">
-                            <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;">
-                                ※仮装景品の想定仕入れ価格を入力してください
                             </div>
                         </div>
 
@@ -1618,9 +1608,6 @@
                             <input type="number" id="prizeCount" min="1" value="1">
                             <div style="font-size: 12px; color: var(--sf-gray); margin-top: 4px;" id="prizeCountDescription">
                             </div>
-                        </div>
-                        <div class="form-group" style="display: none;">
-                            <input type="checkbox" id="isTemporaryPrize" onchange="toggleTemporaryPrizeMode()">
                         </div>
                         <button class="btn btn-success" id="addPrizeBtn" onclick="addPrizeFromForm()" style="width: 100%;">景品を追加</button>
                         <button class="btn btn-success" id="updatePrizeBtn" onclick="updatePrizeFromForm()" style="display: none; width: 100%;">景品を更新</button>
@@ -2016,42 +2003,6 @@
             </div>
         </div>
         <!-- /景品一覧タブコンテンツ -->
-
-        <!-- 仮装景品管理タブコンテンツ -->
-        <div id="tab-temporary-prize-list" class="tab-content">
-        <div style="max-width: 1400px; margin: 0 auto;">
-            <h2 style="color: var(--sf-orange); border-bottom: 2px solid var(--sf-orange); padding-bottom: 12px; margin-bottom: 20px;">
-                📝 仮装景品マスター
-            </h2>
-
-            <div class="info-box" style="background: rgba(255, 149, 0, 0.1); border-color: var(--sf-orange); margin-bottom: 20px;">
-                <h3 style="color: var(--sf-orange); margin-bottom: 12px;">💡 仮装景品とは？</h3>
-                <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                    <li>実在しないカードを仮に登録して、オリパの構成を検討できます</li>
-                    <li>仮装景品には在庫という概念がありません（無限に使用可能）</li>
-                    <li>後から本物の景品（景品マスターの景品）と差し替えができます</li>
-                    <li>仮装景品は自動的にクラウドに保存され、他の仮オリパでも使用できます</li>
-                </ul>
-            </div>
-
-            <div style="background: white; border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-md);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h3>登録済み仮装景品（<span id="temporaryPrizeCount">0</span>件）</h3>
-                    <button class="btn btn-danger" onclick="clearAllTemporaryPrizes()" style="font-size: 12px; padding: 8px 16px;">
-                        🗑️ すべて削除
-                    </button>
-                </div>
-
-                <div id="temporaryPrizeMasterList" style="display: grid; gap: 12px;">
-                    <p style="color: var(--sf-gray); text-align: center; padding: 40px 0;">
-                        仮装景品が登録されていません。<br>
-                        メインタブで「📝 仮装景品」にチェックを入れて景品を追加してください。
-                    </p>
-                </div>
-            </div>
-        </div>
-        </div>
-        <!-- /仮装景品管理タブコンテンツ -->
 
         <!-- 在庫調整タブコンテンツ -->
         <div id="tab-inventory-adjustment" class="tab-content">
@@ -2724,29 +2675,6 @@
         </div>
     </div>
 
-    <!-- 仮装景品選択モーダル -->
-    <div id="temporaryPrizeSelectModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 800px;">
-            <div class="modal-header">
-                <h2>📝 仮装景品マスターから選択</h2>
-                <span class="modal-close" onclick="closeTemporaryPrizeSelectModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div style="margin-bottom: 16px;">
-                    <input type="text" id="temporaryPrizeSearchInput" placeholder="🔍 景品名で検索..."
-                           style="width: 100%; padding: 12px; border: 1px solid var(--sf-gray-4); border-radius: var(--radius-sm);"
-                           oninput="filterTemporaryPrizeList()">
-                </div>
-                <div id="temporaryPrizeSelectList" style="max-height: 400px; overflow-y: auto;">
-                    <!-- 仮装景品リストがここに表示されます -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-danger" onclick="closeTemporaryPrizeSelectModal()">キャンセル</button>
-            </div>
-        </div>
-    </div>
-
     <!-- クラウドバックアップモーダル -->
     <div id="cloudBackupModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 700px;">
@@ -2906,21 +2834,6 @@
                 value = formatNumber(parseInt(value)); // カンマ区切りに変換
             }
             input.value = value;
-
-            // 仮装景品モードの場合、ポイント還元価値を仕入れ価格にも自動コピー
-            if (input.id === 'prizeValue') {
-                const isTemporary = document.getElementById('isTemporaryPrize')?.checked;
-                console.log('📝 ポイント還元価値が変更されました:', value, '/ 仮装景品モード:', isTemporary);
-                if (isTemporary) {
-                    const tempPurchasePriceInput = document.getElementById('tempPrizePurchasePrice');
-                    if (tempPurchasePriceInput) {
-                        tempPurchasePriceInput.value = value;
-                        console.log('✅ 仕入れ価格に自動コピーしました:', value);
-                    } else {
-                        console.warn('⚠️ 仕入れ価格入力フィールドが見つかりません');
-                    }
-                }
-            }
         }
 
         // 基本設定値のフォーマット
@@ -2942,67 +2855,6 @@
         // 景品追加
         // メイン専用：マスターから選択した景品を一時保存
         let selectedMasterPrizeForMain = null;
-
-        // 仮装景品モードの切り替え
-        function toggleTemporaryPrizeMode() {
-            const isTemporary = document.getElementById('isTemporaryPrize').checked;
-            const selectButton = document.querySelector('button[onclick="selectFromPrizeMasterForMain()"]');
-            const prizeNameInput = document.getElementById('prizeName');
-            const prizeReadonlyInfo = document.getElementById('prizeReadonlyInfo');
-            const tempPurchasePriceField = document.getElementById('temporaryPrizePurchasePrice');
-
-            if (isTemporary) {
-                // 仮装景品モード
-                console.log('🔄 仮装景品モードON');
-                if (selectButton) {
-                    selectButton.disabled = true;
-                    selectButton.style.opacity = '0.5';
-                    selectButton.style.cursor = 'not-allowed';
-                }
-                prizeNameInput.placeholder = '例: 仮想的なレアカード';
-                if (prizeReadonlyInfo) {
-                    prizeReadonlyInfo.style.display = 'none';
-                }
-                // 仮装景品用の仕入れ価格フィールドを表示
-                if (tempPurchasePriceField) {
-                    tempPurchasePriceField.style.display = 'block';
-                }
-                // ポイント還元価値を仕入れ価格にコピー
-                const prizeValueInput = document.getElementById('prizeValue');
-                const tempPurchasePriceInput = document.getElementById('tempPrizePurchasePrice');
-                if (prizeValueInput && tempPurchasePriceInput) {
-                    // 既に値がある場合はコピー
-                    if (prizeValueInput.value) {
-                        tempPurchasePriceInput.value = prizeValueInput.value;
-                        console.log('✅ ポイント還元価値を仕入れ価格にコピーしました:', prizeValueInput.value);
-                    } else {
-                        // 値がない場合は空にする（プレースホルダーが表示される）
-                        tempPurchasePriceInput.value = '';
-                        console.log('ℹ️ ポイント還元価値が未入力のため、仕入れ価格は空です');
-                    }
-                }
-                // 選択をクリア
-                selectedMasterPrizeForMain = null;
-            } else {
-                // 通常モード
-                console.log('🔄 仮装景品モードOFF');
-                if (selectButton) {
-                    selectButton.disabled = false;
-                    selectButton.style.opacity = '1';
-                    selectButton.style.cursor = 'pointer';
-                }
-                prizeNameInput.placeholder = '例: レアカード';
-                // 仮装景品用の仕入れ価格フィールドを非表示
-                if (tempPurchasePriceField) {
-                    tempPurchasePriceField.style.display = 'none';
-                }
-                // 仕入れ価格フィールドをクリア
-                const tempPurchasePriceInput = document.getElementById('tempPrizePurchasePrice');
-                if (tempPurchasePriceInput) {
-                    tempPurchasePriceInput.value = '';
-                }
-            }
-        }
 
         // 景品タイプ変更時の処理
         function handlePrizeTypeChange() {
@@ -3036,107 +2888,6 @@
             }
         }
 
-        // 仮装景品マスターから選択（メイン用）
-        function selectFromTemporaryPrizeMaster() {
-            if (temporaryPrizeMaster.length === 0) {
-                alert('📝 仮装景品マスターが空です。\n\n先に仮装景品を作成してください。\n\n手順：\n1. メインタブで仮装景品を作成\n2. 「🧮 計算する」をクリック\n3. 自動的に仮装景品マスターに保存されます');
-                return;
-            }
-
-            // モーダルを開く
-            const modal = document.getElementById('temporaryPrizeSelectModal');
-            document.getElementById('temporaryPrizeSearchInput').value = '';
-            updateTemporaryPrizeSelectList();
-            modal.style.display = 'flex';
-        }
-
-        // 仮装景品選択モーダルを閉じる
-        function closeTemporaryPrizeSelectModal() {
-            const modal = document.getElementById('temporaryPrizeSelectModal');
-            modal.style.display = 'none';
-        }
-
-        // 仮装景品一覧を更新
-        function updateTemporaryPrizeSelectList() {
-            const listContainer = document.getElementById('temporaryPrizeSelectList');
-            const searchText = document.getElementById('temporaryPrizeSearchInput').value.toLowerCase();
-
-            if (temporaryPrizeMaster.length === 0) {
-                listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--sf-gray);">📝 仮装景品が登録されていません</div>';
-                return;
-            }
-
-            // 検索フィルター
-            let filteredPrizes = temporaryPrizeMaster;
-            if (searchText) {
-                filteredPrizes = temporaryPrizeMaster.filter(prize =>
-                    prize.name.toLowerCase().includes(searchText)
-                );
-            }
-
-            // 還元価値の高い順にソート
-            filteredPrizes.sort((a, b) => (b.rewardValue || 0) - (a.rewardValue || 0));
-
-            if (filteredPrizes.length === 0) {
-                listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--sf-gray);">🔍 検索結果がありません</div>';
-                return;
-            }
-
-            // リスト表示
-            listContainer.innerHTML = filteredPrizes.map(prize => `
-                <div class="prize-master-item" onclick="selectTemporaryPrizeForMain('${prize.id}')" style="cursor: pointer; padding: 16px; border: 1px solid var(--sf-gray-4); border-radius: var(--radius-md); margin-bottom: 12px; transition: all 0.2s; background: rgba(255, 149, 0, 0.03);">
-                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 16px; color: var(--sf-orange); margin-bottom: 8px;">
-                                📝 ${prize.name}
-                            </div>
-                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 13px; color: var(--sf-gray);">
-                                <div>💰 仕入れ価格: <strong>${formatNumber(prize.purchasePrice || 0)}円</strong></div>
-                                <div>🎁 還元価値: <strong>${formatNumber(prize.rewardValue || 0)}円</strong></div>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary" style="font-size: 12px; padding: 8px 16px; white-space: nowrap;">
-                            選択
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // 仮装景品を選択してフォームに反映
-        function selectTemporaryPrizeForMain(prizeId) {
-            const prize = temporaryPrizeMaster.find(p => p.id == prizeId);
-            if (!prize) {
-                alert('❌ 景品が見つかりませんでした');
-                return;
-            }
-
-            // フォームに反映
-            document.getElementById('prizeName').value = prize.name;
-            document.getElementById('prizeValue').value = formatNumber(prize.rewardValue || 0);
-
-            // 仮装景品モードをONにする
-            document.getElementById('isTemporaryPrize').checked = true;
-            toggleTemporaryPrizeMode();
-
-            // 仕入れ価格を設定
-            const tempPurchasePriceInput = document.getElementById('tempPrizePurchasePrice');
-            if (tempPurchasePriceInput) {
-                tempPurchasePriceInput.value = formatNumber(prize.purchasePrice || 0);
-            }
-
-            // モーダルを閉じる
-            closeTemporaryPrizeSelectModal();
-
-            console.log('✅ 仮装景品を選択しました:', prize.name);
-            showNotification(`📝 仮装景品「${prize.name}」を選択しました`, 'success');
-        }
-
-        // 仮装景品リストをフィルター
-        function filterTemporaryPrizeList() {
-            updateTemporaryPrizeSelectList();
-        }
-
         // メイン専用：フォームから景品を追加
         function addPrizeFromForm() {
             // 編集モード中は追加しない
@@ -3149,12 +2900,11 @@
             const rank = parseInt(document.getElementById('prizeRank').value);
             const value = parseFormattedNumber(document.getElementById('prizeValue').value);
             const count = parseInt(document.getElementById('prizeCount').value) || 0;
-            const isTemporary = document.getElementById('isTemporaryPrize').checked;
             const prizeType = document.getElementById('prizeType').value || 'normal';
 
             // 景品名が空の場合、選択を促す
             if (!name) {
-                alert('景品を選択してください。\n\n「📋 マスターから選択」または「📝 仮装景品から選択」ボタンを押して景品を選んでください。');
+                alert('景品を選択してください。\n\n「📋 マスターから選択」ボタンを押して景品を選んでください。');
                 return;
             }
 
@@ -3163,81 +2913,28 @@
                 return;
             }
 
-            let prize;
-
-            if (isTemporary) {
-                // 仮装景品の場合
-                const tempPurchasePriceInput = document.getElementById('tempPrizePurchasePrice');
-                const tempPurchasePrice = parseFormattedNumber(tempPurchasePriceInput.value) || 0;
-
-                console.log('📦 仮装景品を追加:', {
-                    name: name,
-                    purchasePrice: tempPurchasePrice,
-                    value: value,
-                    inputValue: tempPurchasePriceInput.value
-                });
-
-                if (tempPurchasePrice === 0) {
-                    console.warn('⚠️ 仮装景品の仕入れ価格が0です。ポイント還元価値と同じ値を設定することをお勧めします。');
-                }
-
-                prize = {
-                    id: Date.now(),
-                    name: name,
-                    rank: rank,
-                    purchasePrice: tempPurchasePrice, // 入力された仕入れ価格
-                    value: value,
-                    count: count,
-                    image: null,
-                    isTemporary: true, // 仮装景品フラグ
-                    prizeType: prizeType // 景品タイプ（normal, lastOne, milestone）
-                };
-
-                // 仮装景品マスターに追加（重複チェック）
-                const existingInMaster = temporaryPrizeMaster.find(p => p.name === name);
-                if (!existingInMaster) {
-                    const masterPrize = {
-                        id: Date.now() + 1, // 景品IDと被らないように+1
-                        name: name,
-                        purchasePrice: tempPurchasePrice,
-                        rewardValue: value,
-                        stock: 9999, // 仮装景品は在庫無限（実際には使用しない）
-                        image: null,
-                        isTemporary: true,
-                        createdAt: Date.now()
-                    };
-                    temporaryPrizeMaster.push(masterPrize);
-                    saveTemporaryPrizeMaster();
-                    console.log(`仮装景品「${name}」を仮装景品マスターに追加しました`);
-                }
-
-                showNotification(`✅ 仮装景品「${name}」を追加しました（${count}個）`, 'success');
-            } else {
-                // 通常の景品の場合
-                // マスターから選択された景品が必要
-                if (!selectedMasterPrizeForMain) {
-                    alert('「📋 マスターから選択」ボタンで景品を選択してください');
-                    return;
-                }
-
-                // 入力フィールドから仕入れ価格を取得（編集可能）
-                const purchasePriceInput = document.getElementById('prizePurchasePriceInput');
-                const inputPurchasePrice = parseFormattedNumber(purchasePriceInput.value) || selectedMasterPrizeForMain.purchasePrice || 0;
-
-                prize = {
-                    id: Date.now(),
-                    name: name,
-                    rank: rank,
-                    purchasePrice: inputPurchasePrice,
-                    value: value,
-                    count: count,
-                    image: selectedMasterPrizeForMain.image || null,
-                    isTemporary: false,
-                    prizeType: prizeType // 景品タイプ（normal, lastOne, milestone）
-                };
-
-                showNotification(`✅ 景品「${name}」を追加しました（${count}個）`, 'success');
+            // マスターから選択された景品が必要
+            if (!selectedMasterPrizeForMain) {
+                alert('「📋 マスターから選択」ボタンで景品を選択してください');
+                return;
             }
+
+            // 入力フィールドから仕入れ価格を取得（編集可能）
+            const purchasePriceInput = document.getElementById('prizePurchasePriceInput');
+            const inputPurchasePrice = parseFormattedNumber(purchasePriceInput.value) || selectedMasterPrizeForMain.purchasePrice || 0;
+
+            const prize = {
+                id: Date.now(),
+                name: name,
+                rank: rank,
+                purchasePrice: inputPurchasePrice,
+                value: value,
+                count: count,
+                image: selectedMasterPrizeForMain.image || null,
+                prizeType: prizeType // 景品タイプ（normal, lastOne, milestone）
+            };
+
+            showNotification(`✅ 景品「${name}」を追加しました（${count}個）`, 'success');
 
             prizes.push(prize);
 
@@ -3323,17 +3020,12 @@
             document.getElementById('prizeReadonlyInfo').style.display = 'none';
             document.getElementById('prizePurchasePriceInput').value = ''; // 仕入れ価格入力をクリア
             document.getElementById('prizePurchasePriceHint').textContent = ''; // ヒントをクリア
-            document.getElementById('isTemporaryPrize').checked = false;
-            document.getElementById('tempPrizePurchasePrice').value = ''; // 仮装景品用仕入れ価格をクリア
 
             // 景品タイプをリセット
             document.getElementById('prizeType').value = 'normal';
             document.getElementById('prizeCount').disabled = false;
             document.getElementById('prizeTypeDescription').textContent = '通常のガチャ景品として抽選プールに入ります';
             document.getElementById('prizeCountDescription').textContent = '';
-
-            // 仮装景品モードをリセット
-            toggleTemporaryPrizeMode();
 
             // ボタンの表示を元に戻す
             document.getElementById('addPrizeBtn').style.display = 'inline-block';
@@ -3699,7 +3391,7 @@
                 const typeLabel = prize.type || 'PSA10';
                 const isWanted = prize.isWanted || false;
                 // すでに景品として設定されているかチェック
-                const isAlreadySet = prizes.some(p => p.name === prize.name && !p.isTemporary);
+                const isAlreadySet = prizes.some(p => p.name === prize.name);
                 const stockBadge = prize.count > 0
                     ? `<span style="display: inline-block; padding: 6px 14px; background: rgba(52, 199, 89, 0.1); color: #34C759; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">${formatNumber(prize.count)}個</span>`
                     : `<span style="display: inline-block; padding: 6px 14px; background: rgba(255, 59, 48, 0.1); color: #ff3b30; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;">売り切れ</span>`;
@@ -3837,10 +3529,6 @@
 
             // 選択した景品を一時保存
             selectedMasterPrizeForMain = prize;
-
-            // 仮装景品モードをOFFにする
-            document.getElementById('isTemporaryPrize').checked = false;
-            toggleTemporaryPrizeMode();
 
             // フォームに情報を設定
             document.getElementById('prizeName').value = prize.name;
@@ -4101,20 +3789,14 @@
                            onerror="this.style.display='none';">`
                     : `<div style="width: 60px; height: 90px; background: rgba(0, 0, 0, 0.05); border-radius: 4px; border: 2px solid rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 12px;">📦</div>`;
 
-                const temporaryBadge = prize.isTemporary
-                    ? '<span style="display: inline-block; background: var(--sf-orange); color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">📝 仮装</span>'
-                    : '';
-
-                // 在庫状況バッジ（仮装景品以外）
+                // 在庫状況バッジ
                 let stockBadge = '';
-                if (!prize.isTemporary) {
-                    const masterPrize = prizeMaster.find(p => p.name === prize.name);
-                    if (masterPrize) {
-                        if (masterPrize.count > 0) {
-                            stockBadge = `<span style="display: inline-block; background: rgba(52, 199, 89, 0.15); color: #34C759; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">在庫あり (${masterPrize.count}個)</span>`;
-                        } else {
-                            stockBadge = '<span style="display: inline-block; background: rgba(255, 59, 48, 0.15); color: #FF3B30; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">在庫なし</span>';
-                        }
+                const masterPrize = prizeMaster.find(p => p.name === prize.name);
+                if (masterPrize) {
+                    if (masterPrize.count > 0) {
+                        stockBadge = `<span style="display: inline-block; background: rgba(52, 199, 89, 0.15); color: #34C759; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">在庫あり (${masterPrize.count}個)</span>`;
+                    } else {
+                        stockBadge = '<span style="display: inline-block; background: rgba(255, 59, 48, 0.15); color: #FF3B30; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">在庫なし</span>';
                     }
                 }
 
@@ -4127,18 +3809,20 @@
                 }
 
                 return `
-                <div class="prize-item" style="display: flex; align-items: center;">
+                <div class="prize-item" style="display: flex; align-items: flex-start; gap: 12px;">
                     ${imageHtml}
-                    <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
+                    <div style="flex: 1; min-width: 0;">
                         <div class="prize-rank rank-${prize.rank}">${prize.rank}等</div>
-                        <div class="prize-content" style="flex: 1;">
-                            <div class="prize-name">${prize.name}${temporaryBadge}${stockBadge}${prizeTypeBadge}</div>
-                            <div class="prize-purchase">仕入¥${formatNumber(prize.purchasePrice)}</div>
-                            <div class="prize-value">還元¥${formatNumber(prize.value)}</div>
-                            <div class="prize-count">${formatNumber(prize.count)}枚</div>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="btn btn-primary" onclick="editPrize(${prize.id})">編集</button>
-                                <button class="btn btn-danger" onclick="removePrize(${prize.id})">削除</button>
+                        <div class="prize-content">
+                            <div class="prize-name">${prize.name}${stockBadge}${prizeTypeBadge}</div>
+                            <div class="prize-info" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                <span class="prize-purchase">仕入¥${formatNumber(prize.purchasePrice)}</span>
+                                <span class="prize-value">還元¥${formatNumber(prize.value)}</span>
+                                <span class="prize-count">${formatNumber(prize.count)}枚</span>
+                                <div style="display: flex; gap: 8px; margin-left: auto;">
+                                    <button class="btn btn-primary btn-sm" onclick="editPrize(${prize.id})">編集</button>
+                                    <button class="btn btn-danger btn-sm" onclick="removePrize(${prize.id})">削除</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -5126,11 +4810,6 @@
                 initializeAuth();
             }
 
-            // 仮装景品タブが表示された時
-            if (tabName === 'temporary-prize-list') {
-                updateTemporaryPrizeMasterList();
-            }
-
             // 在庫調整タブが表示された時
             if (tabName === 'inventory-adjustment') {
                 // 仕入れ履歴を再描画（ローカルストレージから復元）
@@ -5150,10 +4829,6 @@
         let editingMasterPrizeId = null; // 編集中の景品ID（景品一覧用）
         let prizeMaster = []; // 景品マスター（クラウドから取得した全景品）
         const PRIZE_MASTER_STORAGE_KEY = 'oripa_prize_master_v1';
-
-        // 仮装景品マスター
-        let temporaryPrizeMaster = []; // 仮装景品マスター（実在しないカードを管理）
-        const TEMPORARY_PRIZE_MASTER_STORAGE_KEY = 'oripa_temporary_prize_master_v1';
 
         // 景品マスターを読み込み
         function loadPrizeMaster() {
@@ -5230,129 +4905,6 @@
             } catch (e) {
                 console.error('❌ クラウド保存エラー:', e);
                 updateSyncStatus('❌ 保存エラー');
-            }
-        }
-
-        // 仮装景品マスターを読み込み
-        function loadTemporaryPrizeMaster() {
-            try {
-                const savedData = localStorage.getItem(TEMPORARY_PRIZE_MASTER_STORAGE_KEY);
-                if (savedData) {
-                    temporaryPrizeMaster = JSON.parse(savedData);
-                }
-            } catch (e) {
-                console.error('仮装景品マスターの読み込みに失敗しました:', e);
-            }
-        }
-
-        // 仮装景品マスターを保存（localStorageとFirebaseの両方）
-        function saveTemporaryPrizeMaster() {
-            try {
-                // localStorageに保存（バックアップ）
-                localStorage.setItem(TEMPORARY_PRIZE_MASTER_STORAGE_KEY, JSON.stringify(temporaryPrizeMaster));
-
-                // Firebaseに保存（クラウド共有）
-                saveTemporaryPrizeMasterToCloud();
-            } catch (e) {
-                console.error('仮装景品マスターの保存に失敗しました:', e);
-            }
-        }
-
-        // 仮装景品マスターをFirebaseに保存
-        function saveTemporaryPrizeMasterToCloud() {
-            // まずlocalStorageに保存（常に実行）
-            try {
-                localStorage.setItem(TEMPORARY_PRIZE_MASTER_STORAGE_KEY, JSON.stringify(temporaryPrizeMaster));
-                console.log('💾 仮装景品マスターをlocalStorageに保存しました');
-            } catch (e) {
-                console.error('❌ localStorageへの保存に失敗:', e);
-            }
-
-            // Firebaseへの保存を試行
-            if (typeof database === 'undefined') {
-                console.warn('⚠️ Firebaseが初期化されていません（localStorageのみ保存）');
-                return;
-            }
-
-            // 認証完了を待つ
-            if (!isAuthReady) {
-                console.log('⏳ Firebase認証を待っています...');
-                waitForAuth(() => saveTemporaryPrizeMasterToCloud());
-                return;
-            }
-
-            try {
-                const data = {
-                    prizes: temporaryPrizeMaster,
-                    updatedAt: Date.now(),
-                    version: '1.0'
-                };
-
-                database.ref('temporaryPrizeMaster').set(data).then(() => {
-                    console.log('✅ 仮装景品マスターをクラウドに保存しました');
-                }).catch((error) => {
-                    if (error.code === 'PERMISSION_DENIED') {
-                        console.warn('⚠️ クラウド保存の権限がありません（localStorageには保存済み）');
-                        console.info('💡 Firebase Consoleでデータベースルールを確認してください');
-                    } else {
-                        console.error('❌ 仮装景品マスターのクラウド保存に失敗:', error.code || error.message);
-                    }
-                });
-            } catch (e) {
-                console.error('❌ 仮装景品マスターのクラウド保存エラー:', e);
-            }
-        }
-
-        // 仮装景品マスターをFirebaseから読み込み
-        function loadTemporaryPrizeMasterFromCloud() {
-            if (typeof database === 'undefined') {
-                console.warn('Firebaseが初期化されていません');
-                // localStorageから読み込む
-                loadTemporaryPrizeMasterFromLocalStorage();
-                return;
-            }
-
-            database.ref('temporaryPrizeMaster').once('value').then((snapshot) => {
-                const data = snapshot.val();
-
-                if (data && data.prizes) {
-                    temporaryPrizeMaster = data.prizes;
-
-                    // localStorageにも保存（バックアップ）
-                    try {
-                        localStorage.setItem(TEMPORARY_PRIZE_MASTER_STORAGE_KEY, JSON.stringify(temporaryPrizeMaster));
-                    } catch (e) {
-                        console.error('localStorageへの保存に失敗:', e);
-                    }
-
-                    console.log(`✅ 仮装景品マスターをクラウドから読み込みました（${temporaryPrizeMaster.length}件）`);
-                } else {
-                    console.log('ℹ️ 仮装景品マスターのクラウドデータがありません（localStorageから読み込みます）');
-                    // クラウドにデータがない場合はlocalStorageから読み込む
-                    loadTemporaryPrizeMasterFromLocalStorage();
-                }
-            }).catch((error) => {
-                console.error('❌ 仮装景品マスターの読み込みに失敗しました:', error.code || error.message);
-                // エラー時はlocalStorageから読み込む
-                console.log('💾 localStorageから仮装景品マスターを読み込みます');
-                loadTemporaryPrizeMasterFromLocalStorage();
-            });
-        }
-
-        // localStorageから仮装景品マスターを読み込む
-        function loadTemporaryPrizeMasterFromLocalStorage() {
-            try {
-                const saved = localStorage.getItem(TEMPORARY_PRIZE_MASTER_STORAGE_KEY);
-                if (saved) {
-                    temporaryPrizeMaster = JSON.parse(saved);
-                    console.log(`✅ 仮装景品マスターをlocalStorageから読み込みました（${temporaryPrizeMaster.length}件）`);
-                } else {
-                    console.log('ℹ️ localStorageに仮装景品マスターがありません（新規作成）');
-                    temporaryPrizeMaster = [];
-                }
-            } catch (e) {
-                console.error('❌ localStorageからの読み込みに失敗:', e);
-                temporaryPrizeMaster = [];
             }
         }
 
@@ -6143,80 +5695,6 @@
             }).join('');
         }
 
-        // ==================== 仮装景品マスター管理 ====================
-
-        // 仮装景品マスター一覧を更新
-        function updateTemporaryPrizeMasterList() {
-            const listContainer = document.getElementById('temporaryPrizeMasterList');
-            const countSpan = document.getElementById('temporaryPrizeCount');
-
-            if (!listContainer || !countSpan) return;
-
-            countSpan.textContent = temporaryPrizeMaster.length;
-
-            if (temporaryPrizeMaster.length === 0) {
-                listContainer.innerHTML = `
-                    <p style="color: var(--sf-gray); text-align: center; padding: 40px 0;">
-                        仮装景品が登録されていません。<br>
-                        メインタブで「📝 仮装景品」にチェックを入れて景品を追加してください。
-                    </p>
-                `;
-                return;
-            }
-
-            // 仮装景品を日付順（新しい順）に表示
-            const sortedPrizes = [...temporaryPrizeMaster].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-            listContainer.innerHTML = sortedPrizes.map(prize => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(255, 149, 0, 0.05); border: 1px solid rgba(255, 149, 0, 0.2); border-radius: var(--radius-md);">
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; font-size: 16px; color: var(--sf-black); margin-bottom: 8px;">
-                            📝 ${prize.name}
-                        </div>
-                        <div style="display: flex; gap: 16px; font-size: 13px; color: var(--sf-gray);">
-                            <div>仕入れ: ¥${formatNumber(prize.purchasePrice || 0)}</div>
-                            <div>還元価値: ¥${formatNumber(prize.rewardValue || 0)}</div>
-                        </div>
-                    </div>
-                    <button class="btn btn-danger" onclick="deleteTemporaryPrize(${prize.id})" style="font-size: 12px; padding: 6px 12px;">
-                        🗑️ 削除
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        // 仮装景品を削除
-        function deleteTemporaryPrize(prizeId) {
-            const prize = temporaryPrizeMaster.find(p => p.id === prizeId);
-            if (!prize) return;
-
-            if (!confirm(`仮装景品「${prize.name}」を削除しますか？\n\nこの仮装景品を使用しているオリパがある場合、影響が出る可能性があります。`)) {
-                return;
-            }
-
-            temporaryPrizeMaster = temporaryPrizeMaster.filter(p => p.id !== prizeId);
-            saveTemporaryPrizeMaster();
-            updateTemporaryPrizeMasterList();
-            showNotification(`✅ 仮装景品「${prize.name}」を削除しました`, 'success');
-        }
-
-        // すべての仮装景品を削除
-        function clearAllTemporaryPrizes() {
-            if (temporaryPrizeMaster.length === 0) {
-                alert('削除する仮装景品がありません');
-                return;
-            }
-
-            if (!confirm(`すべての仮装景品（${temporaryPrizeMaster.length}件）を削除しますか？\n\nこの操作は取り消せません。`)) {
-                return;
-            }
-
-            temporaryPrizeMaster = [];
-            saveTemporaryPrizeMaster();
-            updateTemporaryPrizeMasterList();
-            showNotification('✅ すべての仮装景品を削除しました', 'success');
-        }
-
         // 欲しいものバッジをトグル
         function togglePrizeWanted(prizeId) {
             const prizeIndex = prizeMaster.findIndex(p => p.id === prizeId);
@@ -6747,7 +6225,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             // まずlocalStorageから読み込み（即座に表示）
             loadPrizeMaster();
-            loadTemporaryPrizeMaster(); // 仮装景品マスターも読み込み
 
             // Firebase認証を早期に開始（タイムアウト防止）
             setTimeout(() => {
@@ -10072,7 +9549,6 @@ function initializeAuth() {
         console.log('✅ 既にFirebase認証済みです');
         // onAuthStateChangedで処理されるので、ここでは何もしない
         loadPrizeMasterFromCloudOnce();
-        loadTemporaryPrizeMasterFromCloud(); // 仮装景品マスターも読み込み
         return;
     }
 
@@ -10087,7 +9563,6 @@ function initializeAuth() {
 
             // 認証完了後にデータを読み込む
             loadPrizeMasterFromCloudOnce();
-            loadTemporaryPrizeMasterFromCloud(); // 仮装景品マスターも読み込み
         })
         .catch((error) => {
             console.error('❌ Firebase認証エラー:', error);
@@ -10444,11 +9919,23 @@ function updateCloudConfig() {
     return;
   }
 
-  // 表示名を取得
+  // 入力欄のオリパ名を取得（変更可能）
+  const inputName = document.getElementById('cloudConfigName').value.trim();
   const configData = cloudConfigs[currentCloudConfigId];
-  const displayName = configData?.displayName || currentCloudConfigId;
+  const oldDisplayName = configData?.displayName || currentCloudConfigId;
 
-  if (!confirm(`「${displayName}」を現在の設定で上書き更新しますか？`)) {
+  // 入力欄が空の場合は既存の名前を使用
+  const newDisplayName = inputName || oldDisplayName;
+
+  // 名前が変更されたかどうか
+  const nameChanged = newDisplayName !== oldDisplayName;
+
+  let confirmMessage = `「${oldDisplayName}」を現在の設定で上書き更新しますか？`;
+  if (nameChanged) {
+    confirmMessage = `「${oldDisplayName}」を「${newDisplayName}」に名前を変更して上書き更新しますか？`;
+  }
+
+  if (!confirm(confirmMessage)) {
     return;
   }
 
@@ -10457,16 +9944,26 @@ function updateCloudConfig() {
 
   const updateData = {
     data: config,
+    displayName: newDisplayName,  // オリパ名も更新
     updatedAt: Date.now()
   };
 
   console.log('🔥 Firebaseを更新するデータ:', updateData);
 
-  // 既存のdisplayNameを保持しながら更新
   database.ref('configs/' + currentCloudConfigId).update(updateData).then(() => {
-    updateCloudStatus(`「${displayName}」を更新しました`);
+    // ローカルのcloudConfigsも更新
+    if (cloudConfigs[currentCloudConfigId]) {
+      cloudConfigs[currentCloudConfigId].displayName = newDisplayName;
+    }
+
+    const statusMsg = nameChanged
+      ? `「${newDisplayName}」に名前を変更して更新しました`
+      : `「${newDisplayName}」を更新しました`;
+    updateCloudStatus(statusMsg);
     console.log(`✅ 更新完了:`, {
-      displayName: displayName,
+      oldDisplayName: oldDisplayName,
+      newDisplayName: newDisplayName,
+      nameChanged: nameChanged,
       internalId: currentCloudConfigId,
       memo: config.memo
     });
