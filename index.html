@@ -8457,8 +8457,21 @@
             const historyEntries = [];
 
             shippedItems.forEach(item => {
-                // 正規化マッチングで景品マスターを検索
-                const masterItem = findPrizeByNormalizedName(item.prizeName);
+                // masterIdがあればそれを優先、なければ正規化マッチングで景品マスターを検索
+                let masterItem = null;
+                if (item.masterId) {
+                    masterItem = prizeMaster.find(p => p.id === item.masterId);
+                    if (masterItem) {
+                        console.log(`✅ masterId ${item.masterId} で景品を特定: ${masterItem.name}`);
+                    }
+                }
+                if (!masterItem) {
+                    masterItem = findPrizeByNormalizedName(item.prizeName);
+                    if (masterItem) {
+                        console.log(`📝 景品名マッチング: ${item.prizeName} → ${masterItem.name} (ID: ${masterItem.id})`);
+                    }
+                }
+
                 if (masterItem) {
                     // stock または count のどちらかを使用
                     const stockKey = 'stock' in masterItem ? 'stock' : 'count';
@@ -8495,6 +8508,15 @@
             const newPendingFromCsv = filteredShippingData.filter(d => d.status === 'pending');
             let pendingAddedCount = 0;
             newPendingFromCsv.forEach(newItem => {
+                // masterIdがなければ景品マスターを検索して追加
+                if (!newItem.masterId) {
+                    const masterItem = findPrizeByNormalizedName(newItem.prizeName);
+                    if (masterItem) {
+                        newItem.masterId = masterItem.id;
+                        console.log(`📝 未発送に景品マスターIDを紐付け: ${newItem.prizeName} → ${masterItem.id}`);
+                    }
+                }
+
                 // 同じID + orderId + prizeName の既存アイテムを検索
                 const existingItem = pendingOrders.find(existing =>
                     existing.id === newItem.id &&
@@ -8504,6 +8526,10 @@
                 if (existingItem) {
                     // 既存アイテムがあれば数量を増やす
                     existingItem.quantity = (existingItem.quantity || 1) + (newItem.quantity || 1);
+                    // masterIdも更新（未設定の場合）
+                    if (!existingItem.masterId && newItem.masterId) {
+                        existingItem.masterId = newItem.masterId;
+                    }
                     console.log(`📦 既存アイテムの数量を増加: ${newItem.prizeName} → ${existingItem.quantity}個`);
                 } else {
                     // 新規アイテムとして追加
@@ -8532,6 +8558,15 @@
             let pendingAddedCount = 0;
 
             newPendingFromCsv.forEach(newItem => {
+                // masterIdがなければ景品マスターを検索して追加
+                if (!newItem.masterId) {
+                    const masterItem = findPrizeByNormalizedName(newItem.prizeName);
+                    if (masterItem) {
+                        newItem.masterId = masterItem.id;
+                        console.log(`📝 未発送に景品マスターIDを紐付け: ${newItem.prizeName} → ${masterItem.id}`);
+                    }
+                }
+
                 // 同じID + orderId + prizeName の既存アイテムを検索
                 const existingItem = pendingOrders.find(existing =>
                     existing.id === newItem.id &&
@@ -8541,6 +8576,10 @@
                 if (existingItem) {
                     // 既存アイテムがあれば数量を増やす
                     existingItem.quantity = (existingItem.quantity || 1) + (newItem.quantity || 1);
+                    // masterIdも更新（未設定の場合）
+                    if (!existingItem.masterId && newItem.masterId) {
+                        existingItem.masterId = newItem.masterId;
+                    }
                 } else {
                     // 新規アイテムとして追加
                     pendingOrders.push(newItem);
@@ -9661,6 +9700,9 @@
 
                         // localStorageにもバックアップ
                         localStorage.setItem('pendingShipments', JSON.stringify(pendingOrders));
+
+                        // 既存データに紐付けがない場合は自動紐付け
+                        setTimeout(() => autoLinkMasterIds(), 500);
                     } else {
                         // Firebaseにデータがない場合はローカルストレージから読み込み
                         loadFromLocalStorage();
@@ -9682,6 +9724,9 @@
                             renderPendingOrdersOnly();
                             renderNeedRestockList();
                             console.log('📥 発送待ちリストをローカルから読込:', pendingOrders.length + '件');
+
+                            // 既存データに紐付けがない場合は自動紐付け
+                            setTimeout(() => autoLinkMasterIds(), 500);
                         }
                     } catch (e) {
                         console.error('発送待ちリストの解析に失敗:', e);
@@ -9801,8 +9846,23 @@
 
             const item = pendingOrders[idx];
 
-            // 正規化マッチングで景品マスターを検索して在庫を減少
-            const masterItem = findPrizeByNormalizedName(item.prizeName);
+            // masterIdがあればそれを優先、なければ正規化マッチングで景品マスターを検索
+            let masterItem = null;
+            if (item.masterId) {
+                masterItem = prizeMaster.find(p => p.id === item.masterId);
+                if (masterItem) {
+                    console.log(`✅ masterId ${item.masterId} で景品を特定: ${masterItem.name}`);
+                }
+            }
+            if (!masterItem) {
+                masterItem = findPrizeByNormalizedName(item.prizeName);
+                if (masterItem) {
+                    console.log(`📝 景品名マッチング: ${item.prizeName} → ${masterItem.name} (ID: ${masterItem.id})`);
+                    // 紐付けを保存（次回のために）
+                    item.masterId = masterItem.id;
+                }
+            }
+
             if (masterItem) {
                 // stock または count プロパティを検出
                 const stockKey = 'stock' in masterItem ? 'stock' : 'count';
@@ -9850,6 +9910,26 @@
         function loadInventoryAdjustmentData() {
             loadPendingOrdersFromCloud();
             loadShippedOrderIds();
+        }
+
+        // 既存のpendingOrdersに対してmasterIdを自動紐付け
+        function autoLinkMasterIds() {
+            let updated = false;
+            pendingOrders.forEach(item => {
+                if (!item.masterId) {
+                    const masterItem = findPrizeByNormalizedName(item.prizeName);
+                    if (masterItem) {
+                        item.masterId = masterItem.id;
+                        console.log(`🔗 既存データに紐付け追加: ${item.prizeName} → ${masterItem.id}`);
+                        updated = true;
+                    }
+                }
+            });
+
+            if (updated) {
+                savePendingOrdersToCloud();
+                console.log('✅ 既存データの紐付けをクラウドに保存しました');
+            }
         }
 
         // HTMLエスケープ
