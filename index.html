@@ -9612,50 +9612,170 @@
         // ========== 発送待ちリストのクラウド管理 ==========
 
         function savePendingOrdersToCloud() {
-            // ローカルストレージに保存
+            // ローカルストレージに保存（バックアップ）
             localStorage.setItem('pendingShipments', JSON.stringify(pendingOrders));
             console.log('📤 発送待ちリストをローカルに保存:', pendingOrders.length + '件');
+
+            // Firebaseに保存（認証待ち対応）
+            const saveToFirebase = () => {
+                if (typeof database === 'undefined') {
+                    console.warn('⚠️ Firebaseが初期化されていません（localStorageのみ保存）');
+                    return;
+                }
+
+                const data = {
+                    orders: pendingOrders,
+                    updatedAt: Date.now()
+                };
+
+                database.ref('pendingShipments').set(data).then(() => {
+                    console.log('✅ 発送待ちリストをクラウドに保存しました:', pendingOrders.length + '件');
+                }).catch((error) => {
+                    console.error('❌ 発送待ちリストのクラウド保存に失敗:', error.code || error.message);
+                });
+            };
+
+            if (typeof database !== 'undefined' && isAuthReady) {
+                saveToFirebase();
+            } else {
+                waitForAuth(saveToFirebase);
+            }
         }
 
         function loadPendingOrdersFromCloud() {
-            // ローカルストレージから読み込み
-            const localData = localStorage.getItem('pendingShipments');
-            if (localData) {
-                try {
-                    const data = JSON.parse(localData);
-                    if (Array.isArray(data)) {
-                        pendingOrders = data;
+            // Firebaseから読み込み（認証待ち対応）
+            const loadFromFirebase = () => {
+                if (typeof database === 'undefined') {
+                    console.warn('⚠️ Firebaseが初期化されていません（localStorageから読込）');
+                    loadFromLocalStorage();
+                    return;
+                }
+
+                database.ref('pendingShipments').once('value').then(snapshot => {
+                    const data = snapshot.val();
+                    if (data && Array.isArray(data.orders)) {
+                        pendingOrders = data.orders;
                         renderPendingOrdersOnly();
                         renderNeedRestockList();
-                        console.log('📥 発送待ちリストをローカルから読込:', pendingOrders.length + '件');
+                        console.log('☁️ 発送待ちリストをクラウドから読込:', pendingOrders.length + '件');
+
+                        // localStorageにもバックアップ
+                        localStorage.setItem('pendingShipments', JSON.stringify(pendingOrders));
+                    } else {
+                        // Firebaseにデータがない場合はローカルストレージから読み込み
+                        loadFromLocalStorage();
                     }
-                } catch (e) {
-                    console.error('発送待ちリストの解析に失敗:', e);
+                }).catch((error) => {
+                    console.error('❌ 発送待ちリストのクラウド読込に失敗:', error);
+                    loadFromLocalStorage();
+                });
+            };
+
+            // ローカルストレージから読み込む関数
+            const loadFromLocalStorage = () => {
+                const localData = localStorage.getItem('pendingShipments');
+                if (localData) {
+                    try {
+                        const data = JSON.parse(localData);
+                        if (Array.isArray(data)) {
+                            pendingOrders = data;
+                            renderPendingOrdersOnly();
+                            renderNeedRestockList();
+                            console.log('📥 発送待ちリストをローカルから読込:', pendingOrders.length + '件');
+                        }
+                    } catch (e) {
+                        console.error('発送待ちリストの解析に失敗:', e);
+                    }
                 }
+            };
+
+            if (typeof database !== 'undefined' && isAuthReady) {
+                loadFromFirebase();
+            } else {
+                waitForAuth(loadFromFirebase);
             }
         }
 
         // ========== 発送済みIDの管理（重複発送防止） ==========
 
         function saveShippedOrderIds() {
-            // ローカルストレージに保存（メイン保存先）
+            // ローカルストレージに保存（バックアップ）
             localStorage.setItem('shippedOrderIds', JSON.stringify([...shippedOrderIds]));
             console.log('📤 発送済みIDをローカルに保存:', shippedOrderIds.size + '件');
+
+            // Firebaseに保存（認証待ち対応）
+            const saveToFirebase = () => {
+                if (typeof database === 'undefined') {
+                    console.warn('⚠️ Firebaseが初期化されていません（localStorageのみ保存）');
+                    return;
+                }
+
+                const data = {
+                    ids: [...shippedOrderIds],
+                    updatedAt: Date.now()
+                };
+
+                database.ref('shippedOrderIds').set(data).then(() => {
+                    console.log('✅ 発送済みIDをクラウドに保存しました:', shippedOrderIds.size + '件');
+                }).catch((error) => {
+                    console.error('❌ 発送済みIDのクラウド保存に失敗:', error.code || error.message);
+                });
+            };
+
+            if (typeof database !== 'undefined' && isAuthReady) {
+                saveToFirebase();
+            } else {
+                waitForAuth(saveToFirebase);
+            }
         }
 
         function loadShippedOrderIds() {
-            // ローカルストレージから読み込み
-            const localData = localStorage.getItem('shippedOrderIds');
-            if (localData) {
-                try {
-                    const ids = JSON.parse(localData);
-                    if (Array.isArray(ids)) {
-                        shippedOrderIds = new Set(ids.map(id => String(id)));
-                        console.log('📥 発送済みIDをローカルから読込:', shippedOrderIds.size + '件');
-                    }
-                } catch (e) {
-                    console.error('発送済みIDの解析に失敗:', e);
+            // Firebaseから読み込み（認証待ち対応）
+            const loadFromFirebase = () => {
+                if (typeof database === 'undefined') {
+                    console.warn('⚠️ Firebaseが初期化されていません（localStorageから読込）');
+                    loadFromLocalStorage();
+                    return;
                 }
+
+                database.ref('shippedOrderIds').once('value').then(snapshot => {
+                    const data = snapshot.val();
+                    if (data && Array.isArray(data.ids)) {
+                        shippedOrderIds = new Set(data.ids.map(id => String(id)));
+                        console.log('☁️ 発送済みIDをクラウドから読込:', shippedOrderIds.size + '件');
+
+                        // localStorageにもバックアップ
+                        localStorage.setItem('shippedOrderIds', JSON.stringify([...shippedOrderIds]));
+                    } else {
+                        // Firebaseにデータがない場合はローカルストレージから読み込み
+                        loadFromLocalStorage();
+                    }
+                }).catch((error) => {
+                    console.error('❌ 発送済みIDのクラウド読込に失敗:', error);
+                    loadFromLocalStorage();
+                });
+            };
+
+            // ローカルストレージから読み込む関数
+            const loadFromLocalStorage = () => {
+                const localData = localStorage.getItem('shippedOrderIds');
+                if (localData) {
+                    try {
+                        const ids = JSON.parse(localData);
+                        if (Array.isArray(ids)) {
+                            shippedOrderIds = new Set(ids.map(id => String(id)));
+                            console.log('📥 発送済みIDをローカルから読込:', shippedOrderIds.size + '件');
+                        }
+                    } catch (e) {
+                        console.error('発送済みIDの解析に失敗:', e);
+                    }
+                }
+            };
+
+            if (typeof database !== 'undefined' && isAuthReady) {
+                loadFromFirebase();
+            } else {
+                waitForAuth(loadFromFirebase);
             }
         }
 
