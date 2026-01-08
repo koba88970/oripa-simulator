@@ -8497,6 +8497,19 @@
                 }
             });
 
+            // 発送済みの注文IDを記録（重複処理防止）
+            const processedOrderIds = new Set();
+            shippedItems.forEach(item => {
+                if (item.orderId) {
+                    processedOrderIds.add(String(item.orderId));
+                }
+            });
+            processedOrderIds.forEach(orderId => {
+                shippedOrderIds.add(orderId);
+            });
+            saveShippedOrderIds();
+            console.log(`📋 発送済みID ${processedOrderIds.size}件を記録しました`);
+
             // 景品マスターを保存
             savePrizeMaster();
             updatePrizeMasterList();
@@ -9887,6 +9900,13 @@
                 alert(`${item.prizeName} を発送済みにしました\n在庫: ${oldStock} → ${newStock}`);
             } else {
                 alert('景品マスターに登録されていないため、在庫は変更されません');
+            }
+
+            // 発送済みIDを記録（重複処理防止）
+            if (item.orderId) {
+                shippedOrderIds.add(String(item.orderId));
+                saveShippedOrderIds();
+                console.log(`📋 発送済みIDを記録: ${item.orderId}`);
             }
 
             // リストから削除
