@@ -6957,21 +6957,24 @@
         // 重複の処理方法を選択
         function handleDuplicateOrders(mode) {
             duplicateHandleMode = mode;
-            closeDuplicateOrderModal();
+
+            // 処理前に重複IDを保存（closeDuplicateOrderModalでクリアされるため）
+            const idsToProcess = [...duplicateOrderIdsFound];
 
             if (mode === 'overwrite') {
                 // 既存の重複IDを削除
-                pendingOrders = pendingOrders.filter(p => !duplicateOrderIdsFound.includes(String(p.id)));
+                pendingOrders = pendingOrders.filter(p => !idsToProcess.includes(String(p.id)));
                 savePendingOrdersToCloud();
-                console.log(`🔄 重複ID ${duplicateOrderIdsFound.length}件を上書きモードで削除`);
+                console.log(`🔄 重複ID ${idsToProcess.length}件を上書きモードで削除`);
             } else if (mode === 'exclude') {
                 // CSVから重複IDを除外
                 filteredShippingData = filteredShippingData.filter(d =>
-                    d.status !== 'pending' || !duplicateOrderIdsFound.includes(String(d.id))
+                    d.status !== 'pending' || !idsToProcess.includes(String(d.id))
                 );
-                console.log(`⏭️ 重複ID ${duplicateOrderIdsFound.length}件を除外`);
+                console.log(`⏭️ 重複ID ${idsToProcess.length}件を除外`);
             }
 
+            closeDuplicateOrderModal();
             proceedWithOrderConfirmation();
         }
 
@@ -8362,7 +8365,7 @@
                 pendingByPrize[order.prizeName].orders.push(order);
             });
 
-            // 在庫0のものだけ抽出
+            // 在庫が必要数量より少ないものを抽出
             const needRestock = [];
             Object.values(pendingByPrize).forEach(item => {
                 // 紐付けされている場合はそのIDで検索、なければ正規化マッチング
@@ -8375,11 +8378,13 @@
                 }
                 const currentStock = masterItem ? (masterItem.stock ?? masterItem.count ?? 0) : 0;
 
-                if (currentStock === 0) {
+                // 在庫が必要数量より少ない場合に表示
+                if (currentStock < item.totalQty) {
                     needRestock.push({
                         ...item,
                         masterItem: masterItem,
-                        currentStock: currentStock
+                        currentStock: currentStock,
+                        shortageQty: item.totalQty - currentStock  // 不足数量を追加
                     });
                 }
             });
@@ -8425,6 +8430,7 @@
                     // 登録済み景品の場合
                     const isLinked = item.linkedPrizeId && item.linkedPrizeName && item.linkedPrizeName !== item.prizeName;
                     const displayName = isLinked ? item.linkedPrizeName : item.prizeName;
+                    const shortageQty = item.shortageQty || (item.totalQty - item.currentStock);
                     return `
                     <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border-radius: 8px; border-left: 4px solid var(--sf-red);">
                         ${imageUrl ? `<img src="${imageUrl}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; background: #f5f5f5;" onerror="this.style.display='none'">` : '<div style="width: 50px; height: 50px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 20px;">📦</div>'}
@@ -8432,7 +8438,7 @@
                             <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(displayName)}</div>
                             ${isLinked ? `<div style="font-size: 11px; color: var(--sf-blue); margin-top: 1px;">🔗 ${escapeHtml(item.prizeName)}</div>` : ''}
                             <div style="font-size: 12px; color: var(--sf-red); margin-top: 2px;">
-                                在庫: 0個 → 必要: ${item.totalQty}個
+                                在庫: ${item.currentStock}個 / 必要: ${item.totalQty}個 → <strong>あと${shortageQty}個必要</strong>
                             </div>
                             ${item.masterItem?.purchasePrice ? `<div style="font-size: 11px; color: var(--sf-gray); margin-top: 1px;">現在の平均仕入れ値: ¥${item.masterItem.purchasePrice.toLocaleString()}</div>` : ''}
                         </div>
@@ -8440,7 +8446,7 @@
                             <div style="display: flex; gap: 6px; align-items: center;">
                                 <div style="display: flex; align-items: center; gap: 2px;">
                                     <span style="font-size: 11px; color: var(--sf-gray);">数量</span>
-                                    <input type="number" id="restockQty_${prizeId}" value="${item.totalQty}" min="1" style="width: 50px; padding: 6px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); text-align: center; font-size: 13px;">
+                                    <input type="number" id="restockQty_${prizeId}" value="${shortageQty}" min="1" style="width: 50px; padding: 6px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); text-align: center; font-size: 13px;">
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 2px;">
                                     <span style="font-size: 11px; color: var(--sf-gray);">単価¥</span>
