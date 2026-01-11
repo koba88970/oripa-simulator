@@ -2137,6 +2137,25 @@
                         <!-- 未発送注文カードがここに動的に追加される -->
                     </div>
                 </div>
+
+                <!-- 発送済み履歴セクション -->
+                <div style="margin-top: 24px; background: rgba(52, 199, 89, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(52, 199, 89, 0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="font-size: 16px; font-weight: 700; color: #34C759; margin: 0; display: flex; align-items: center; gap: 8px;">
+                            📋 発送済み処理履歴
+                            <span style="font-size: 12px; font-weight: 500; color: #666666;">（直近20件）</span>
+                        </h3>
+                        <button onclick="clearShippedHistory()" style="padding: 6px 12px; font-size: 11px; background: rgba(255,59,48,0.1); color: #FF3B30; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            🗑️ 履歴クリア
+                        </button>
+                    </div>
+                    <p style="font-size: 13px; color: #666666; margin-bottom: 12px;">
+                        CSVから在庫減少を実行した履歴です。新しいCSVをアップロードする際に、前回どこまで処理したか確認できます。
+                    </p>
+                    <div id="shippedHistoryContainer" style="max-height: 400px; overflow-y: auto;">
+                        <p style="color: #8E8E93; text-align: center; padding: 20px;">発送履歴はまだありません</p>
+                    </div>
+                </div>
             </div>
 
             <!-- ========== 在庫登録セクション ========== -->
@@ -6342,6 +6361,7 @@
         let filteredShippingData = []; // 選択された注文のデータのみ
         let pendingOrders = [];    // 未発送注文リスト
         let shippedOrderIds = new Set(); // 発送済み注文IDセット（重複防止用）
+        let shippedOrderHistory = []; // 発送済み注文履歴（詳細情報付き）
         let inventoryHistory = []; // 在庫増減履歴
         let randomPackCount = 0;   // なにかのパックの数
         let randomPackSelections = {}; // なにかのパック選択状態
@@ -7983,6 +8003,11 @@
             saveShippedOrderIds();
             console.log(`📋 発送済みID ${processedOrderIds.size}件を記録しました`);
 
+            // 発送済み履歴に追加
+            if (processedOrderIds.size > 0) {
+                addToShippedHistory([...processedOrderIds], successCount);
+            }
+
             // 景品マスターを保存
             savePrizeMaster();
             updatePrizeMasterList();
@@ -8756,13 +8781,37 @@
         }
 
         // 加重平均仕入れ値を計算
-        function calculateAveragePurchasePrice(prize) {
+        // oldStockBeforeProcurement: 入庫前の在庫数（指定がない場合は履歴から推測）
+        function calculateAveragePurchasePrice(prize, oldStockBeforeProcurement) {
             if (!prize.purchasePriceHistory || prize.purchasePriceHistory.length === 0) {
                 return prize.purchasePrice || 0;
             }
 
             let totalValue = 0;
             let totalQuantity = 0;
+
+            // 履歴が追加される前に既存の仕入れ価格があった場合、
+            // その価格を1個分として加重平均に含める
+            // ただし、入庫前の在庫が1個以上ある場合のみ（在庫0の場合は新規仕入れなので既存価格は含めない）
+            // （初回登録フラグがない = 履歴機能追加前からの既存価格）
+
+            // 入庫前の在庫を判定（引数で渡されていない場合は現在の在庫から履歴の合計を引いて推測）
+            let stockBeforeProcurement = oldStockBeforeProcurement;
+            if (typeof stockBeforeProcurement === 'undefined') {
+                const currentStock = prize.stock ?? prize.count ?? 0;
+                const historyTotalQty = prize.purchasePriceHistory.reduce((sum, e) => sum + e.quantity, 0);
+                stockBeforeProcurement = currentStock - historyTotalQty;
+            }
+
+            const hasLegacyPrice = prize.purchasePrice > 0 &&
+                                   !prize.purchasePriceHistoryInitialized &&
+                                   stockBeforeProcurement > 0;
+            if (hasLegacyPrice) {
+                totalValue += prize.purchasePrice * 1;  // 既存価格を1個分として計算
+                totalQuantity += 1;
+                // フラグを立てて次回以降は既存価格を含めない
+                prize.purchasePriceHistoryInitialized = true;
+            }
 
             prize.purchasePriceHistory.forEach(entry => {
                 totalValue += entry.price * entry.quantity;
@@ -9324,6 +9373,145 @@
             saveShippedOrderIds();
         }
 
+        // ========== 発送済み履歴の管理 ==========
+
+        // 発送済み履歴を追加
+        function addToShippedHistory(orderIds, itemCount) {
+            const historyEntry = {
+                id: Date.now(),
+                timestamp: Date.now(),
+                orderIds: orderIds,
+                itemCount: itemCount || orderIds.length
+            };
+            shippedOrderHistory.unshift(historyEntry); // 新しい順に追加
+            // 最大100件まで保持
+            if (shippedOrderHistory.length > 100) {
+                shippedOrderHistory = shippedOrderHistory.slice(0, 100);
+            }
+            saveShippedOrderHistory();
+            renderShippedHistoryUI();
+        }
+
+        // 発送済み履歴を保存
+        function saveShippedOrderHistory() {
+            localStorage.setItem('shippedOrderHistory', JSON.stringify(shippedOrderHistory));
+            console.log('📤 発送履歴をローカルに保存:', shippedOrderHistory.length + '件');
+
+            const saveToFirebase = () => {
+                if (typeof database === 'undefined') return;
+                database.ref('shippedOrderHistory').set({
+                    history: shippedOrderHistory,
+                    updatedAt: Date.now()
+                }).then(() => {
+                    console.log('✅ 発送履歴をクラウドに保存しました');
+                }).catch((error) => {
+                    console.error('❌ 発送履歴のクラウド保存に失敗:', error.code || error.message);
+                });
+            };
+
+            if (typeof database !== 'undefined' && isAuthReady) {
+                saveToFirebase();
+            } else {
+                waitForAuth(saveToFirebase);
+            }
+        }
+
+        // 発送済み履歴を読み込み
+        function loadShippedOrderHistory() {
+            const loadFromFirebase = () => {
+                if (typeof database === 'undefined') {
+                    loadHistoryFromLocalStorage();
+                    return;
+                }
+                database.ref('shippedOrderHistory').once('value').then(snapshot => {
+                    const data = snapshot.val();
+                    if (data && Array.isArray(data.history)) {
+                        shippedOrderHistory = data.history;
+                        console.log('☁️ 発送履歴をクラウドから読込:', shippedOrderHistory.length + '件');
+                        localStorage.setItem('shippedOrderHistory', JSON.stringify(shippedOrderHistory));
+                    } else {
+                        loadHistoryFromLocalStorage();
+                    }
+                    renderShippedHistoryUI();
+                }).catch((error) => {
+                    console.error('❌ 発送履歴のクラウド読込に失敗:', error);
+                    loadHistoryFromLocalStorage();
+                });
+            };
+
+            const loadHistoryFromLocalStorage = () => {
+                const localData = localStorage.getItem('shippedOrderHistory');
+                if (localData) {
+                    try {
+                        shippedOrderHistory = JSON.parse(localData);
+                        console.log('📥 発送履歴をローカルから読込:', shippedOrderHistory.length + '件');
+                    } catch (e) {
+                        console.error('発送履歴の解析に失敗:', e);
+                        shippedOrderHistory = [];
+                    }
+                }
+                renderShippedHistoryUI();
+            };
+
+            if (typeof database !== 'undefined' && isAuthReady) {
+                loadFromFirebase();
+            } else {
+                waitForAuth(loadFromFirebase);
+            }
+        }
+
+        // 発送履歴UIを描画
+        function renderShippedHistoryUI() {
+            const container = document.getElementById('shippedHistoryContainer');
+            if (!container) return;
+
+            if (shippedOrderHistory.length === 0) {
+                container.innerHTML = '<p style="color: #8E8E93; text-align: center; padding: 20px;">発送履歴はまだありません</p>';
+                return;
+            }
+
+            container.innerHTML = shippedOrderHistory.slice(0, 20).map(entry => {
+                const date = new Date(entry.timestamp);
+                const dateStr = `${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getDate().toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+                const orderIdsDisplay = entry.orderIds.slice(0, 5).join(', ') + (entry.orderIds.length > 5 ? ` 他${entry.orderIds.length - 5}件` : '');
+
+                return `
+                <div style="padding: 12px; background: white; border-radius: 8px; border-left: 3px solid #34C759; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-size: 13px; font-weight: 600; color: #000000;">${dateStr}</span>
+                        <span style="font-size: 12px; color: #34C759; font-weight: 600;">${entry.itemCount || entry.orderIds.length}件処理</span>
+                    </div>
+                    <div style="font-size: 12px; color: #666666;">
+                        注文ID: ${orderIdsDisplay}
+                    </div>
+                    <button onclick="toggleHistoryDetail(${entry.id})" style="margin-top: 8px; padding: 4px 10px; font-size: 11px; background: rgba(0,0,0,0.05); border: none; border-radius: 4px; cursor: pointer; color: #666666;">
+                        詳細を表示
+                    </button>
+                    <div id="historyDetail_${entry.id}" style="display: none; margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.03); border-radius: 4px; font-size: 11px; color: #666666; max-height: 150px; overflow-y: auto;">
+                        ${entry.orderIds.map(id => `<span style="display: inline-block; background: rgba(0,122,255,0.1); padding: 2px 6px; border-radius: 4px; margin: 2px;">${id}</span>`).join('')}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // 履歴詳細の表示切替
+        function toggleHistoryDetail(entryId) {
+            const detail = document.getElementById('historyDetail_' + entryId);
+            if (detail) {
+                detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        // 発送履歴をクリア
+        function clearShippedHistory() {
+            if (!confirm('発送履歴をすべてクリアしますか？\n（発送済みIDの記録は保持されます）')) return;
+            shippedOrderHistory = [];
+            saveShippedOrderHistory();
+            renderShippedHistoryUI();
+            alert('発送履歴をクリアしました');
+        }
+
         function renderPendingOrdersOnly() {
             // ID別グループ表示を使用
             renderPendingOrdersById(pendingOrders);
@@ -9406,6 +9594,7 @@
         function loadInventoryAdjustmentData() {
             loadPendingOrdersFromCloud();
             loadShippedOrderIds();
+            loadShippedOrderHistory();
         }
 
         // 既存のpendingOrdersに対してmasterIdを自動紐付け
